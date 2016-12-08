@@ -1,7 +1,7 @@
-
-
 def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
+    """_CONVERT_REFLECTIVITY_FROM_KU"""
     """Convert to S-band using method of Cao et al. (2013)"""
+
     # Set coefficients for conversion from Ku-band to S-band
     #        Rain      90%      80%      70%      60%      50%      40%      30%      20%      10%     Snow
     as0=[ 4.78e-2, 4.12e-2, 8.12e-2, 1.59e-1, 2.87e-1, 4.93e-1, 8.16e-1, 1.31e+0, 2.01e+0, 2.82e+0, 1.74e-1]
@@ -61,8 +61,10 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
 
 
 def convert_to_Sband(refp, zp, zbb, bbwidth):
+    """CONVERT_TO_SBAND"""
     return _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, 0)
 
 
 def convert_to_Cband(refp, zp, zbb, bbwidth):
+    """CONVERT_TO_CBAND"""
     return _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, 1)

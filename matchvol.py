@@ -3,66 +3,70 @@ import pyproj
 import pandas as pd
 import glob
 import re
+import os
 import datetime
 from numpy import sqrt, cos, sin, tan, pi
 
 # Custom modules
 import reflectivity_conversion
 from read_gpm import read_gpm
-from ground_radar import ground_radar_params, radar_gaussian_curve
+from ground_radar import *
+from satellite import *
 
 
-def get_orbit_number(the_file):
-    '''Get the orbit number from filename (last serie of 6 consecutives numbers
-       in filename)'''
+def get_files(inpath):
+    '''GET_FILES'''
+    '''Returns a list of with the supported extension (netcdf) in the given
+    path. Will recursively search in subdirectories too.'''
 
-    to_return = re.findall("[0-9]{6}", the_file)[-1] #Get orbit number
+    supported_extension = ['.nc', '.NC', '.cdf']
+    flist = []
+
+    for dirpath, dirnames, filenames in os.walk(inpath):
+        for filenames_slice in filenames:
+            file_extension = os.path.splitext(str(filenames_slice))[1] # Get extension
+
+            if np.any(np.in1d(supported_extension, file_extension)):
+                # Check if file extension is in the list of supported ones
+                the_path = os.path.join(dirpath, filenames_slice)
+            else: # If not test next file.
+                continue
+
+            # File does have the supported extension, we keep it for returning list
+            flist.append(the_path)
+
+    to_return = flist
+
+    return sorted(to_return) # type: List[str, ...]
+
+
+def get_time_from_filename(filename, date):
+    '''GET_TIME_FROM_FILENAME'''
+    '''Capture the time string inside the filename and returns it'''
+
+    # Looking for date followed by underscore and 6 consecutives number (i.e. the time)
+    date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
+    # Turn it into a datetime object
+    to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
+
     return to_return
 
 
-l_write=1    # Switch for writing out volume-matched data
-l_cband=1    # Switch for C-band GR
-l_netcdf=1   # Switch for NetCDF GR data
-l_dbz=0      # Switch for averaging in dBZ
-l_dp=1       # Switch for dual-pol data
-l_gpm=1      # Switch for GPM PR data
-
-if l_gpm == 0:
-    satstr='trmm'
-else:
-    satstr='gpm'
-
-# Set the data directories
-raddir='/data/vlouf/cpol/20150219'
-satdir='/data/vlouf/GPM_DATA'
-
-# Ground radar parameters
-GR_param = ground_radar_params('CPOL')
-rid = GR_param['rid']
-lon0 = GR_param['lon0']
-lat0 = GR_param['lat0']
-z0 = GR_param['z0']
-bwr = GR_param['bwr']
+""" SECTION of user-defined parameters """
+l_write = 1    # Switch for writing out volume-matched data
+l_cband = 1    # Switch for C-band GR
+l_netcdf= 1    # Switch for NetCDF GR data
+l_dbz = 0      # Switch for averaging in dBZ
+l_dp = 1       # Switch for dual-pol data
+l_gpm = 1      # Switch for GPM PR data
 
 # Start and end dates
 date1='20150218'
 date2='20150218'
 
-if l_dbz == 0:
-    outdir = raddir+'/'+rid+'/'+satstr+'_comp'
-else:
-    outdir = raddir+'/'+rid+'/'+satstr+'_comp_dbz'
-
-outdir = outdir + '_new'
-
-# Orbit parameters
-if l_gpm == 0:
-    zt = 402500.   # orbital height of TRMM (post boost)
-    drt = 250.     # gate spacing of TRMM
-else:
-    zt = 407000.   # orbital height of GPM
-    drt = 125.     # gate spacing of GPM
-bwt=0.71
+# Set the data directories
+raddir = '/data/vlouf/cpol'
+satdir = '/data/vlouf/GPM_DATA'
 
 # Algorithm parameters and thresholds
 rmin = 15000.  # minimum GR range (m)
@@ -73,7 +77,34 @@ tscan = 90.    # approx. time to do first few tilts (s)
 minrefg = 0.   # minimum GR reflectivity
 minrefp = 18.  # minimum PR reflectivity
 minpair = 10   # minimum number of paired samples
+""" End of the section for user-defined parameters """
 
+if l_gpm == 0:
+    satstr='trmm'
+    raise ValueError("TRMM not yet implemented")
+else:
+    satstr='gpm'
+
+# Ground radar parameters
+GR_param = ground_radar_params('CPOL')
+rid = GR_param['rid']
+lon0 = GR_param['lon0']
+lat0 = GR_param['lat0']
+z0 = GR_param['z0']
+bwr = GR_param['bwr']
+
+sat_params = satellite_params(satstr)
+zt = sat_params['zt']
+drt = sat_params['drt']
+bwt = sat_params['bwt']
+
+# Output directory
+if l_dbz == 0:
+    outdir = raddir+'/'+rid+'/'+satstr+'_comp'
+else:
+    outdir = raddir+'/'+rid+'/'+satstr+'_comp_dbz'
+
+outdir = outdir + '_new'
 
 # Initialise error counters
 ntot = 0
@@ -98,7 +129,6 @@ ae = radar_gaussian_curve(lat0)
 jul1 = datetime.datetime.strptime(date1, '%Y%m%d')
 jul2 = datetime.datetime.strptime(date2, '%Y%m%d')
 nday = jul2-jul1
-#juls = jul1+LINDGEN(nday)
 
 # Date loop
 for the_date in pd.date_range(jul1, jul2):
@@ -297,3 +327,11 @@ for the_date in pd.date_range(jul1, jul2):
             refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(refp, zp, zbb, bbwidth)
         else:
             refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(refp, zp, zbb, bbwidth)
+
+        # Get the ground radar file lists
+        radar_file_list = get_files(raddir + '/' + date + '/')
+
+        # Get the datetime for each radar files
+        dtime = [None]*len(radar_file_list) # Allocate empty list
+        for cnt, radfile in enumerate(radar_file_list):
+            dtime[cnt] = get_time_from_filename(radfile, date)

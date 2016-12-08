@@ -1,4 +1,5 @@
 def radar_gaussian_curve(lat0):
+    '''RADAR_GAUSSIAN_CURVE'''
     '''Determine the Earth's Gaussian radius of curvature at the radar'''
     '''https://en.wikipedia.org/wiki/Earth_radius#Radii_of_curvature'''
 
@@ -13,7 +14,7 @@ def radar_gaussian_curve(lat0):
     ag = sqrt(an*am)
     ae = (4/3.)*ag
     return ae
-    
+
 
 def ground_radar_params(rname='CPOL'):
     """GROUND_RADAR_PARAMS"""
@@ -62,8 +63,8 @@ def ground_radar_params(rname='CPOL'):
         z0=375.0
         bwr=2.0
     else:
-        print("The available radars are: CPOL, Berrimah, Brisbane, Marburg, " +
-              "Grafton, and Gympie")
+        raise ValueError("The available radars are: CPOL, Berrimah, Brisbane," +
+                         " Marburg, Grafton, and Gympie")
 
     to_return = {'rid': rid, 'lon0': lon0, 'lat0': lat0, 'z0': z0, 'bwr': bwr}
     return to_return
