@@ -40,7 +40,7 @@ def get_files(inpath):
 
     to_return = flist
 
-    return sorted(to_return)  # type: List[str, ...]
+    return sorted(to_return)  # Type: List[str, ...]
 
 
 def get_time_from_filename(filename, date):
@@ -53,7 +53,38 @@ def get_time_from_filename(filename, date):
     # Turn it into a datetime object
     to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
 
-    return to_return
+    return to_return  # Type: str
+
+
+def get_closest_date(list_date, base_time):
+    '''GET_CLOSEST_DATE'''
+    # from:  http://stackoverflow.com/a/17249470/846892
+
+    b_d = base_time
+    def func(x):
+        dd =  x
+        delta =  dd - b_d if dd > b_d else datetime.timedelta.max
+        return delta
+
+    # There is some black magic going on here...
+    return min(list_date, key=func)  # Type: datetime
+
+
+def get_filename_from_date(file_list, the_date):
+    '''GET_FILENAME_FROM_DATE'''
+    '''Looks for a file in a list of file with the exact corresponding date and
+       returns it'''
+
+    rt_str = the_date.strftime("%Y%m%d_%H%M%S")
+    for the_file in file_list:
+        try:
+            re.findall(rt_str, the_file)[0]
+            to_return = the_file
+            break
+        except IndexError:
+            continue
+
+    return to_return  # Type: str
 
 
 """ SECTION of user-defined parameters """
@@ -333,7 +364,7 @@ for the_date in pd.date_range(jul1, jul2):
         else:
             refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(refp, zp, zbb, bbwidth)
 
-        # Get the ground radar file lists
+        # Get the ground radar file lists (next 20 lines can be a function)
         radar_file_list = get_files(raddir + '/' + date + '/')
 
         # Get the datetime for each radar files
@@ -341,4 +372,23 @@ for the_date in pd.date_range(jul1, jul2):
         for cnt, radfile in enumerate(radar_file_list):
             dtime_radar[cnt] = get_time_from_filename(radfile, date)
 
-        #
+        # Find the nearest scan time
+        closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
+
+        if dtime_sat >= closest_dtime_rad:
+            time_difference = dtime_sat - closest_dtime_rad
+        else:
+            time_difference = closest_dtime_rad - dtime_sat
+
+        # Looking at the time difference between satellite and radar
+        if time_difference.seconds > maxdt:
+            print('Time difference is of %i.' % (time_difference.seconds))
+            print('This time difference is bigger than the acceptable value of ', maxdt)            
+            nerr[5] += 1
+            continue  # To the next satellite file
+
+        # Radar file corresponding to the nearest scan time
+        radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
+        time = closest_dtime_rad  # Keeping the IDL program notation
+
+        radar = pyart.io.read(radfile)
