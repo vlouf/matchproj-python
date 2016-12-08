@@ -1,6 +1,9 @@
+import re
+
+
 def satellite_params(sname='GPM'):
     """SATELLITE_PARAMS"""
-    
+
     sname = sname.upper()
     # Orbit parameters
     if sname == 'GPM':

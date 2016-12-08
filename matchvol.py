@@ -5,6 +5,7 @@ import glob
 import re
 import os
 import datetime
+import pyart
 from numpy import sqrt, cos, sin, tan, pi
 
 # Custom modules
@@ -58,17 +59,17 @@ def get_time_from_filename(filename, date):
 """ SECTION of user-defined parameters """
 l_write = 1    # Switch for writing out volume-matched data
 l_cband = 1    # Switch for C-band GR
-l_netcdf = 1    # Switch for NetCDF GR data
+l_netcdf = 1   # Switch for NetCDF GR data
 l_dbz = 0      # Switch for averaging in dBZ
 l_dp = 1       # Switch for dual-pol data
 l_gpm = 1      # Switch for GPM PR data
 
 # Start and end dates
-date1 = '20150218'
-date2 = '20150218'
+date1 = '20150211'
+date2 = '20150211'
 
 # Set the data directories
-raddir = '/data/vlouf/cpol'
+raddir = '/g/ns/cw/arm/data-1/vlouf/cpol_season_1415'
 satdir = '/data/vlouf/GPM_DATA'
 
 # Algorithm parameters and thresholds
@@ -158,7 +159,7 @@ for the_date in pd.date_range(jul1, jul2):
         ntot += 1
         orbit = get_orbit_number(the_file)
 
-        print("Orbit", orbit)
+        print("Orbit " + orbit + " -- " + jul0.strftime("%d %B %Y"))
 
         sat = read_gpm(the_file)
         if sat is None:
@@ -339,3 +340,5 @@ for the_date in pd.date_range(jul1, jul2):
         dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
         for cnt, radfile in enumerate(radar_file_list):
             dtime_radar[cnt] = get_time_from_filename(radfile, date)
+
+        #

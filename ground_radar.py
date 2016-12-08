@@ -1,3 +1,6 @@
+from numpy import sqrt, cos, sin, tan, pi
+
+
 def radar_gaussian_curve(lat0):
     '''RADAR_GAUSSIAN_CURVE'''
     '''Determine the Earth's Gaussian radius of curvature at the radar'''
