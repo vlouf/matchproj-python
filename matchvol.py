@@ -24,27 +24,30 @@ def get_files(inpath):
 
     for dirpath, dirnames, filenames in os.walk(inpath):
         for filenames_slice in filenames:
-            file_extension = os.path.splitext(str(filenames_slice))[1] # Get extension
+            file_extension = os.path.splitext(str(filenames_slice))[1]
+            # Get extension
 
             if np.any(np.in1d(supported_extension, file_extension)):
                 # Check if file extension is in the list of supported ones
                 the_path = os.path.join(dirpath, filenames_slice)
-            else: # If not test next file.
+            else:  # If not test next file.
                 continue
 
-            # File does have the supported extension, we keep it for returning list
+            # File does have the supported extension, we keep it for returning
+            # list
             flist.append(the_path)
 
     to_return = flist
 
-    return sorted(to_return) # type: List[str, ...]
+    return sorted(to_return)  # type: List[str, ...]
 
 
 def get_time_from_filename(filename, date):
     '''GET_TIME_FROM_FILENAME'''
     '''Capture the time string inside the filename and returns it'''
 
-    # Looking for date followed by underscore and 6 consecutives number (i.e. the time)
+    # Looking for date followed by underscore and 6 consecutives number (i.e.
+    # the time)
     date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
     # Turn it into a datetime object
     to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
@@ -55,14 +58,14 @@ def get_time_from_filename(filename, date):
 """ SECTION of user-defined parameters """
 l_write = 1    # Switch for writing out volume-matched data
 l_cband = 1    # Switch for C-band GR
-l_netcdf= 1    # Switch for NetCDF GR data
+l_netcdf = 1    # Switch for NetCDF GR data
 l_dbz = 0      # Switch for averaging in dBZ
 l_dp = 1       # Switch for dual-pol data
 l_gpm = 1      # Switch for GPM PR data
 
 # Start and end dates
-date1='20150218'
-date2='20150218'
+date1 = '20150218'
+date2 = '20150218'
 
 # Set the data directories
 raddir = '/data/vlouf/cpol'
@@ -70,7 +73,7 @@ satdir = '/data/vlouf/GPM_DATA'
 
 # Algorithm parameters and thresholds
 rmin = 15000.  # minimum GR range (m)
-rmax = 150000. # maximum GR range (m)
+rmax = 150000  # maximum GR range (m)
 minprof = 10   # minimum number of PR profiles with precip
 maxdt = 300.   # maximum PR-GR time difference (s)
 tscan = 90.    # approx. time to do first few tilts (s)
@@ -80,10 +83,10 @@ minpair = 10   # minimum number of paired samples
 """ End of the section for user-defined parameters """
 
 if l_gpm == 0:
-    satstr='trmm'
+    satstr = 'trmm'
     raise ValueError("TRMM not yet implemented")
 else:
-    satstr='gpm'
+    satstr = 'gpm'
 
 # Ground radar parameters
 GR_param = ground_radar_params('CPOL')
@@ -111,7 +114,8 @@ ntot = 0
 nerr = np.zeros((8,), dtype=int)
 
 # Map Projection
-# Options: projection transverse mercator, lon and lat of radar, and ellipsoid WGS84
+# Options: projection transverse mercator, lon and lat of radar, and ellipsoid
+# WGS84
 smap = pyproj.Proj('+proj=tmerc +lon_0=131.0440 +lat_0=-12.2490 +ellps=WGS84')
 
 # Note the lon,lat limits of the domain
@@ -204,7 +208,7 @@ for the_date in pd.date_range(jul1, jul2):
 
         # Determine the date and time (in seconds since the start of the day)
         # of the closest approach of TRMM to the GR
-        xc = xp[:, 24] #Grid center
+        xc = xp[:, 24]  # Grid center
         yc = yp[:, 24]
         dc = sqrt(xc**2 + yc**2)
         iclose = np.argmin(dc)
@@ -217,10 +221,9 @@ for the_date in pd.date_range(jul1, jul2):
         second = secondp[iclose]
 
         date = "%i%02i%02i" % (year, month, day)
-        timep= "%02i%02i%02i" % (hour, minute, second)
-        julp = datetime.datetime(year, month, day, hour, minute, second)
-
-        # Some julp bullshit
+        timep = "%02i%02i%02i" % (hour, minute, second)
+        dtime_sat = datetime.datetime(year, month, day, hour, minute, second)
+        # dtime_sat corresponds to the julp/tp stuff in the IDL code
 
         # Compute the distance of every ray to the radar
         d = sqrt(xp**2 + yp**2)
@@ -235,7 +238,7 @@ for the_date in pd.date_range(jul1, jul2):
         # Note the scan and ray indices for these rays
         # iscan, iray = np.unravel_index(iprof, d.shape)
 
-        #Extract data for these rays
+        # Extract data for these rays
         xp = xp[iscan, iray]
         yp = yp[iscan, iray]
         xc = xc[iscan]
@@ -307,7 +310,8 @@ for the_date in pd.date_range(jul1, jul2):
         ap = 90-180/pi*np.arctan2(yp, xp)
 
         # Determine the median brightband height
-        ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0] #1D arrays
+        # 1D arrays
+        ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0]
         nbb = len(ibb)
         if nbb >= minprof:
             zbb = np.median(zbb[ibb])
@@ -318,7 +322,7 @@ for the_date in pd.date_range(jul1, jul2):
             continue
 
         # Set all values less than minrefp as missing
-        ibadx, ibady = np.where(refp < minrefp) #WHERE(refp lt minrefp,nbad)
+        ibadx, ibady = np.where(refp < minrefp)  # WHERE(refp lt minrefp,nbad)
         if len(ibadx) > 0:
             refp[ibadx, ibady] = np.NaN
 
@@ -332,6 +336,6 @@ for the_date in pd.date_range(jul1, jul2):
         radar_file_list = get_files(raddir + '/' + date + '/')
 
         # Get the datetime for each radar files
-        dtime = [None]*len(radar_file_list) # Allocate empty list
+        dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
         for cnt, radfile in enumerate(radar_file_list):
-            dtime[cnt] = get_time_from_filename(radfile, date)
+            dtime_radar[cnt] = get_time_from_filename(radfile, date)
