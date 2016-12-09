@@ -6,6 +6,7 @@ import re
 import os
 import datetime
 import pyart  # Preload for child's module
+import copy
 from numpy import sqrt, cos, sin, tan, pi
 
 # Custom modules
@@ -14,6 +15,19 @@ from read_gpm import read_gpm
 from read_radar import read_radar
 from ground_radar import *
 from satellite import *
+
+
+def nancumsum(a, ax=0):
+    '''NANCUMSUM'''
+    '''Cumsum in numpy does not ignore the NaN values, this one does'''
+    '''Note that nancumsum will be implemented in numpy v1.12'''
+
+    tmp = copy.deepcopy(a)
+    tmp[np.isnan(tmp)] = 0
+    rslt = np.cumsum(tmp, axis=ax)
+    rslt[np.isnan(a)] = np.NaN
+
+    return rslt
 
 
 def get_files(inpath):
@@ -419,3 +433,52 @@ for the_date in pd.date_range(jul1, jul2):
 
         # Convert S-band GR reflectivities to Ku-band
         refg_ku = reflectivity_conversion.convert_to_Ku(refg, zg, zbb, l_cband)
+
+        # Create arrays to store comparison variables
+        '''Coordinates'''
+        x = np.zeros((nprof, ntilt))  # x coordinate of sample
+        y = np.zeros((nprof, ntilt))  # y coordinate of sample
+        z = np.zeros((nprof, ntilt))  # z coordinate of sample
+        dz = np.zeros((nprof, ntilt))  # depth of sample
+        ds = np.zeros((nprof, ntilt))  # width of sample
+        r = np.zeros((nprof, ntilt))  # range of sample from ground radar
+
+        '''Reflectivities'''
+        ref1 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity
+        ref2 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity S-band, snow
+        ref3 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity S-band, hail
+        ref4 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity
+        ref5 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity Ku-band
+        iref1 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated PR reflectivity
+        iref2 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated GR reflectivity
+        stdv1 = np.zeros((nprof, ntilt)) + np.NaN  # STD of PR reflectivity
+        stdv2 = np.zeros((nprof, ntilt)) + np.NaN  # STD of GR reflectivity
+
+        '''Number of bins in sample'''
+        ntot1 = np.zeros((nprof, ntilt), dtype=int)  # Total nb of PR bin in sample
+        nrej1 = np.zeros((nprof, ntilt), dtype=int)  # Nb of rejected PR bin in sample
+        ntot2 = np.zeros((nprof, ntilt), dtype=int)  # Total nb of GR bin in sample
+        nrej2 = np.zeros((nprof, ntilt), dtype=int)  # Nb of rejected GR bin in sample
+        vol1 = np.zeros((nprof, ntilt)) + np.NaN  # Total volume of PR bins in sample
+        vol2 = np.zeros((nprof, ntilt)) + np.NaN  # Total volume of GR bins in sample
+
+        # Compute the path-integrated reflectivities at every points
+        nat_refp = 10**(refp/10.0)  # In natural units
+        nat_refg = 10**(refg/10.0)
+        irefp = np.fliplr(nancumsum(np.fliplr(nat_refp), 1))
+        irefg = nancumsum(nat_refg)
+        irefp = drt*(irefp - nat_refp/2)
+        irefg = dr*(irefg - nat_refg/2)
+        irefp = 10*np.log10(irefp)
+        irefg = 10*np.log10(irefg)
+
+        # Convert to linear units
+        if l_dbz == 0:
+            refp = 10**(refp/10.0)
+            refg = 10**(refg/10.0)
+            refp_ss = 10**(refp_ss/10.0)
+            refp_sh = 10**(refp_sh/10.0)
+            refg_ku = 10**(refg_ku/10.0)
+
+        irefp = 10**(irefp/10.0)
+        irefg = 10**(irefg/10.0)
