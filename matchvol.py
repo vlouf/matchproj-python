@@ -5,12 +5,13 @@ import glob
 import re
 import os
 import datetime
-import pyart
+import pyart  # Preload for child's module
 from numpy import sqrt, cos, sin, tan, pi
 
 # Custom modules
 import reflectivity_conversion
 from read_gpm import read_gpm
+from read_radar import read_radar
 from ground_radar import *
 from satellite import *
 
@@ -135,9 +136,9 @@ bwt = sat_params['bwt']
 
 # Output directory
 if l_dbz == 0:
-    outdir = raddir+'/'+rid+'/'+satstr+'_comp'
+    outdir = raddir + '/' + rid + '/' + satstr + '_comp'
 else:
-    outdir = raddir+'/'+rid+'/'+satstr+'_comp_dbz'
+    outdir = raddir + '/' + rid + '/' + satstr + '_comp_dbz'
 
 outdir = outdir + '_new'
 
@@ -383,7 +384,7 @@ for the_date in pd.date_range(jul1, jul2):
         # Looking at the time difference between satellite and radar
         if time_difference.seconds > maxdt:
             print('Time difference is of %i.' % (time_difference.seconds))
-            print('This time difference is bigger than the acceptable value of ', maxdt)            
+            print('This time difference is bigger than the acceptable value of ', maxdt)
             nerr[5] += 1
             continue  # To the next satellite file
 
@@ -391,4 +392,30 @@ for the_date in pd.date_range(jul1, jul2):
         radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
         time = closest_dtime_rad  # Keeping the IDL program notation
 
-        radar = pyart.io.read(radfile)
+        radar = read_radar(radfile)
+
+        ngate = radar['ngate']
+        nbeam = radar['nbeam']
+        ntilt = radar['ntilt']
+        r_range = radar['range']
+        azang = radar['azang']
+        elang = radar['elang']
+        dr = radar['dr']
+        refg = radar['reflec']
+
+        # Determine the Cartesian coordinates of the ground radar's pixels
+        rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
+        zg = sqrt(rg**2 + (ae + z0)**2 + 2*rg*(ae + z0)*sin(pi/180*eg)) - ae  # ae is the gaussian curve
+        sg = ae*np.arcsin(rg*cos(pi/180*eg)/(ae + zg))
+        xg = sg*cos(pi/180*(90 - ag))
+        yg = sg*sin(pi/180*(90 - ag))
+
+        # Compute the volume of each radar bin
+        volg = 1e-9*pi*dr*(pi/180*bwr/2*rg)**2
+
+        #  Set all values less than minref as missing
+        rbad, azbad, elbad = np.where(refg < minrefg)
+        refg[rbad, azbad, elbad] = np.NaN
+
+        # Convert S-band GR reflectivities to Ku-band
+        refg_ku = reflectivity_conversion.convert_to_Ku(refg, zg, zbb, l_cband)

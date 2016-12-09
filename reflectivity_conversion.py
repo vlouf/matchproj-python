@@ -71,3 +71,29 @@ def convert_to_Sband(refp, zp, zbb, bbwidth):
 def convert_to_Cband(refp, zp, zbb, bbwidth):
     """CONVERT_TO_CBAND"""
     return _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, 1)
+
+
+def convert_to_Ku(refg, zg, zbb, l_cband=1):
+    '''CONVERT_TO_KU'''
+    '''Method of Liao and Meneghini (2009)'''
+
+    refg_ku = np.zeros(refg.shape) + np.NaN
+    iax, iay, iaz = np.where(zg >= zbb)
+
+    #  Above bright band
+    if len(iax) > 0:
+        refg_ku[iax, iay, iaz] = 0.185074 + 1.01378*refg[iax, iay, iaz] - \
+                                 0.00189212*refg[iax, iay, iaz]**2
+
+    # Below bright band
+    ibx, iby, ibz = np.where(zg < zbb)
+    if len(ibx) > 0:
+        refg_ku[ibx, iby, ibz] = -1.50393 + 1.07274*refg[ibx, iby, ibz] + \
+                                 0.000165393*refg[ibx, iby, ibz]**2
+
+    #  Jackson Tan's fix for C-band
+    if l_cband:
+        delta = (refg_ku-refg)*5.3/10.0
+        refg_ku = refg+delta
+
+    return refg_ku

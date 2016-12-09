@@ -31,8 +31,8 @@ def ground_radar_params(rname='CPOL'):
 
     if rname == 'CPOL':
         rid='IDR59'
-        lon0=131.0440
-        lat0=-12.2490
+        lon0=131.04530334
+        lat0=-12.24880028
         z0=50.
         bwr=1.0
     elif rname =='Berrimah':
