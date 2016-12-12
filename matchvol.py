@@ -6,7 +6,6 @@ import re
 import os
 import datetime
 import pyart  # Preload for child's module
-import copy
 from numpy import sqrt, cos, sin, tan, pi, exp
 
 # Custom modules
@@ -15,92 +14,7 @@ from read_gpm import read_gpm
 from read_radar import read_radar
 from ground_radar import *
 from satellite import *
-
-
-def nancumsum(a, ax=0):
-    '''NANCUMSUM'''
-    '''Cumsum in numpy does not ignore the NaN values, this one does'''
-    '''Note that nancumsum will be implemented in numpy v1.12'''
-
-    tmp = copy.deepcopy(a)
-    tmp[np.isnan(tmp)] = 0
-    rslt = np.cumsum(tmp, axis=ax)
-    rslt[np.isnan(a)] = np.NaN
-
-    return rslt
-
-
-def get_files(inpath):
-    '''GET_FILES'''
-    '''Returns a list of with the supported extension (netcdf) in the given
-    path. Will recursively search in subdirectories too.'''
-
-    supported_extension = ['.nc', '.NC', '.cdf']
-    flist = []
-
-    for dirpath, dirnames, filenames in os.walk(inpath):
-        for filenames_slice in filenames:
-            file_extension = os.path.splitext(str(filenames_slice))[1]
-            # Get extension
-
-            if np.any(np.in1d(supported_extension, file_extension)):
-                # Check if file extension is in the list of supported ones
-                the_path = os.path.join(dirpath, filenames_slice)
-            else:  # If not test next file.
-                continue
-
-            # File does have the supported extension, we keep it for returning
-            # list
-            flist.append(the_path)
-
-    to_return = flist
-
-    return sorted(to_return)  # Type: List[str, ...]
-
-
-def get_time_from_filename(filename, date):
-    '''GET_TIME_FROM_FILENAME'''
-    '''Capture the time string inside the filename and returns it'''
-
-    # Looking for date followed by underscore and 6 consecutives number (i.e.
-    # the time)
-    date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
-    # Turn it into a datetime object
-    to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
-
-    return to_return  # Type: str
-
-
-def get_closest_date(list_date, base_time):
-    '''GET_CLOSEST_DATE'''
-    # from:  http://stackoverflow.com/a/17249470/846892
-
-    b_d = base_time
-    def func(x):
-        dd =  x
-        delta =  dd - b_d if dd > b_d else datetime.timedelta.max
-        return delta
-
-    # There is some black magic going on here...
-    return min(list_date, key=func)  # Type: datetime
-
-
-def get_filename_from_date(file_list, the_date):
-    '''GET_FILENAME_FROM_DATE'''
-    '''Looks for a file in a list of file with the exact corresponding date and
-       returns it'''
-
-    rt_str = the_date.strftime("%Y%m%d_%H%M%S")
-    for the_file in file_list:
-        try:
-            re.findall(rt_str, the_file)[0]
-            to_return = the_file
-            break
-        except IndexError:
-            continue
-
-    return to_return  # Type: str
-
+from util_fun import *
 
 """ SECTION of user-defined parameters """
 l_write = 1    # Switch for writing out volume-matched data
@@ -149,12 +63,12 @@ drt = sat_params['drt']
 bwt = sat_params['bwt']
 
 # Output directory
-if l_dbz == 0:
-    outdir = raddir + '/' + rid + '/' + satstr + '_comp'
-else:
-    outdir = raddir + '/' + rid + '/' + satstr + '_comp_dbz'
-
-outdir = outdir + '_new'
+# if l_dbz == 0:
+#     outdir = raddir + '/' + rid + '/' + satstr + '_comp'
+# else:
+#     outdir = raddir + '/' + rid + '/' + satstr + '_comp_dbz'
+#
+# outdir = outdir + '_new'
 
 # Initialise error counters
 ntot = 0
@@ -170,8 +84,8 @@ xmin = -1*rmax
 xmax = rmax
 ymin = -1*rmax
 ymax = rmax
-lonmin, latmin = smap(xmin, ymin, inverse=True)
-lonmax, latmax = smap(xmax, ymax, inverse=True)
+lonmin, latmin = smap(xmin, ymin, inverse=True)  # Unused
+lonmax, latmax = smap(xmax, ymax, inverse=True)  # Unused
 
 # Gaussian radius of curvatur for the radar's position
 ae = radar_gaussian_curve(lat0)
@@ -306,9 +220,6 @@ for the_date in pd.date_range(jul1, jul2):
         alpha = np.abs(-17.04 + np.arange(nray)*0.71)
         alpha = alpha[iray]
 
-        # Correct for parallax to get x, y, z coordinates
-        # The next 30 lines took 2 days to write....
-
         # Remember Python's ways: unlike IDL, rebin cannot change the number
         # of dimension. the_range dimension is equal to nbin, and we nw wnat
         # to copy it for nprof x nbin
@@ -317,28 +228,9 @@ for the_date in pd.date_range(jul1, jul2):
         for idx in range(0, nprof):
             the_range[idx, :] = the_range_1d[:]
 
-        # alpha dim is nprof x 1 and now we want nprof x nbin
-        # xc, yc, xp, yp dimensions are nprof x 1
-        the_alpha = np.zeros((nprof, nbin))
-        xc0 = np.zeros((nprof, nbin))
-        yc0 = np.zeros((nprof, nbin))
-        xp0 = np.zeros((nprof, nbin))
-        yp0 = np.zeros((nprof, nbin))
-        for idx in range(0, nbin):
-            the_alpha[:, idx] = alpha[:]
-            xc0[:, idx] = xc[:]
-            yc0[:, idx] = yc[:]
-            xp0[:, idx] = xp[:]
-            yp0[:, idx] = yp[:]
-
+        xp, yp, zp, ds, the_alpha = correct_parallax(xc, yc, xp, yp, alpha, the_range)
         alpha = the_alpha
-        zp = the_range*cos(pi/180.*the_alpha)
-        ds = the_range*sin(pi/180.*the_alpha)
-        ang = np.arctan2(yp0-yc0, xp0-xc0)
-        dx = ds*cos(ang)
-        dy = ds*sin(ang)
-        xp = xp0+dx
-        yp = yp0+dy
+
 
         if len(ds) == 0:
             continue
@@ -353,8 +245,8 @@ for the_date in pd.date_range(jul1, jul2):
         sp = sqrt(xp**2 + yp**2)
         gamma = sp/ae
         ep = 180/pi*np.arctan((cos(gamma) - (ae + z0)/(ae + zp))/sin(gamma))
-        rp = (ae + zp)*sin(gamma)/cos(pi/180*ep)
-        ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)
+        # rp = (ae + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
+        # ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)  # Not used
 
         # Determine the median brightband height
         # 1D arrays
@@ -398,7 +290,8 @@ for the_date in pd.date_range(jul1, jul2):
         # Looking at the time difference between satellite and radar
         if time_difference.seconds > maxdt:
             print('Time difference is of %i.' % (time_difference.seconds))
-            print('This time difference is bigger than the acceptable value of ', maxdt)
+            print('This time difference is bigger' +
+                  ' than the acceptable value of ', maxdt)
             nerr[5] += 1
             continue  # To the next satellite file
 
@@ -419,7 +312,8 @@ for the_date in pd.date_range(jul1, jul2):
 
         # Determine the Cartesian coordinates of the ground radar's pixels
         rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
-        zg = sqrt(rg**2 + (ae + z0)**2 + 2*rg*(ae + z0)*sin(pi/180*eg)) - ae  # ae is the gaussian curve
+        zg = sqrt(rg**2 + (ae + z0)**2 + 2*rg*(ae + z0)*sin(pi/180*eg)) - ae
+        # ae is the gaussian curve
         sg = ae*np.arcsin(rg*cos(pi/180*eg)/(ae + zg))
         xg = sg*cos(pi/180*(90 - ag))
         yg = sg*sin(pi/180*(90 - ag))
@@ -445,12 +339,12 @@ for the_date in pd.date_range(jul1, jul2):
 
         '''Reflectivities'''
         ref1 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity
-        ref2 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity S-band, snow
-        ref3 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity S-band, hail
+        ref2 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, snow
+        ref3 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, hail
         ref4 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity
         ref5 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity Ku-band
-        iref1 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated PR reflectivity
-        iref2 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated GR reflectivity
+        iref1 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated PR reflec
+        iref2 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated GR reflec
         stdv1 = np.zeros((nprof, ntilt)) + np.NaN  # STD of PR reflectivity
         stdv2 = np.zeros((nprof, ntilt)) + np.NaN  # STD of GR reflectivity
 
@@ -541,7 +435,7 @@ for the_date in pd.date_range(jul1, jul2):
                     stdv1[ii, jj] = np.nanstd(refp1)
 
                 # Note the number of rejected bins
-                nrej1[ii, jj] =  int(np.sum(np.isnan(refp1)))
+                nrej1[ii, jj] = int(np.sum(np.isnan(refp1)))
 
                 if ~np.isnan(stdv1[ii, jj]) and nip - nrej1[ii, jj] > 1:
                     continue
@@ -616,35 +510,41 @@ for the_date in pd.date_range(jul1, jul2):
         iprof = ipairx
         itilt = ipairy
 
-        x = x[ipairx, ipairy]
-        y = y[ipairx, ipairy]
-        z = z[ipairx, ipairy]
-        dz = dz[ipairx, ipairy]
-        ds = ds[ipairx, ipairy]
-        r = r[ipairx, ipairy]
+        match_vol = dict()
 
-        el = elang[itilt]
+        match_vol['x'] = x[ipairx, ipairy]
+        match_vol['y'] = y[ipairx, ipairy]
+        match_vol['z'] = z[ipairx, ipairy]
+        match_vol['dz'] = dz[ipairx, ipairy]
+        match_vol['ds'] = ds[ipairx, ipairy]
+        match_vol['r'] = r[ipairx, ipairy]
 
-        dt = time_difference.seconds  # TODO CHECK!
+        match_vol['el'] = elang[itilt]
 
-        ref1 = ref1[ipairx, ipairy]
-        ref2 = ref2[ipairx, ipairy]
-        ref3 = ref3[ipairx, ipairy]
-        ref4 = ref4[ipairx, ipairy]
-        ref5 = ref5[ipairx, ipairy]
-        iref1 = iref1[ipairx, ipairy]
-        iref2 = iref2[ipairx, ipairy]
-        ntot1 = ntot1[ipairx, ipairy]
-        nrej1 = nrej1[ipairx, ipairy]
-        ntot2 = ntot2[ipairx, ipairy]
-        nrej2 = nrej2[ipairx, ipairy]
+        match_vol['dt'] = time_difference.seconds  # TODO CHECK!
 
-        sfc = sfc[iprof]
-        ptype = ptype[iprof]
-        iray = iray[iprof]
-        iscan = iscan[iprof]
+        match_vol['ref1'] = ref1[ipairx, ipairy]
+        match_vol['ref2'] = ref2[ipairx, ipairy]
+        match_vol['ref3'] = ref3[ipairx, ipairy]
+        match_vol['ref4'] = ref4[ipairx, ipairy]
+        match_vol['ref5'] = ref5[ipairx, ipairy]
+        match_vol['iref1'] = iref1[ipairx, ipairy]
+        match_vol['iref2'] = iref2[ipairx, ipairy]
+        match_vol['ntot1'] = ntot1[ipairx, ipairy]
+        match_vol['nrej1'] = nrej1[ipairx, ipairy]
+        match_vol['ntot2'] = ntot2[ipairx, ipairy]
+        match_vol['nrej2'] = nrej2[ipairx, ipairy]
 
-        stdv1 = stdv1[ipairx, ipairy]
-        stdv2 = stdv2[ipairx, ipairy]
-        vol1 = vol1[ipairx, ipairy]
-        vol2 = vol2[ipairx, ipairy]
+        match_vol['sfc'] = sfc[iprof]
+        match_vol['ptype'] = ptype[iprof]
+        match_vol['iray'] = iray[iprof]
+        match_vol['iscan'] = iscan[iprof]
+
+        match_vol['stdv1'] = stdv1[ipairx, ipairy]
+        match_vol['stdv2'] = stdv2[ipairx, ipairy]
+        match_vol['vol1'] = vol1[ipairx, ipairy]
+        match_vol['vol2'] = vol2[ipairx, ipairy]
+
+        out_name = "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + jul0.strftime("%Y%m%d")
+
+        save_data(out_name, match_vol)
