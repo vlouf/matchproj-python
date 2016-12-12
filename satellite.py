@@ -1,8 +1,9 @@
 import re
 import numpy as np
+from numba import jit
 from numpy import sqrt, cos, sin, tan, pi
 
-
+@jit
 def correct_parallax(xc, yc, xp, yp, alpha, the_range):
     # Correct for parallax to get x, y, z coordinates
     # This function took 2 days to write....
