@@ -7,7 +7,7 @@ import os
 import datetime
 import pyart  # Preload for child's module
 import copy
-from numpy import sqrt, cos, sin, tan, pi
+from numpy import sqrt, cos, sin, tan, pi, exp
 
 # Custom modules
 import reflectivity_conversion
@@ -354,7 +354,7 @@ for the_date in pd.date_range(jul1, jul2):
         gamma = sp/ae
         ep = 180/pi*np.arctan((cos(gamma) - (ae + z0)/(ae + zp))/sin(gamma))
         rp = (ae + zp)*sin(gamma)/cos(pi/180*ep)
-        ap = 90-180/pi*np.arctan2(yp, xp)
+        ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)
 
         # Determine the median brightband height
         # 1D arrays
@@ -482,3 +482,169 @@ for the_date in pd.date_range(jul1, jul2):
 
         irefp = 10**(irefp/10.0)
         irefg = 10**(irefg/10.0)
+
+        # Loop over the TRMM profiles
+        for ii in range(0, nprof):
+
+            # Loop over the GR elevation scan
+            for jj in range(0, ntilt):
+
+                # Identify those PR bins which fall within the GR sweep
+                ip = np.where((ep[ii, :] >= elang[jj] - bwr/2) &
+                              (ep[ii, :] <= elang[jj] + bwr/2))
+
+                # Store the number of bins
+                ntot1[ii, jj] = len(ip)
+
+                if len(ip) == 0:
+                    continue
+
+                x[ii, jj] = np.mean(xp[ii, ip])
+                y[ii, jj] = np.mean(yp[ii, ip])
+                z[ii, jj] = np.mean(zp[ii, ip])
+
+                # Compute the thickness of the layer
+                nip = len(ip)
+                dz[ii, jj] = nip*drt*cos(pi/180*alpha[ii, 0])
+
+                # Compute the PR averaging volume
+                vol1[ii, jj] = np.sum(volp[ii, ip])
+
+                # Note the mean TRMM beam diameter
+                ds[ii, jj] = pi/180*bwt*np.mean((zt - zp[ii, ip])/cos(pi/180*alpha[ii, ip]))
+
+                # Note the radar range
+                s = sqrt(x[ii, jj]**2 + y[ii, jj]**2)
+                r[ii, jj] = (ae + z[ii, jj])*sin(s/ae)/cos(pi/180*elang[jj])
+
+                # Check that sample is within radar range
+                if r[ii, jj] + ds[ii, jj]/2 > rmax:
+                    continue
+
+                # Extract the relevant PR data
+                refp1 = refp[ii, ip].flatten()
+                refp2 = refp_ss[ii, ip].flatten()
+                refp3 = refp_sh[ii, ip].flatten()
+                irefp1 = irefp[ii, ip].flatten()
+
+                # Average over those bins that exceed the reflectivity
+                # threshold (linear average)
+
+                ref1[ii, jj] = np.nanmean(refp1)
+                ref2[ii, jj] = np.nanmean(refp2)
+                ref3[ii, jj] = np.nanmean(refp3)
+                iref1[ii, jj] = np.nanmean(irefp1)
+
+                if l_dbz == 0:
+                    stdv1[ii, jj] = np.nanstd(10*np.log10(refp1))
+                else:
+                    stdv1[ii, jj] = np.nanstd(refp1)
+
+                # Note the number of rejected bins
+                nrej1[ii, jj] =  int(np.sum(np.isnan(refp1)))
+
+                if ~np.isnan(stdv1[ii, jj]) and nip - nrej1[ii, jj] > 1:
+                    continue
+
+                # Compute the horizontal distance to all the GR bins
+                d = sqrt((xg[:, :, jj] - x[ii, jj])**2 + (yg[:, :, jj] - y[ii, jj])**2)
+
+                # Find all GR bins within the SR beam
+                igx, igy = np.where(d <= ds[ii, jj]/2)
+
+                # Store the number of bins
+                ntot2[ii, jj] = len(igx)
+
+                if len(igx) == 0:
+                    continue
+
+                # Extract the relevant GR data
+                refg1 = refg[:, :, jj][igx, igy].flatten()
+                refg2 = refg_ku[:, :, jj][igx, igy].flatten()
+                volg1 = volg[:, :, jj][igx, igy].flatten()
+                irefg1 = irefg[:, :, jj][igx, igy].flatten()
+
+                #  Comupte the GR averaging volume
+                vol2[ii, jj] = np.sum(volg1)
+
+                # Average over those bins that exceed the reflectivity
+                # threshold (exponential distance and volume weighting)
+                w = volg1*exp(-1*(d[igx, igy]/(ds[ii, jj]/2.))**2)
+                w = w*refg1/refg2
+
+                ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
+                ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
+                iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
+
+                if l_dbz == 0:
+                    stdv2[ii, jj] = np.nanstd(10*np.log10(refg1))
+                else:
+                    stdv2[ii, jj] = np.nanstd(refg1)
+
+                # Note the number of rejected bins
+                nrej2[ii, jj] = int(np.sum(np.isnan(refg1)))
+
+            # END FOR
+        # END FOR
+
+        # Correct std
+        stdv1[np.isnan(stdv1)] = 0
+        stdv2[np.isnan(stdv2)] = 0
+
+        # Convert back to dBZ
+        iref1 = 10*np.log10(iref1)
+        iref2 = 10*np.log10(iref2)
+        if l_dbz == 0:
+            refp = 10*np.log10(refp)
+            refg = 10*np.log10(refg)
+            refp_ss = 10*np.log10(refp_ss)
+            refp_sh = 10*np.log10(refp_sh)
+            refg_ku = 10*np.log10(refg_ku)
+            ref1 = 10*np.log10(ref1)
+            ref2 = 10*np.log10(ref2)
+            ref3 = 10*np.log10(ref3)
+            ref4 = 10*np.log10(ref4)
+            ref5 = 10*np.log10(ref5)
+
+        # Extract comparison pairs
+        ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
+        if len(ipairx) < minpair:
+            nerr[7] += 1
+            print('Insufficient comparison pairs')
+            continue
+
+        iprof = ipairx
+        itilt = ipairy
+
+        x = x[ipairx, ipairy]
+        y = y[ipairx, ipairy]
+        z = z[ipairx, ipairy]
+        dz = dz[ipairx, ipairy]
+        ds = ds[ipairx, ipairy]
+        r = r[ipairx, ipairy]
+
+        el = elang[itilt]
+
+        dt = time_difference.seconds  # TODO CHECK!
+
+        ref1 = ref1[ipairx, ipairy]
+        ref2 = ref2[ipairx, ipairy]
+        ref3 = ref3[ipairx, ipairy]
+        ref4 = ref4[ipairx, ipairy]
+        ref5 = ref5[ipairx, ipairy]
+        iref1 = iref1[ipairx, ipairy]
+        iref2 = iref2[ipairx, ipairy]
+        ntot1 = ntot1[ipairx, ipairy]
+        nrej1 = nrej1[ipairx, ipairy]
+        ntot2 = ntot2[ipairx, ipairy]
+        nrej2 = nrej2[ipairx, ipairy]
+
+        sfc = sfc[iprof]
+        ptype = ptype[iprof]
+        iray = iray[iprof]
+        iscan = iscan[iprof]
+
+        stdv1 = stdv1[ipairx, ipairy]
+        stdv2 = stdv2[ipairx, ipairy]
+        vol1 = vol1[ipairx, ipairy]
+        vol2 = vol2[ipairx, ipairy]
