@@ -11,10 +11,10 @@ def radar_gaussian_curve(lat0):
     e2 = 0.0066943800
     b = a*sqrt(1-e2)
 
-    tmp = (a*cos(pi/180*lat0))**2+(b*sin(pi/180*lat0))**2
-    an = (a**2)/sqrt(tmp)
-    am = (a*b)**2/tmp**(3/2.)
-    ag = sqrt(an*am)
+    tmp = (a*cos(pi/180*lat0))**2+(b*sin(pi/180*lat0))**2   # Le denominateur
+    an = (a**2)/sqrt(tmp)  # Radius of curvature in the prime vertical (east–west direction)
+    am = (a*b)**2/tmp**(3/2.)  # Radius of curvature in the north–south meridian
+    ag = sqrt(an*am)  # Earth's Gaussian radius of curvature
     ae = (4/3.)*ag
     return ae
 

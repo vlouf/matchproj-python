@@ -8,14 +8,16 @@ import warnings
 import numpy as np
 import pandas as pd
 from numpy import sqrt, cos, sin, tan, pi, exp
+from multiprocessing import Pool
 
 # Custom modules
-import reflectivity_conversion
-from read_gpm import read_gpm
-from read_radar import read_radar
-from ground_radar import *  # functions related to the satellite data
-from satellite import *  # functions related to the satellite data
-from util_fun import *  # bunch of utilitarian functions
+from MSGR import reflectivity_conversion
+from MSGR.io.read_gpm import *
+from MSGR.io.read_radar import *
+from MSGR.io.save_data import *
+from MSGR.instruments.ground_radar import *  # functions related to the ground radar data
+from MSGR.instruments.satellite import *   # functions related to the satellite data
+from MSGR.util_fun import *  # bunch of useful functions
 
 
 def matchproj_fun(the_file, julday):
@@ -146,9 +148,9 @@ def matchproj_fun(the_file, julday):
 
     # Compute the ground-radar coordinates of the PR pixels
     sp = sqrt(xp**2 + yp**2)
-    gamma = sp/ae
-    ep = 180/pi*np.arctan((cos(gamma) - (ae + z0)/(ae + zp))/sin(gamma))
-    # rp = (ae + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
+    gamma = sp/earth_gaussian_radius
+    ep = 180/pi*np.arctan((cos(gamma) - (earth_gaussian_radius + z0)/(earth_gaussian_radius + zp))/sin(gamma))
+    # rp = (earth_gaussian_radius + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
     # ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)  # Not used
 
     # Determine the median brightband height
@@ -215,9 +217,9 @@ def matchproj_fun(the_file, julday):
 
     # Determine the Cartesian coordinates of the ground radar's pixels
     rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
-    zg = sqrt(rg**2 + (ae + z0)**2 + 2*rg*(ae + z0)*sin(pi/180*eg)) - ae
-    # ae is the gaussian curve
-    sg = ae*np.arcsin(rg*cos(pi/180*eg)/(ae + zg))
+    zg = sqrt(rg**2 + (earth_gaussian_radius + z0)**2 + \
+         2*rg*(earth_gaussian_radius + z0)*sin(pi/180*eg)) - earth_gaussian_radius
+    sg = earth_gaussian_radius*np.arcsin(rg*cos(pi/180*eg)/(earth_gaussian_radius + zg))
     xg = sg*cos(pi/180*(90 - ag))
     yg = sg*sin(pi/180*(90 - ag))
 
@@ -316,7 +318,7 @@ def matchproj_fun(the_file, julday):
 
                 # Note the radar range
                 s = sqrt(x[ii, jj]**2 + y[ii, jj]**2)
-                r[ii, jj] = (ae + z[ii, jj])*sin(s/ae)/cos(pi/180*elang[jj])
+                r[ii, jj] = (earth_gaussian_radius + z[ii, jj])*sin(s/earth_gaussian_radius)/cos(pi/180*elang[jj])
 
                 # Check that sample is within radar range
                 if r[ii, jj] + ds[ii, jj]/2 > rmax:
@@ -460,62 +462,71 @@ def matchproj_fun(the_file, julday):
     return match_vol
 
 
-def main():
+def MAIN_matchproj_fun(the_date):
+    year = the_date.year
+    month = the_date.month
+    day = the_date.day
+    date = "%i%02i%02i" % (year, month, day)
 
-    # Date loop
-    for the_date in pd.date_range(jul1, jul2):
-        year = the_date.year
-        month = the_date.month
-        day = the_date.day
-        date = "%i%02i%02i" % (year, month, day)
+    # Note the Julian day corresponding to 00 UTC
+    julday = datetime.datetime(year, month, day, 0, 0, 0)
 
-        # Note the Julian day corresponding to 00 UTC
-        julday = datetime.datetime(year, month, day, 0, 0, 0)
+    # Note the number of satellite overpasses on this day
+    satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
+    nswath = len(satfiles)
 
-        # Note the number of satellite overpasses on this day
-        satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
-        nswath = len(satfiles)
+    if nswath == 0:
+        print('No satellite swaths')
+        nerr[0] += 1
+        return None
 
-        if nswath == 0:
-            print('No satellite swaths')
-            nerr[0] += 1
+    for the_file in satfiles:
+        orbit = get_orbit_number(the_file)
+
+        print("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
+
+        match_vol = matchproj_fun(the_file, julday)
+        if match_vol is None:
             continue
 
-        for the_file in satfiles:
-            orbit = get_orbit_number(the_file)
+        out_name = outdir + "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + julday.strftime("%Y%m%d")
 
-            print("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
+        if l_write:
+            print("Saving data to " + out_name)
+            save_data(out_name, match_vol)
 
-            match_vol = matchproj_fun(the_file, julday)
-            if match_vol is None:
-                continue
+    return None
 
-            out_name = "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + julday.strftime("%Y%m%d")
 
-            if l_write:
-                print("Saving data to " + out_name)
-                save_data(out_name, match_vol)
+def main():
+    """MAIN"""
+    """Multiprocessing control room"""
+
+    date_range = pd.date_range(start_date, end_date)
+    with Pool(ncpu) as pool:
+        pool.map(MAIN_matchproj_fun, date_range)
 
     return None
 
 
 if __name__=='__main__':
-
-    """ SECTION of user-defined parameters """
+    """GLOBAL variables declaration"""
+    """ User-defined parameters """
     l_write = 1    # Switch for writing out volume-matched data
     l_cband = 1    # Switch for C-band GR
-    l_netcdf = 1   # Switch for NetCDF GR data
     l_dbz = 0      # Switch for averaging in dBZ
-    l_dp = 1       # Switch for dual-pol data
     l_gpm = 1      # Switch for GPM PR data
 
+    ncpu = 2  # Number of CPU for multiprocessing
+
     # Start and end dates
-    date1 = '20150211'
-    date2 = '20150211'
+    start_date = datetime.datetime(2015, 2, 11)
+    end_date = datetime.datetime(2015, 2, 25)
 
     # Set the data directories
     raddir = '/g/ns/cw/arm/data-1/vlouf/cpol_season_1415'
     satdir = '/data/vlouf/GPM_DATA'
+    outdir = os.path.expanduser("~")  + "/"  # Platform-independent home path
 
     # Algorithm parameters and thresholds
     rmin = 15000.  # minimum GR range (m)
@@ -542,13 +553,12 @@ if __name__=='__main__':
     z0 = GR_param['z0']
     bwr = GR_param['bwr']
 
-    sat_params = satellite_params(satstr)
-    zt = sat_params['zt']
-    drt = sat_params['drt']
-    bwt = sat_params['bwt']
+    SAT_params = satellite_params(satstr)
+    zt = SAT_params['zt']
+    drt = SAT_params['drt']
+    bwt = SAT_params['bwt']
 
     # Initialise error counters
-    ntot = 0
     nerr = np.zeros((8,), dtype=int)
 
     # Map Projection
@@ -561,15 +571,34 @@ if __name__=='__main__':
     xmax = rmax
     ymin = -1*rmax
     ymax = rmax
-    lonmin, latmin = smap(xmin, ymin, inverse=True)  # Unused
-    lonmax, latmax = smap(xmax, ymax, inverse=True)  # Unused
+    # lonmin, latmin = smap(xmin, ymin, inverse=True)  # Unused
+    # lonmax, latmax = smap(xmax, ymax, inverse=True)  # Unused
 
     # Gaussian radius of curvatur for the radar's position
-    ae = radar_gaussian_curve(lat0)
+    earth_gaussian_radius = radar_gaussian_curve(lat0)
 
-    # Determine the Julian days to loop over
-    jul1 = datetime.datetime.strptime(date1, '%Y%m%d')
-    jul2 = datetime.datetime.strptime(date2, '%Y%m%d')
-    nday = jul2-jul1
+    # Printing some information about the global variables and switches
+    welcome_msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
+
+    print("#"*80)
+    print("\n" + welcome_msg + "\n")
+    print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
+    if l_gpm:
+        print("The spaceborne instrument used is GPM.")
+    else:
+        print("The spaceborne instrument used is TRMM.")
+    print("The volume matching will be executed between " +
+          start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
+    if l_dbz:
+        print("The statistics will be done in dBZ.")
+    else:
+        print("The statistics will be done in natural units.")
+    if l_write:
+        print("The results will be saved in " + outdir)
+    else:
+        print("The results won't be saved.")
+    print("This will run on %i cpu(s)." % (ncpu))
+    print("#"*80)
+    print("\n\n")
 
     main()
