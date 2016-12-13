@@ -1,3 +1,17 @@
+"""
+################################################################################
+
+                                      MSGR
+                      Matching Satellite and Ground Radar
+
+@author: Valentin Louf (from an original IDL code of Rob Warren)
+@version: 0.1.161213
+@date: 2016-12-06 (creation) 2016-12-13 (current version)
+@email: valentin.louf@bom.gov.au
+@company: Monash University/Bureau of Meteorology
+
+################################################################################
+"""
 import os
 import re
 import glob
@@ -5,6 +19,7 @@ import pyart  # Preload for child's module
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
 import warnings
+import configparser
 import numpy as np
 import pandas as pd
 from numpy import sqrt, cos, sin, tan, pi, exp
@@ -196,9 +211,9 @@ def matchproj_fun(the_file, julday):
 
     # Looking at the time difference between satellite and radar
     if time_difference.seconds > maxdt:
-        print('Time difference is of %i.' % (time_difference.seconds))
+        print('Time difference is of %i s.' % (time_difference.seconds))
         print('This time difference is bigger' +
-              ' than the acceptable value of ', maxdt)
+              ' than the acceptable value of %i s.' % (maxdt))
         nerr[5] += 1
         return None  # To the next satellite file
 
@@ -522,7 +537,9 @@ def welcome_message():
         print("The results will be saved in " + outdir)
     else:
         print("The results won't be saved.")
-    print("This will run on %i cpu(s)." % (ncpu))
+    print("This program will look for satellite data in " + satdir)
+    print("This program will look for ground radar data in " + raddir)
+    print("This program will run on %i cpu(s)." % (ncpu))
     print("#"*80)
     print("\n\n")
 
@@ -542,47 +559,53 @@ def main():
 
 if __name__=='__main__':
     """GLOBAL variables declaration"""
+
     """ User-defined parameters """
-    l_write = 1    # Switch for writing out volume-matched data
-    l_cband = 1    # Switch for C-band GR
-    l_dbz = 0      # Switch for averaging in dBZ
-    l_gpm = 1      # Switch for GPM PR data
+    config = configparser.ConfigParser()
+    config.read('config.ini')  # Reading configuration file
 
-    ncpu = 2  # Number of CPU for multiprocessing
+    general = config['general']
+    ncpu = general.getint('ncpu')
+    date1 = general.get('start_date')
+    date2 = general.get('end_date')
 
-    # Start and end dates
-    start_date = datetime.datetime(2015, 2, 11)
-    end_date = datetime.datetime(2015, 2, 25)
+    switch = config['switch']
+    l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
+    l_cband = switch.getboolean('cband')   # Switch for C-band GR
+    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
+    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
 
-    # Set the data directories
-    raddir = '/g/ns/cw/arm/data-1/vlouf/cpol_season_1415'
-    satdir = '/data/vlouf/GPM_DATA'
-    outdir = os.path.expanduser("~")  + "/"  # Platform-independent home path
+    path = config['path']
+    raddir = path.get('ground_radar')
+    satdir = path.get('satellite')
+    outdir = path.get('output')
 
-    # Algorithm parameters and thresholds
-    rmin = 15000.  # minimum GR range (m)
-    rmax = 150000  # maximum GR range (m)
-    minprof = 10   # minimum number of PR profiles with precip
-    maxdt = 300.   # maximum PR-GR time difference (s)
-    tscan = 90.    # approx. time to do first few tilts (s)
-    minrefg = 0.   # minimum GR reflectivity
-    minrefp = 18.  # minimum PR reflectivity
-    minpair = 10   # minimum number of paired samples
+    GR_param = config['radar']
+    radstr = GR_param.get('radar_name')
+    rmin = GR_param.getfloat('rmin')  # minimum GR range (m)
+    rmax = GR_param.getfloat('rmax')  # maximum GR range (m)
+    rid = GR_param.get('radar_id')
+    lon0 = GR_param.getfloat('longitude')
+    lat0 = GR_param.getfloat('latitude')
+    z0 = GR_param.getfloat('altitude')
+    bwr = GR_param.getfloat('beamwidth')
+
+    thresholds = config['thresholds']
+    minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
+    maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
+    minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
+    minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
+    minpair = thresholds.getint('min_pair')  # minimum number of paired samples
     """ End of the section for user-defined parameters """
+
+    start_date = datetime.datetime.strptime(date1, '%Y%m%d')
+    end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
     if l_gpm == 0:
         satstr = 'trmm'
         raise ValueError("TRMM not yet implemented")
     else:
         satstr = 'gpm'
-
-    # Ground radar parameters
-    GR_param = ground_radar_params('CPOL')
-    rid = GR_param['rid']
-    lon0 = GR_param['lon0']
-    lat0 = GR_param['lat0']
-    z0 = GR_param['z0']
-    bwr = GR_param['bwr']
 
     SAT_params = satellite_params(satstr)
     zt = SAT_params['zt']

@@ -18,7 +18,8 @@ def radar_gaussian_curve(lat0):
     ae = (4/3.)*ag
     return ae
 
-
+'''
+# !!!! USELESS SINCE IT IS MOVED TO CONFIGURATION FILE !!!!
 def ground_radar_params(rname='CPOL'):
     """GROUND_RADAR_PARAMS"""
     """Input parameters:
@@ -71,3 +72,4 @@ def ground_radar_params(rname='CPOL'):
 
     to_return = {'rid': rid, 'lon0': lon0, 'lat0': lat0, 'z0': z0, 'bwr': bwr}
     return to_return
+'''
