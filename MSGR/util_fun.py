@@ -32,7 +32,7 @@ def get_files(inpath):
     '''Returns a list of with the supported extension (netcdf) in the given
     path. Will recursively search in subdirectories too.'''
 
-    supported_extension = ['.nc', '.NC', '.cdf']
+    supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5', '.H5']
     flist = []
 
     for dirpath, dirnames, filenames in os.walk(inpath):

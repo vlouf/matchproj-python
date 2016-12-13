@@ -19,7 +19,10 @@ def populate_missing_azimuth(azi, refl_slice, ngate):
 def read_radar(infile):
     '''READ_RADAR'''
 
-    radar = pyart.io.read(infile)
+    try:
+        radar = pyart.io.read(infile)
+    except KeyError:
+        radar = pyart.aux_io.read_odim_h5(infile)
 
     rg = radar.range['data']  # Extract range
     sweep_number = radar.sweep_number['data']  # Extract number of tilt
@@ -37,7 +40,13 @@ def read_radar(infile):
     for cnt, sw in enumerate(sweep_number):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
         azi = radar.azimuth['data'][sweep_slice].astype(int)  # Extract azimuth
-        refl_slice = radar.fields['DBZ_F']['data'][sweep_slice]  # Reflectivity
+        try:
+            refl_slice = radar.fields['DBZ']['data'][sweep_slice]  # Reflectivity
+        except KeyError:
+            refl_slice = radar.fields['DBZ_F']['data'][sweep_slice]  # Reflectivity
+        except KeyError:
+            refl_slice = radar.fields['reflectivity']['data'][sweep_slice]  # Reflectivity
+
         elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
 
         if len(azi) < 360:

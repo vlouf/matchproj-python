@@ -12,6 +12,7 @@
 
 ################################################################################
 """
+
 import os
 import re
 import glob
@@ -43,6 +44,7 @@ def matchproj_fun(the_file, julday):
 
     if l_gpm:
         sat = read_gpm(the_file)
+        print('READING ', the_file)
     else:
         return None
 
@@ -80,7 +82,7 @@ def matchproj_fun(the_file, julday):
 
     if len(ioverx) == 0:
         nerr[1] += 1
-        print("Insufficient satellite rays in domain.")
+        print("Insufficient satellite rays in domain for " + julday.strftime("%d %b %Y"))
         return None
 
     # Note the first and last scan indices
@@ -194,14 +196,14 @@ def matchproj_fun(the_file, julday):
         refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(refp, zp, zbb, bbwidth)
 
     # Get the ground radar file lists (next 20 lines can be a function)
-    radar_file_list = get_files(raddir + '/' + date + '/')
+    radar_file_list = get_files(raddir + '/' )
 
     # Get the datetime for each radar files
     dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
     for cnt, radfile in enumerate(radar_file_list):
         dtime_radar[cnt] = get_time_from_filename(radfile, date)
 
-    # Find the nearest scan time
+    # Find the nearest scan time    )
     closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
 
     if dtime_sat >= closest_dtime_rad:
@@ -491,7 +493,8 @@ def MAIN_matchproj_fun(the_date):
     satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
 
     if len(satfiles) == 0:
-        print('No satellite swaths')
+        txt = 'No satellite swaths for ' + julday.strftime("%d %b %Y")
+        print("\033[91m{}\033[00m".format(txt))
         nerr[0] += 1
         return None
 
@@ -507,8 +510,9 @@ def MAIN_matchproj_fun(the_date):
         out_name = outdir + "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + julday.strftime("%Y%m%d")
 
         if l_write:
-            print("Saving data to " + out_name)
-            print("For orbit " + orbit + " on " + julday.strftime("%d %B %Y"))
+            txt = "Saving data to " + out_name + \
+                  "\nFor orbit " + orbit + " on " + julday.strftime("%d %B %Y")
+            print("\033[92m{}\033[00m" .format(prt))
             save_data(out_name, match_vol)
 
     return None
