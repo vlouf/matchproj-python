@@ -61,7 +61,10 @@ def get_time_from_filename(filename, date):
 
     # Looking for date followed by underscore and 6 consecutives number (i.e.
     # the time)
-    date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
+    try:
+        date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
+    except IndexError:
+        return None
     # Turn it into a datetime object
     to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
 

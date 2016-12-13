@@ -203,6 +203,12 @@ def matchproj_fun(the_file, julday):
     for cnt, radfile in enumerate(radar_file_list):
         dtime_radar[cnt] = get_time_from_filename(radfile, date)
 
+    dtime_radar = list(filter(None, dtime_radar))  # Removing None values
+
+    if len(dtime_radar) == 0:
+        print("No corresponding ground radar files for this date")
+        return None
+
     # Find the nearest scan time    )
     closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
 
@@ -512,7 +518,7 @@ def MAIN_matchproj_fun(the_date):
         if l_write:
             txt = "Saving data to " + out_name + \
                   "\nFor orbit " + orbit + " on " + julday.strftime("%d %B %Y")
-            print("\033[92m{}\033[00m" .format(prt))
+            print("\033[92m{}\033[00m" .format(txt))
             save_data(out_name, match_vol)
 
     return None
