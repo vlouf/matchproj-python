@@ -601,11 +601,11 @@ if __name__=='__main__':
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
-    if l_gpm == 0:
+    if l_gpm:
+        satstr = 'gpm'
+    else:
         satstr = 'trmm'
         raise ValueError("TRMM not yet implemented")
-    else:
-        satstr = 'gpm'
 
     SAT_params = satellite_params(satstr)
     zt = SAT_params['zt']
@@ -618,7 +618,8 @@ if __name__=='__main__':
     # Map Projection
     # Options: projection transverse mercator, lon and lat of radar, and
     # ellipsoid WGS84
-    smap = pyproj.Proj('+proj=tmerc +lon_0=131.0440 +lat_0=-12.2490 +ellps=WGS84')
+    pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
+    smap = pyproj.Proj(pyproj_config)
 
     # Note the lon,lat limits of the domain
     xmin = -1*rmax
