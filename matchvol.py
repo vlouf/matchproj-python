@@ -26,7 +26,11 @@ def matchproj_fun(the_file, julday):
     '''julday: date of the day of comparison. Type: datetime'''
     '''returns a dictionnary structure containing the comparable reflectivities.'''
 
-    sat = read_gpm(the_file)
+    if l_gpm:
+        sat = read_gpm(the_file)
+    else:
+        return None
+
     if sat is None:
         print('Bad satellite data')
         return None
@@ -126,9 +130,7 @@ def matchproj_fun(the_file, julday):
     alpha = np.abs(-17.04 + np.arange(nray)*0.71)
     alpha = alpha[iray]
 
-    # Remember Python's ways: unlike IDL, rebin cannot change the number
-    # of dimension. the_range dimension is equal to nbin, and we nw wnat
-    # to copy it for nprof x nbin
+    # the_range shape is (nbin, ), and we now wnat to copy it for (nprof, nbin)
     the_range_1d = np.arange(nbin)*drt
     the_range = np.zeros((nprof, nbin))
     for idx in range(0, nprof):
@@ -288,7 +290,7 @@ def matchproj_fun(the_file, julday):
         # Loop over the GR elevation scan
         for jj in range(0, ntilt):
 
-            # Kill warnings (because of nanmean)
+            # Temporally kill warnings (because of nanmean)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=RuntimeWarning)
 
@@ -332,7 +334,6 @@ def matchproj_fun(the_file, julday):
 
                 # Average over those bins that exceed the reflectivity
                 # threshold (linear average)
-
                 ref1[ii, jj] = np.nanmean(refp1)
                 ref2[ii, jj] = np.nanmean(refp2)
                 ref3[ii, jj] = np.nanmean(refp3)
@@ -345,7 +346,6 @@ def matchproj_fun(the_file, julday):
 
                 # Note the number of rejected bins
                 nrej1[ii, jj] = int(np.sum(np.isnan(refp1)))
-
                 if ~np.isnan(stdv1[ii, jj]) and nip - nrej1[ii, jj] > 1:
                     continue
 
@@ -357,7 +357,6 @@ def matchproj_fun(the_file, julday):
 
                 # Store the number of bins
                 ntot2[ii, jj] = len(igx)
-
                 if len(igx) == 0:
                     continue
 
@@ -434,7 +433,6 @@ def matchproj_fun(the_file, julday):
     match_vol['dz'] = dz[ipairx, ipairy]
     match_vol['ds'] = ds[ipairx, ipairy]
     match_vol['r'] = r[ipairx, ipairy]
-
     match_vol['el'] = elang[itilt]
 
     match_vol['ref1'] = ref1[ipairx, ipairy]
@@ -463,6 +461,9 @@ def matchproj_fun(the_file, julday):
 
 
 def MAIN_matchproj_fun(the_date):
+    """MAIN_MATCHPROJ_FUN"""
+    """the_date: a datetime structure for which to run the code"""
+
     year = the_date.year
     month = the_date.month
     day = the_date.day
@@ -473,9 +474,8 @@ def MAIN_matchproj_fun(the_date):
 
     # Note the number of satellite overpasses on this day
     satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
-    nswath = len(satfiles)
 
-    if nswath == 0:
+    if len(satfiles) == 0:
         print('No satellite swaths')
         nerr[0] += 1
         return None
@@ -493,7 +493,38 @@ def MAIN_matchproj_fun(the_date):
 
         if l_write:
             print("Saving data to " + out_name)
+            print("For orbit " + orbit + " on " + julday.strftime("%d %B %Y"))
             save_data(out_name, match_vol)
+
+    return None
+
+
+def welcome_message():
+    '''WELCOME_MESSAGE'''
+    '''Print a welcome message with a recap on the main global variables status'''
+
+    msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
+
+    print("#"*80)
+    print("\n" + msg + "\n")
+    print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
+    if l_gpm:
+        print("The spaceborne instrument used is GPM.")
+    else:
+        print("The spaceborne instrument used is TRMM.")
+    print("The volume matching will be executed between " +
+          start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
+    if l_dbz:
+        print("The statistics will be done in dBZ.")
+    else:
+        print("The statistics will be done in natural units.")
+    if l_write:
+        print("The results will be saved in " + outdir)
+    else:
+        print("The results won't be saved.")
+    print("This will run on %i cpu(s)." % (ncpu))
+    print("#"*80)
+    print("\n\n")
 
     return None
 
@@ -562,8 +593,8 @@ if __name__=='__main__':
     nerr = np.zeros((8,), dtype=int)
 
     # Map Projection
-    # Options: projection transverse mercator, lon and lat of radar, and ellipsoid
-    # WGS84
+    # Options: projection transverse mercator, lon and lat of radar, and
+    # ellipsoid WGS84
     smap = pyproj.Proj('+proj=tmerc +lon_0=131.0440 +lat_0=-12.2490 +ellps=WGS84')
 
     # Note the lon,lat limits of the domain
@@ -578,27 +609,7 @@ if __name__=='__main__':
     earth_gaussian_radius = radar_gaussian_curve(lat0)
 
     # Printing some information about the global variables and switches
-    welcome_msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
+    welcome_message()
 
-    print("#"*80)
-    print("\n" + welcome_msg + "\n")
-    print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
-    if l_gpm:
-        print("The spaceborne instrument used is GPM.")
-    else:
-        print("The spaceborne instrument used is TRMM.")
-    print("The volume matching will be executed between " +
-          start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
-    if l_dbz:
-        print("The statistics will be done in dBZ.")
-    else:
-        print("The statistics will be done in natural units.")
-    if l_write:
-        print("The results will be saved in " + outdir)
-    else:
-        print("The results won't be saved.")
-    print("This will run on %i cpu(s)." % (ncpu))
-    print("#"*80)
-    print("\n\n")
-
+    # Serious business starting here.
     main()
