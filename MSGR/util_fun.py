@@ -100,3 +100,32 @@ def get_filename_from_date(file_list, the_date):
             continue
 
     return to_return  # Type: str
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    """Use it to cut a big list into smaller chunks"""
+    for i in range(0, len(l), n):
+        yield l[i:i + n] # type: Generator[list of strings]
+
+
+def print_with_time(txt):
+    pfix = "[" + str(datetime.datetime.now().isoformat()) + "]\t"
+    print("\033[94m{}\033[00m" .format(pfix) + txt)
+    return None
+
+
+# To print in color in the terminal
+def print_red(txt):
+    print_with_time("\033[91m{}\033[00m".format(txt))
+    return None
+
+
+def print_green(txt):
+    print_with_time("\033[92m{}\033[00m" .format(txt))
+    return None
+
+
+def print_blue(txt):
+    print("\033[95m{}\033[00m" .format(txt))
+    return None

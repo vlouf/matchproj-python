@@ -5,8 +5,8 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.1.161213
-@date: 2016-12-06 (creation) 2016-12-13 (current version)
+@version: 0.1.161214
+@date: 2016-12-06 (creation) 2016-12-14 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -44,32 +44,18 @@ def matchproj_fun(the_file, julday):
 
     if l_gpm:
         sat = read_gpm(the_file)
-        print('READING ', the_file)
+        txt = 'READING ' + the_file
+        print_with_time(txt)
     else:
         return None
 
     if sat is None:
-        print('Bad satellite data')
+        print_red('Bad satellite data')
         return None
 
-    nscan = sat['nscan']
-    nray = sat['nray']
-    nbin = sat['nbin']
-    yearp = sat['year']
-    monthp = sat['month']
-    dayp = sat['day']
-    hourp = sat['hour']
-    minutep = sat['minute']
-    secondp = sat['second']
+    # Extracting lat/lon just to make a check
     lonp = sat['lon']
     latp = sat['lat']
-    pflag = sat['pflag']
-    ptype = sat['ptype']
-    zbb = sat['zbb']
-    bbwidth = sat['bbwidth']
-    sfc = sat['sfc']
-    quality = sat['quality']
-    refp = sat['refl']
 
     # Convert to Cartesian coordinates
     res = smap(lonp, latp)
@@ -82,8 +68,26 @@ def matchproj_fun(the_file, julday):
 
     if len(ioverx) == 0:
         nerr[1] += 1
-        print("Insufficient satellite rays in domain for " + julday.strftime("%d %b %Y"))
+        print_red("Insufficient satellite rays in domain for " + julday.strftime("%d %b %Y"))
         return None
+
+    # Extracting the rest of the satellite data
+    nscan = sat['nscan']
+    nray = sat['nray']
+    nbin = sat['nbin']
+    yearp = sat['year']
+    monthp = sat['month']
+    dayp = sat['day']
+    hourp = sat['hour']
+    minutep = sat['minute']
+    secondp = sat['second']
+    pflag = sat['pflag']
+    ptype = sat['ptype']
+    zbb = sat['zbb']
+    bbwidth = sat['bbwidth']
+    sfc = sat['sfc']
+    quality = sat['quality']
+    refp = sat['refl']
 
     # Note the first and last scan indices
     i1x, i1y = np.min(ioverx), np.min(iovery)
@@ -120,7 +124,7 @@ def matchproj_fun(the_file, julday):
     nprof = len(iscan)
     if nprof < minprof:
         nerr[2] += 1
-        print('Insufficient precipitating satellite rays in domain', nprof)
+        print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
         return None
 
     # Note the scan and ray indices for these rays
@@ -181,7 +185,8 @@ def matchproj_fun(the_file, julday):
         bbwidth = np.median(bbwidth[ibb])
     else:
         nerr[3] += 1
-        print('Insufficient bright band rays', nbb)
+        print_red('Insufficient bright band rays %i for ' % (nbb) +
+                  julday.strftime("%d %b %Y"))
         return None
 
     # Set all values less than minrefp as missing
@@ -206,7 +211,7 @@ def matchproj_fun(the_file, julday):
     dtime_radar = list(filter(None, dtime_radar))  # Removing None values
 
     if len(dtime_radar) == 0:
-        print("No corresponding ground radar files for this date")
+        print_red("No corresponding ground radar files for this date " + julday.strftime("%d %b %Y"))
         return None
 
     # Find the nearest scan time    )
@@ -219,8 +224,8 @@ def matchproj_fun(the_file, julday):
 
     # Looking at the time difference between satellite and radar
     if time_difference.seconds > maxdt:
-        print('Time difference is of %i s.' % (time_difference.seconds))
-        print('This time difference is bigger' +
+        print_red('Time difference is of %i s.' % (time_difference.seconds))
+        print_red('This time difference is bigger' +
               ' than the acceptable value of %i s.' % (maxdt))
         nerr[5] += 1
         return None  # To the next satellite file
@@ -436,7 +441,7 @@ def matchproj_fun(the_file, julday):
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
     if len(ipairx) < minpair:
         nerr[7] += 1
-        print('Insufficient comparison pairs')
+        print_red('Insufficient comparison pairs for ' + julday.strftime("%d %b %Y"))
         return None
 
     iprof = ipairx
@@ -499,26 +504,29 @@ def MAIN_matchproj_fun(the_date):
     satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
 
     if len(satfiles) == 0:
+        print('')  # line break
         txt = 'No satellite swaths for ' + julday.strftime("%d %b %Y")
-        print("\033[91m{}\033[00m".format(txt))
+        print_red(txt)
         nerr[0] += 1
         return None
 
     for the_file in satfiles:
         orbit = get_orbit_number(the_file)
 
-        print("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
+        print('')  # line break
+        print_with_time("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
 
         match_vol = matchproj_fun(the_file, julday)
         if match_vol is None:
             continue
 
-        out_name = outdir + "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + julday.strftime("%Y%m%d")
-
+        # Saving data
         if l_write:
+            out_name = outdir + "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + \
+                       julday.strftime("%Y%m%d")
             txt = "Saving data to " + out_name + \
-                  "\nFor orbit " + orbit + " on " + julday.strftime("%d %B %Y")
-            print("\033[92m{}\033[00m" .format(txt))
+                  ". For orbit " + orbit + " on " + julday.strftime("%d %B %Y")
+            print_green(txt)
             save_data(out_name, match_vol)
 
     return None
@@ -531,7 +539,7 @@ def welcome_message():
     msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
 
     print("#"*80)
-    print("\n" + msg + "\n")
+    print_blue("\n" + msg + "\n")
     print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
     if l_gpm:
         print("The spaceborne instrument used is GPM.")
@@ -561,8 +569,21 @@ def main():
     """Multiprocessing control room"""
 
     date_range = pd.date_range(start_date, end_date)
-    with Pool(ncpu) as pool:
-        pool.map(MAIN_matchproj_fun, date_range)
+
+    # Chunking the date_range list in order to make it smaller to ingest in
+    # multiprocessing. This allows to clear multiprocessing memory at every
+    # chunks and not going to cray with memory eating.
+    if len(date_range) > ncpu*2:
+
+        date_range_chunk = chunks(date_range, ncpu*2)  # Type: Generator
+        for date_range_slice in date_range_chunk:
+            with Pool(ncpu) as pool:
+                date_list = list(date_range_slice)
+                pool.map(MAIN_matchproj_fun, date_list)
+
+    else:
+        with Pool(ncpu) as pool:
+            pool.map(MAIN_matchproj_fun, date_range)
 
     return None
 
