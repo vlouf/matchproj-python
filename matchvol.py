@@ -201,7 +201,10 @@ def matchproj_fun(the_file, julday):
         refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(refp, zp, zbb, bbwidth)
 
     # Get the ground radar file lists (next 20 lines can be a function)
-    radar_file_list = get_files(raddir + '/' )
+    radar_file_list = get_files(raddir + '/', julday)
+    if len(radar_file_list) == 0:
+        print_red('No radar file found for this date '+ julday.strftime("%d %b %Y"))
+        return None
 
     # Get the datetime for each radar files
     dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
@@ -234,6 +237,7 @@ def matchproj_fun(the_file, julday):
     radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
     time = closest_dtime_rad  # Keeping the IDL program notation
 
+    print_with_time('READING ' + radfile)
     radar = read_radar(radfile)
 
     ngate = radar['ngate']
@@ -328,7 +332,6 @@ def matchproj_fun(the_file, julday):
 
                 # Store the number of bins
                 ntot1[ii, jj] = len(ip)
-
                 if len(ip) == 0:
                     continue
 
@@ -572,7 +575,7 @@ def main():
 
     # Chunking the date_range list in order to make it smaller to ingest in
     # multiprocessing. This allows to clear multiprocessing memory at every
-    # chunks and not going to cray with memory eating.
+    # chunks and not going to cray with memory eating. It's just a little trick.
     if len(date_range) > ncpu*2:
 
         date_range_chunk = chunks(date_range, ncpu*2)  # Type: Generator

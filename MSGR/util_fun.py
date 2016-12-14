@@ -26,17 +26,31 @@ def nancumsum(a, ax=0):
 
     return rslt
 
-
-def get_files(inpath):
+def get_files(inpath, date=None):
     '''GET_FILES'''
     '''Returns a list of with the supported extension (netcdf) in the given
-    path. Will recursively search in subdirectories too.'''
+    path. Will recursively search in subdirectories too. If provided a date
+    (string or datetime object) it will only returns the files whose
+    filename matches.'''
 
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5', '.H5']
     flist = []
 
+    # Check date type
+    if type(date) == datetime.datetime:
+        date = date.strftime("%Y%m%d")
+
     for dirpath, dirnames, filenames in os.walk(inpath):
         for filenames_slice in filenames:
+
+            # If no date provided, nothing new under the sun
+            if date is None:
+                pass
+            elif len(date) == 8:
+                # Check is provided date is found in the file name
+                if len(re.findall(date, filenames_slice)) == 0:
+                    continue
+
             file_extension = os.path.splitext(str(filenames_slice))[1]
             # Get extension
 
