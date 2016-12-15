@@ -41,9 +41,9 @@ def read_radar(infile):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
         azi = radar.azimuth['data'][sweep_slice].astype(int)  # Extract azimuth
         try:
-            refl_slice = radar.fields['DBZ']['data'][sweep_slice]  # Reflectivity
-        except KeyError:
             refl_slice = radar.fields['DBZ_F']['data'][sweep_slice]  # Reflectivity
+        except KeyError:
+            refl_slice = radar.fields['DBZ']['data'][sweep_slice]  # Reflectivity
         except KeyError:
             refl_slice = radar.fields['reflectivity']['data'][sweep_slice]  # Reflectivity
 

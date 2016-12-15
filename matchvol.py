@@ -87,7 +87,7 @@ def matchproj_fun(the_file, julday):
     bbwidth = sat['bbwidth']
     sfc = sat['sfc']
     quality = sat['quality']
-    refp = sat['refl']
+    reflectivity_satellite = sat['refl']
 
     # Note the first and last scan indices
     i1x, i1y = np.min(ioverx), np.min(iovery)
@@ -143,9 +143,9 @@ def matchproj_fun(the_file, julday):
 
     tmp = np.zeros((nprof, nbin), dtype=float)
     for k in range(0, nbin):
-        tmp[:, k] = (refp[:, :, k])[iscan, iray]
+        tmp[:, k] = (reflectivity_satellite[:, :, k])[iscan, iray]
 
-    refp = tmp
+    reflectivity_satellite = tmp
 
     # Note the scan angle for each ray
     alpha = np.abs(-17.04 + np.arange(nray)*0.71)
@@ -190,15 +190,15 @@ def matchproj_fun(the_file, julday):
         return None
 
     # Set all values less than minrefp as missing
-    ibadx, ibady = np.where(refp < minrefp)  # WHERE(refp lt minrefp,nbad)
+    ibadx, ibady = np.where(reflectivity_satellite < minrefp)  # WHERE(reflectivity_satellite lt minrefp,nbad)
     if len(ibadx) > 0:
-        refp[ibadx, ibady] = np.NaN
+        reflectivity_satellite[ibadx, ibady] = np.NaN
 
     # Convert to S-band using method of Cao et al. (2013)
     if l_cband:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(refp, zp, zbb, bbwidth)
+        refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(reflectivity_satellite, zp, zbb, bbwidth)
     else:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(refp, zp, zbb, bbwidth)
+        refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(reflectivity_satellite, zp, zbb, bbwidth)
 
     # Get the ground radar file lists (next 20 lines can be a function)
     radar_file_list = get_files(raddir + '/', julday)
@@ -247,7 +247,7 @@ def matchproj_fun(the_file, julday):
     azang = radar['azang']
     elang = radar['elang']
     dr = radar['dr']
-    refg = radar['reflec']
+    reflectivity_ground_radar = radar['reflec']
 
     # Determine the Cartesian coordinates of the ground radar's pixels
     rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
@@ -261,11 +261,11 @@ def matchproj_fun(the_file, julday):
     volg = 1e-9*pi*dr*(pi/180*bwr/2*rg)**2
 
     #  Set all values less than minref as missing
-    rbad, azbad, elbad = np.where(refg < minrefg)
-    refg[rbad, azbad, elbad] = np.NaN
+    rbad, azbad, elbad = np.where(reflectivity_ground_radar < minrefg)
+    reflectivity_ground_radar[rbad, azbad, elbad] = np.NaN
 
     # Convert S-band GR reflectivities to Ku-band
-    refg_ku = reflectivity_conversion.convert_to_Ku(refg, zg, zbb, l_cband)
+    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, l_cband)
 
     # Create arrays to store comparison variables
     '''Coordinates'''
@@ -296,8 +296,8 @@ def matchproj_fun(the_file, julday):
     vol2 = np.zeros((nprof, ntilt)) + np.NaN  # Total volume of GR bins in sample
 
     # Compute the path-integrated reflectivities at every points
-    nat_refp = 10**(refp/10.0)  # In natural units
-    nat_refg = 10**(refg/10.0)
+    nat_refp = 10**(reflectivity_satellite/10.0)  # In natural units
+    nat_refg = 10**(reflectivity_ground_radar/10.0)
     irefp = np.fliplr(nancumsum(np.fliplr(nat_refp), 1))
     irefg = nancumsum(nat_refg)
     irefp = drt*(irefp - nat_refp/2)
@@ -307,8 +307,8 @@ def matchproj_fun(the_file, julday):
 
     # Convert to linear units
     if l_dbz == 0:
-        refp = 10**(refp/10.0)
-        refg = 10**(refg/10.0)
+        reflectivity_satellite = 10**(reflectivity_satellite/10.0)
+        reflectivity_ground_radar = 10**(reflectivity_ground_radar/10.0)
         refp_ss = 10**(refp_ss/10.0)
         refp_sh = 10**(refp_sh/10.0)
         refg_ku = 10**(refg_ku/10.0)
@@ -358,7 +358,7 @@ def matchproj_fun(the_file, julday):
                     continue
 
                 # Extract the relevant PR data
-                refp1 = refp[ii, ip].flatten()
+                refp1 = reflectivity_satellite[ii, ip].flatten()
                 refp2 = refp_ss[ii, ip].flatten()
                 refp3 = refp_sh[ii, ip].flatten()
                 irefp1 = irefp[ii, ip].flatten()
@@ -392,7 +392,7 @@ def matchproj_fun(the_file, julday):
                     continue
 
                 # Extract the relevant GR data
-                refg1 = refg[:, :, jj][igx, igy].flatten()
+                refg1 = reflectivity_ground_radar[:, :, jj][igx, igy].flatten()
                 refg2 = refg_ku[:, :, jj][igx, igy].flatten()
                 volg1 = volg[:, :, jj][igx, igy].flatten()
                 irefg1 = irefg[:, :, jj][igx, igy].flatten()
@@ -429,8 +429,8 @@ def matchproj_fun(the_file, julday):
     iref1 = 10*np.log10(iref1)
     iref2 = 10*np.log10(iref2)
     if l_dbz == 0:
-        refp = 10*np.log10(refp)
-        refg = 10*np.log10(refg)
+        reflectivity_satellite = 10*np.log10(reflectivity_satellite)
+        reflectivity_ground_radar = 10*np.log10(reflectivity_ground_radar)
         refp_ss = 10*np.log10(refp_ss)
         refp_sh = 10*np.log10(refp_sh)
         refg_ku = 10*np.log10(refg_ku)

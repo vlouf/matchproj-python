@@ -45,11 +45,11 @@ def satellite_params(sname='GPM'):
     sname = sname.upper()
     # Orbit parameters
     if sname == 'GPM':
-        zt = 402500.   # orbital height of TRMM (post boost)
-        drt = 250.     # gate spacing of TRMM
-    elif sname == 'TRMM':
         zt = 407000.   # orbital height of GPM
         drt = 125.     # gate spacing of GPM
+    elif sname == 'TRMM':
+        zt = 402500.   # orbital height of TRMM (post boost)
+        drt = 250.     # gate spacing of TRMM        
     else:
         raise ValueError("The available satellites are GPM or TRMM.")
     bwt=0.71
