@@ -16,6 +16,8 @@
 import os
 import re
 import glob
+import h5py
+import pyhdf
 import pyart  # Preload for child's module
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
@@ -29,6 +31,7 @@ from multiprocessing import Pool
 # Custom modules
 from MSGR import reflectivity_conversion
 from MSGR.io.read_gpm import *
+from MSGR.io.read_trmm import *
 from MSGR.io.read_radar import *
 from MSGR.io.save_data import *
 from MSGR.instruments.ground_radar import *  # functions related to the ground radar data
@@ -36,18 +39,21 @@ from MSGR.instruments.satellite import *   # functions related to the satellite 
 from MSGR.util_fun import *  # bunch of useful functions
 
 
-def matchproj_fun(the_file, julday):
+def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     '''MATCHPROJ_FUN'''
     '''the_file: name of the satellite data file. Type: str'''
     '''julday: date of the day of comparison. Type: datetime'''
     '''returns a dictionnary structure containing the comparable reflectivities.'''
 
+    julday = dtime
     if l_gpm:
         sat = read_gpm(the_file)
         txt = 'READING ' + the_file
         print_with_time(txt)
     else:
-        return None
+        sat = read_trmm(the_file, file_2A25_trmm)
+        txt = "READING " + the_file + "\n" + 32*" " + "READING " +  file_2A25_trmm
+        print_with_time(txt)
 
     if sat is None:
         print_red('Bad satellite data')
@@ -493,6 +499,7 @@ def matchproj_fun(the_file, julday):
 
 def MAIN_matchproj_fun(the_date):
     """MAIN_MATCHPROJ_FUN"""
+    """Here we loop over the satellite files and call matchproj_fun."""
     """the_date: a datetime structure for which to run the code"""
 
     year = the_date.year
@@ -504,7 +511,11 @@ def MAIN_matchproj_fun(the_date):
     julday = datetime.datetime(year, month, day, 0, 0, 0)
 
     # Note the number of satellite overpasses on this day
-    satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
+    if l_gpm:
+        satfiles = glob.glob(satdir + '/' + date + '*.HDF5')
+    else:
+        satfiles = glob.glob(satdir + '/*2A23*' + date + '*.HDF')
+        satfiles2 = glob.glob(satdir + '/*2A25*' + date + '*.HDF')
 
     if len(satfiles) == 0:
         print('')  # line break
@@ -519,7 +530,17 @@ def MAIN_matchproj_fun(the_date):
         print('')  # line break
         print_with_time("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
 
-        match_vol = matchproj_fun(the_file, julday)
+        if l_gpm:
+            match_vol = matchproj_fun(the_file, dtime=julday)
+        else:
+            try:
+                # Trying to find corresponding 2A25 TRMM file based on the orbit
+                fd_25 = find_file_with_string(satfiles2, orbit)
+            except IndexError:
+                print_red("No matching 2A25 file for TRMM")
+                continue
+            match_vol = matchproj_fun(the_file, fd_25, dtime=julday)
+
         if match_vol is None:
             continue
 
@@ -639,7 +660,6 @@ if __name__=='__main__':
         satstr = 'gpm'
     else:
         satstr = 'trmm'
-        raise ValueError("TRMM not yet implemented")
 
     SAT_params = satellite_params(satstr)
     zt = SAT_params['zt']

@@ -39,17 +39,6 @@ def read_gpm(infile):
         mem_id = obj_id['SLV']
         refl = mem_id['zFactorCorrected'].value
 
-    # # Transpose the arrays to make dimension order scan,ray,bin
-    # lat = lat.T
-    # lon = lon.T
-    # pflag = pflag.T
-    # ptype = ptype.T
-    # qbb = qbb.T
-    # qtype = qtype.T
-    # zbb = zbb.T
-    # bbwidth = bbwidth.T
-    # refl = refl.T
-
     # Determine the dimensions
     if refl.ndim != 3:
         print("Invalid number of dimensions")
@@ -61,10 +50,7 @@ def read_gpm(infile):
     refl = refl[:, :, ::-1]
 
     # Change pflag=1 to pflag=2 to be consistent with 'Rain certain' in TRMM
-    irainx, irainy = np.where(pflag == 1)
-    nrain = len(irainx)
-    if nrain > 0:
-        pflag[irainx, irainy] = 2
+    pflag[pflag == 1] = 2
 
     # Simplify the precipitation types
     ptype = ptype/10000000

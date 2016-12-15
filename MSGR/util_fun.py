@@ -14,6 +14,11 @@ import numpy as np
 import copy
 
 
+def find_file_with_string(flist, orb):
+    '''FIND_FILE_WITH_STRING'''
+    return [fd for fd in flist if orb in fd][0]
+
+
 def nancumsum(a, ax=0):
     '''NANCUMSUM'''
     '''Cumsum in numpy does not ignore the NaN values, this one does'''
