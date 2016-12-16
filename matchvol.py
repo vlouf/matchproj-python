@@ -5,8 +5,8 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.2.161215
-@date: 2016-12-06 (creation) 2016-12-15 (current version)
+@version: 0.2.161216
+@date: 2016-12-06 (creation) 2016-12-16 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -35,9 +35,9 @@ from MSGR.io.read_gpm import *
 from MSGR.io.read_trmm import *
 from MSGR.io.read_radar import *
 from MSGR.io.save_data import *
-from MSGR.instruments.ground_radar import *  # functions related to the ground radar data
-from MSGR.instruments.satellite import *   # functions related to the satellite data
-from MSGR.util_fun import *  # bunch of useful functions
+from MSGR.instruments.ground_radar import * # functions related to the ground radar data
+from MSGR.instruments.satellite import *    # functions related to the satellite data
+from MSGR.util_fun import *                 # bunch of useful functions
 
 
 def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
