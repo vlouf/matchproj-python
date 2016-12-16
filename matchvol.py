@@ -5,8 +5,8 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.1.161214
-@date: 2016-12-06 (creation) 2016-12-14 (current version)
+@version: 0.2.161215
+@date: 2016-12-06 (creation) 2016-12-15 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -512,8 +512,8 @@ def MAIN_matchproj_fun(the_date):
 
     # Note the number of satellite overpasses on this day
     if l_gpm:
-        satfiles = glob.glob(satdir + '/' + date + '*.HDF5')
-    else:
+        satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
+    else:        
         satfiles = glob.glob(satdir + '/*2A23*' + date + '*.HDF')
         satfiles2 = glob.glob(satdir + '/*2A25*' + date + '*.HDF')
 
@@ -657,11 +657,10 @@ if __name__=='__main__':
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
     if l_gpm:
-        satstr = 'gpm'
+        SAT_params = satellite_params('gpm')
     else:
-        satstr = 'trmm'
+        SAT_params = satellite_params('trmm')
 
-    SAT_params = satellite_params(satstr)
     zt = SAT_params['zt']
     drt = SAT_params['drt']
     bwt = SAT_params['bwt']
