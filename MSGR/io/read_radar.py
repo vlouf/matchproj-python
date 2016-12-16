@@ -1,5 +1,30 @@
 import pyart
 import numpy as np
+import copy
+from ..util_fun import print_yellow
+
+
+def correct_attenuation(radar, refl_field_name='DBZ_F',
+                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'):
+
+    the_radar = copy.deepcopy(radar)
+    print_yellow("Correcting ground radar attenuation.")
+    # Creating fake NCP field.
+
+    try:
+        ncp = radar.fields['NCP']
+    except KeyError:
+        reflec = the_radar.fields[refl_field_name]['data']
+        ncp = np.zeros_like(reflec) + 1
+        the_radar.add_field_like(refl_field_name, 'NCP', ncp)
+
+    spec_at, cor_z = pyart.correct.calculate_attenuation(the_radar, 0,
+                     refl_field=refl_field_name, ncp_field='NCP',
+                     rhv_field=rhv_field_name, phidp_field=phidp_field_name)
+
+    the_radar.add_field('specific_attenuation', spec_at)
+    the_radar.add_field('corrected_reflectivity_horizontal', cor_z)
+    return the_radar
 
 
 def populate_missing_azimuth(azi, refl_slice, ngate):
@@ -16,13 +41,34 @@ def populate_missing_azimuth(azi, refl_slice, ngate):
     return azi, tmp_refl
 
 
-def read_radar(infile):
+def what_is_the_reflectivity_field_name(radar):
+    '''WHAT_IS_THE_REFLECTIVITY_FIELD_NAME'''
+    '''Try a variety of different reflectvity name and return the first one
+    that works'''
+
+    potential_name = ['DBZ_F', 'DBZ', 'reflectivity']
+    for pn in potential_name:
+        try:
+            rd = radar.fields[pn]
+            return pn
+        except KeyError:
+            continue
+
+    return None
+
+
+def read_radar(infile, attenuation_correction=True):
     '''READ_RADAR'''
 
     try:
         radar = pyart.io.read(infile)
     except KeyError:
         radar = pyart.aux_io.read_odim_h5(infile)
+
+    refl_field_name = what_is_the_reflectivity_field_name(radar)
+
+    if attenuation_correction:
+        radar = correct_attenuation(radar, refl_field_name=refl_field_name)
 
     rg = radar.range['data']  # Extract range
     sweep_number = radar.sweep_number['data']  # Extract number of tilt
@@ -40,12 +86,12 @@ def read_radar(infile):
     for cnt, sw in enumerate(sweep_number):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
         azi = radar.azimuth['data'][sweep_slice].astype(int)  # Extract azimuth
-        try:
-            refl_slice = radar.fields['DBZ_F']['data'][sweep_slice]  # Reflectivity
-        except KeyError:
-            refl_slice = radar.fields['DBZ']['data'][sweep_slice]  # Reflectivity
-        except KeyError:
-            refl_slice = radar.fields['reflectivity']['data'][sweep_slice]  # Reflectivity
+
+        # Extracting reflectivity
+        if attenuation_correction:
+            refl_slice = radar.fields['corrected_reflectivity_horizontal']['data'][sweep_slice]
+        else:
+            refl_slice = radar.fields[refl_field_name]['data'][sweep_slice]
 
         elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
 

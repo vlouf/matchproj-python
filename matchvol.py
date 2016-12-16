@@ -245,7 +245,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     time = closest_dtime_rad  # Keeping the IDL program notation
 
     print_with_time('READING ' + radfile)
-    radar = read_radar(radfile)
+    radar = read_radar(radfile, l_atten)
 
     ngate = radar['ngate']
     nbeam = radar['nbeam']
@@ -323,7 +323,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     irefp = 10**(irefp/10.0)
     irefg = 10**(irefg/10.0)
 
-    print_yellow("Starting comparison.")
+    print_yellow("Starting comparison")
 
     # Loop over the TRMM/GPM profiles and Loop over the GR elevation scan
     for ii, jj in itertools.product(range(nprof), range(ntilt)):
@@ -565,6 +565,8 @@ def welcome_message():
         print("The spaceborne instrument used is TRMM.")
     print("The volume matching will be executed between " +
           start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
+    if l_atten:
+        print("Ground radar attenuation will be corrected.")
     if l_dbz:
         print("The statistics will be done in dBZ.")
     else:
@@ -623,6 +625,7 @@ if __name__=='__main__':
     l_cband = switch.getboolean('cband')   # Switch for C-band GR
     l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
+    l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
 
     path = config['path']
     raddir = path.get('ground_radar')
