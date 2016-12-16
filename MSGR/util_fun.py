@@ -145,6 +145,11 @@ def print_green(txt):
     return None
 
 
+def print_yellow(txt):
+    print_with_time("\033[93m{}\033[00m" .format(txt))
+    return None
+
+
 def print_blue(txt):
     print("\033[95m{}\033[00m" .format(txt))
     return None

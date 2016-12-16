@@ -25,6 +25,7 @@ import warnings
 import configparser
 import numpy as np
 import pandas as pd
+import itertools
 from numpy import sqrt, cos, sin, tan, pi, exp
 from multiprocessing import Pool
 
@@ -322,110 +323,107 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     irefp = 10**(irefp/10.0)
     irefg = 10**(irefg/10.0)
 
-    # Loop over the TRMM/GPM profiles
-    for ii in range(0, nprof):
+    print_yellow("Starting comparison.")
 
-        # Loop over the GR elevation scan
-        for jj in range(0, ntilt):
+    # Loop over the TRMM/GPM profiles and Loop over the GR elevation scan
+    for ii, jj in itertools.product(range(nprof), range(ntilt)):
+        # Temporally kill warnings (because of nanmean)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            # Temporally kill warnings (because of nanmean)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
+            # Identify those PR bins which fall within the GR sweep
+            ip = np.where((ep[ii, :] >= elang[jj] - bwr/2) &
+                          (ep[ii, :] <= elang[jj] + bwr/2))
 
-                # Identify those PR bins which fall within the GR sweep
-                ip = np.where((ep[ii, :] >= elang[jj] - bwr/2) &
-                              (ep[ii, :] <= elang[jj] + bwr/2))
+            # Store the number of bins
+            ntot1[ii, jj] = len(ip)
+            if len(ip) == 0:
+                continue
 
-                # Store the number of bins
-                ntot1[ii, jj] = len(ip)
-                if len(ip) == 0:
-                    continue
+            x[ii, jj] = np.mean(xp[ii, ip])
+            y[ii, jj] = np.mean(yp[ii, ip])
+            z[ii, jj] = np.mean(zp[ii, ip])
 
-                x[ii, jj] = np.mean(xp[ii, ip])
-                y[ii, jj] = np.mean(yp[ii, ip])
-                z[ii, jj] = np.mean(zp[ii, ip])
+            # Compute the thickness of the layer
+            nip = len(ip)
+            dz[ii, jj] = nip*drt*cos(pi/180*alpha[ii, 0])
 
-                # Compute the thickness of the layer
-                nip = len(ip)
-                dz[ii, jj] = nip*drt*cos(pi/180*alpha[ii, 0])
+            # Compute the PR averaging volume
+            vol1[ii, jj] = np.sum(volp[ii, ip])
 
-                # Compute the PR averaging volume
-                vol1[ii, jj] = np.sum(volp[ii, ip])
+            # Note the mean TRMM beam diameter
+            ds[ii, jj] = pi/180*bwt*np.mean((zt - zp[ii, ip])/cos(pi/180*alpha[ii, ip]))
 
-                # Note the mean TRMM beam diameter
-                ds[ii, jj] = pi/180*bwt*np.mean((zt - zp[ii, ip])/cos(pi/180*alpha[ii, ip]))
+            # Note the radar range
+            s = sqrt(x[ii, jj]**2 + y[ii, jj]**2)
+            r[ii, jj] = (earth_gaussian_radius + z[ii, jj])*sin(s/earth_gaussian_radius)/cos(pi/180*elang[jj])
 
-                # Note the radar range
-                s = sqrt(x[ii, jj]**2 + y[ii, jj]**2)
-                r[ii, jj] = (earth_gaussian_radius + z[ii, jj])*sin(s/earth_gaussian_radius)/cos(pi/180*elang[jj])
+            # Check that sample is within radar range
+            if r[ii, jj] + ds[ii, jj]/2 > rmax:
+                continue
 
-                # Check that sample is within radar range
-                if r[ii, jj] + ds[ii, jj]/2 > rmax:
-                    continue
+            # Extract the relevant PR data
+            refp1 = reflectivity_satellite[ii, ip].flatten()
+            refp2 = refp_ss[ii, ip].flatten()
+            refp3 = refp_sh[ii, ip].flatten()
+            irefp1 = irefp[ii, ip].flatten()
 
-                # Extract the relevant PR data
-                refp1 = reflectivity_satellite[ii, ip].flatten()
-                refp2 = refp_ss[ii, ip].flatten()
-                refp3 = refp_sh[ii, ip].flatten()
-                irefp1 = irefp[ii, ip].flatten()
+            # Average over those bins that exceed the reflectivity
+            # threshold (linear average)
+            ref1[ii, jj] = np.nanmean(refp1)
+            ref2[ii, jj] = np.nanmean(refp2)
+            ref3[ii, jj] = np.nanmean(refp3)
+            iref1[ii, jj] = np.nanmean(irefp1)
 
-                # Average over those bins that exceed the reflectivity
-                # threshold (linear average)
-                ref1[ii, jj] = np.nanmean(refp1)
-                ref2[ii, jj] = np.nanmean(refp2)
-                ref3[ii, jj] = np.nanmean(refp3)
-                iref1[ii, jj] = np.nanmean(irefp1)
+            if l_dbz == 0:
+                stdv1[ii, jj] = np.nanstd(10*np.log10(refp1))
+            else:
+                stdv1[ii, jj] = np.nanstd(refp1)
 
-                if l_dbz == 0:
-                    stdv1[ii, jj] = np.nanstd(10*np.log10(refp1))
-                else:
-                    stdv1[ii, jj] = np.nanstd(refp1)
+            # Note the number of rejected bins
+            nrej1[ii, jj] = int(np.sum(np.isnan(refp1)))
+            if ~np.isnan(stdv1[ii, jj]) and nip - nrej1[ii, jj] > 1:
+                continue
 
-                # Note the number of rejected bins
-                nrej1[ii, jj] = int(np.sum(np.isnan(refp1)))
-                if ~np.isnan(stdv1[ii, jj]) and nip - nrej1[ii, jj] > 1:
-                    continue
+            # Compute the horizontal distance to all the GR bins
+            d = sqrt((xg[:, :, jj] - x[ii, jj])**2 + (yg[:, :, jj] - y[ii, jj])**2)
 
-                # Compute the horizontal distance to all the GR bins
-                d = sqrt((xg[:, :, jj] - x[ii, jj])**2 + (yg[:, :, jj] - y[ii, jj])**2)
+            # Find all GR bins within the SR beam
+            igx, igy = np.where(d <= ds[ii, jj]/2)
 
-                # Find all GR bins within the SR beam
-                igx, igy = np.where(d <= ds[ii, jj]/2)
+            # Store the number of bins
+            ntot2[ii, jj] = len(igx)
+            if len(igx) == 0:
+                continue
 
-                # Store the number of bins
-                ntot2[ii, jj] = len(igx)
-                if len(igx) == 0:
-                    continue
+            # Extract the relevant GR data
+            refg1 = reflectivity_ground_radar[:, :, jj][igx, igy].flatten()
+            refg2 = refg_ku[:, :, jj][igx, igy].flatten()
+            volg1 = volg[:, :, jj][igx, igy].flatten()
+            irefg1 = irefg[:, :, jj][igx, igy].flatten()
 
-                # Extract the relevant GR data
-                refg1 = reflectivity_ground_radar[:, :, jj][igx, igy].flatten()
-                refg2 = refg_ku[:, :, jj][igx, igy].flatten()
-                volg1 = volg[:, :, jj][igx, igy].flatten()
-                irefg1 = irefg[:, :, jj][igx, igy].flatten()
+            #  Comupte the GR averaging volume
+            vol2[ii, jj] = np.sum(volg1)
 
-                #  Comupte the GR averaging volume
-                vol2[ii, jj] = np.sum(volg1)
+            # Average over those bins that exceed the reflectivity
+            # threshold (exponential distance and volume weighting)
+            w = volg1*exp(-1*(d[igx, igy]/(ds[ii, jj]/2.))**2)
+            w = w*refg1/refg2
 
-                # Average over those bins that exceed the reflectivity
-                # threshold (exponential distance and volume weighting)
-                w = volg1*exp(-1*(d[igx, igy]/(ds[ii, jj]/2.))**2)
-                w = w*refg1/refg2
+            ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
+            ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
+            iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
 
-                ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
-                ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
-                iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
+            if l_dbz == 0:
+                stdv2[ii, jj] = np.nanstd(10*np.log10(refg1))
+            else:
+                stdv2[ii, jj] = np.nanstd(refg1)
 
-                if l_dbz == 0:
-                    stdv2[ii, jj] = np.nanstd(10*np.log10(refg1))
-                else:
-                    stdv2[ii, jj] = np.nanstd(refg1)
+            # Note the number of rejected bins
+            nrej2[ii, jj] = int(np.sum(np.isnan(refg1)))
 
-                # Note the number of rejected bins
-                nrej2[ii, jj] = int(np.sum(np.isnan(refg1)))
-
-            # END WITH (RuntimeWarning ignore)
-        # END FOR (radar elevation)
-    # END FOR (satellite profiles)
+        # END WITH (RuntimeWarning ignore)
+    # END FOR (satellite profiles, radar elevation)
 
     # Correct std
     stdv1[np.isnan(stdv1)] = 0
@@ -502,18 +500,14 @@ def MAIN_matchproj_fun(the_date):
     """Here we loop over the satellite files and call matchproj_fun."""
     """the_date: a datetime structure for which to run the code"""
 
-    year = the_date.year
-    month = the_date.month
-    day = the_date.day
-    date = "%i%02i%02i" % (year, month, day)
-
     # Note the Julian day corresponding to 00 UTC
-    julday = datetime.datetime(year, month, day, 0, 0, 0)
+    julday = datetime.datetime(the_date.year, the_date.month, the_date.day, 0, 0, 0)
+    date = julday.strftime("%Y%m%d")
 
     # Note the number of satellite overpasses on this day
     if l_gpm:
         satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
-    else:        
+    else:
         satfiles = glob.glob(satdir + '/*2A23*' + date + '*.HDF')
         satfiles2 = glob.glob(satdir + '/*2A25*' + date + '*.HDF')
 
@@ -537,7 +531,7 @@ def MAIN_matchproj_fun(the_date):
                 # Trying to find corresponding 2A25 TRMM file based on the orbit
                 fd_25 = find_file_with_string(satfiles2, orbit)
             except IndexError:
-                print_red("No matching 2A25 file for TRMM")
+                print_red("No matching 2A25 file for TRMM.")
                 continue
             match_vol = matchproj_fun(the_file, fd_25, dtime=julday)
 

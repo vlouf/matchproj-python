@@ -53,7 +53,7 @@ def read_gpm(infile):
     pflag[pflag == 1] = 2
 
     # Simplify the precipitation types
-    ptype = ptype/10000000
+    ptype = ptype/10000000.0
 
     # Simplify the surface types
     imissx, imissy = np.where(sfc == -9999)
@@ -64,15 +64,8 @@ def read_gpm(infile):
 
     # Set a quality indicator for the BB and precip type data
     quality = np.zeros((nscan, nray))
-    i1x, i1y = np.where(((qbb == 0) | (qbb == 1)) & (qtype == 1))
-    n1 = len(i1x)
-    if n1 > 0:
-        quality[i1x, i1y] = 1
-
-    i2x, i2y = np.where((qbb > 1) | (qtype > 1))
-    n2 = len(i2x)
-    if n2 > 0:
-        quality[i2x, i2y] = 2
+    quality[((qbb == 0) | (qbb == 1)) & (qtype == 1)] = 1
+    quality[(qbb > 1) | (qtype > 1)] = 2
 
     # Store data in a dict
     to_return = dict()
