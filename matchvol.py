@@ -6,7 +6,7 @@
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
 @version: 0.2.161216
-@date: 2016-12-06 (creation) 2016-12-16 (current version)
+@date: 2016-12-06 (creation) 2016-12-19 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -200,7 +200,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         return None
 
     # Set all values less than minrefp as missing
-    ibadx, ibady = np.where(reflectivity_satellite < minrefp)  # WHERE(reflectivity_satellite lt minrefp,nbad)
+    ibadx, ibady = np.where(reflectivity_satellite < minrefp)
     if len(ibadx) > 0:
         reflectivity_satellite[ibadx, ibady] = np.NaN
 

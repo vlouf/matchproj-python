@@ -129,7 +129,7 @@ def get_filename_from_date(file_list, the_date):
         try:
             re.findall(rt_str, the_file)[0]  # If does not exist it raises an error
             to_return = the_file
-            break
+            break  # We found what we are looking for, exiting the loop
         except IndexError:
             continue
 
