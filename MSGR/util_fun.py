@@ -12,6 +12,7 @@ import os
 import datetime
 import numpy as np
 import copy
+from dateutil import parser
 
 
 def find_file_with_string(flist, orb):
@@ -44,7 +45,8 @@ def get_files(inpath, date=None):
     filename matches.
     '''
 
-    supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5', '.H5']
+    supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5',
+                           '.H5', '.lassen', '.PPI', '.UF']
     flist = []
 
     # Check date type
@@ -56,11 +58,11 @@ def get_files(inpath, date=None):
 
             # If no date provided, nothing new under the sun
             if date is None:
-                pass
-            elif len(date) == 8:
-                # Check is provided date is found in the file name
-                if len(re.findall(date, filenames_slice)) == 0:
-                    continue
+                pass  # pretends there was no if statement
+            elif date in filenames_slice:
+                pass  # pretends there was no if statement
+            else:
+                continue
 
             file_extension = os.path.splitext(str(filenames_slice))[1]
             # Get extension
@@ -89,11 +91,11 @@ def get_time_from_filename(filename, date):
     # Looking for date followed by underscore and 6 consecutives number (i.e.
     # the time)
     try:
-        date_time_str = re.findall(date + '_[0-9]{6}', filename)[0]
+        # There is maybe an optionnal character (like _) between date and time
+        date_time_str = re.findall(date + ".?[0-9]{6}", filename)[0]
+        to_return = parser.parse(date_time_str, fuzzy=True)
     except IndexError:
-        return None
-    # Turn it into a datetime object
-    to_return = datetime.datetime.strptime(date_time_str, '%Y%m%d_%H%M%S')
+        to_return = None
 
     return to_return  # Type: str
 
@@ -121,7 +123,8 @@ def get_filename_from_date(file_list, the_date):
     returns it.
     '''
 
-    rt_str = the_date.strftime("%Y%m%d_%H%M%S")
+    # There is maybe an optionnal character(underscore) between date and time
+    rt_str = the_date.strftime("%Y%m%d.?%H%M%S")
     for the_file in file_list:
         try:
             re.findall(rt_str, the_file)[0]  # If does not exist it raises an error
@@ -144,7 +147,7 @@ def chunks(l, n):
 
 def print_with_time(txt):
     '''
-    PRINT_WITH_TIME    
+    PRINT_WITH_TIME
     '''
     pfix = "[" + str(datetime.datetime.now().isoformat()) + "]\t"
     print("\033[94m{}\033[00m" .format(pfix) + txt)

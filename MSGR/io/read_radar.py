@@ -55,14 +55,50 @@ def populate_missing_azimuth(azi, refl_slice, ngate):
     return azi, tmp_refl
 
 
-def what_is_the_reflectivity_field_name(radar):
+def get_reflectivity_field_name(radar):
     '''
-    WHAT_IS_THE_REFLECTIVITY_FIELD_NAME
+    GET_REFLECTIVITY_FIELD_NAME
     Because of different conventions for naming fields, it will try a variety
     of different reflectvity name and return the first one that works
     '''
 
     potential_name = ['DBZ_F', 'DBZ', 'reflectivity']
+    for pn in potential_name:
+        try:
+            rd = radar.fields[pn]
+            return pn
+        except KeyError:
+            continue
+
+    return None
+
+
+def get_phidb_field_name(radar):
+    '''
+    GET_PHIDB_FIELD_NAME
+    Because of different conventions for naming fields, it will try a variety
+    of different reflectvity name and return the first one that works
+    '''
+
+    potential_name = ['PHIDP_F', 'PHIDP', 'differential_phase']
+    for pn in potential_name:
+        try:
+            rd = radar.fields[pn]
+            return pn
+        except KeyError:
+            continue
+
+    return None
+
+
+def get_rhohv_field_name(radar):
+    '''
+    GET_RHOHV_FIELD_NAME
+    Because of different conventions for naming fields, it will try a variety
+    of different reflectvity name and return the first one that works
+    '''
+
+    potential_name = ['RHOHV_F', 'RHOHV', 'cross_correlation_ratio']
     for pn in potential_name:
         try:
             rd = radar.fields[pn]
@@ -85,10 +121,15 @@ def read_radar(infile, attenuation_correction=True):
     except KeyError:
         radar = pyart.aux_io.read_odim_h5(infile)
 
-    refl_field_name = what_is_the_reflectivity_field_name(radar)
+    refl_field_name = get_reflectivity_field_name(radar)
 
     if attenuation_correction:
-        radar = correct_attenuation(radar, refl_field_name=refl_field_name)
+        phidp_name = get_phidb_field_name(radar)
+        rhohv_name = get_rhohv_field_name(radar)
+        radar = correct_attenuation(radar,
+                                    refl_field_name=refl_field_name,
+                                    rhv_field_name=rhohv_name,
+                                    phidp_field_name=phidp_name)
 
     rg = radar.range['data']  # Extract range
     sweep_number = radar.sweep_number['data']  # Extract number of tilt

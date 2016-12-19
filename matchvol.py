@@ -43,7 +43,7 @@ from MSGR.util_fun import *                 # bunch of useful functions
 def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     '''
     MATCHPROJ_FUN
-    the_file: name of the satellite data file. 
+    the_file: name of the satellite data file.
     file_2A25_trmm: TRMM only. its data comes in set of 2 files.
     julday: date of the day of comparison. Type: datetime
     returns a dictionnary structure containing the comparable reflectivities.
@@ -215,6 +215,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     if len(radar_file_list) == 0:
         print_red('No radar file found for this date '+ julday.strftime("%d %b %Y"))
         return None
+
+    print_green("%i radar files found." % (len(radar_file_list)))
 
     # Get the datetime for each radar files
     dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
