@@ -2,9 +2,11 @@ from numpy import sqrt, cos, sin, tan, pi
 
 
 def radar_gaussian_curve(lat0):
-    '''RADAR_GAUSSIAN_CURVE'''
-    '''Determine the Earth's Gaussian radius of curvature at the radar'''
-    '''https://en.wikipedia.org/wiki/Earth_radius#Radii_of_curvature'''
+    '''
+    RADAR_GAUSSIAN_CURVE
+    Determine the Earth's Gaussian radius of curvature at the radar
+    https://en.wikipedia.org/wiki/Earth_radius#Radii_of_curvature
+    '''
 
     # Major and minor radii of the Ellipsoid
     a = 6378137.0 # in meters
@@ -19,7 +21,7 @@ def radar_gaussian_curve(lat0):
     return ae
 
 '''
-# !!!! USELESS SINCE IT IS MOVED TO CONFIGURATION FILE !!!!
+# !!!! USELESS SINCE IT HAS BEEN MOVED TO CONFIGURATION FILE !!!!
 def ground_radar_params(rname='CPOL'):
     """GROUND_RADAR_PARAMS"""
     """Input parameters:

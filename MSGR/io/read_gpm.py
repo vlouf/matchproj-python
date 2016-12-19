@@ -1,7 +1,28 @@
 import h5py
 import numpy as np
 
+
 def read_gpm(infile):
+    """
+    READ_GPM
+    Read HDF5 GPM file with these parameters:
+    - dataQuality
+    - landSurfaceType
+    - flagPrecip
+    - flagBB
+    - heightBB
+    - widthBB
+    - qualityBB
+    - typePrecip
+    - qualityTypePrecip
+    - zFactorCorrected
+
+    It will reverse direction along the beam for reflectivity so that the first
+    value along the z-axis of the reflectivity array corresponds to the ground
+    value and not the top of the atm.
+
+    Returns a dictionnary containing the data.
+    """
 
     with h5py.File(infile   , 'r') as file_id:
         obj_id = file_id['NS']

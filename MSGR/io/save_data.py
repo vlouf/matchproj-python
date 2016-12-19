@@ -1,8 +1,11 @@
 import pickle
 
 def save_data(out_file, data):
-    '''SAVE_DATA'''
-    '''Save data in file'''
+    '''
+    SAVE_DATA
+    Dumps data in a python's pickle file
+    Will try to populate the metadata based on the key name.
+    '''
 
     metadat = dict()
     metadat['iscan'] = {'long_name': 'PR scan index', 'units': None}
@@ -44,6 +47,7 @@ def save_data(out_file, data):
         except KeyError:
             to_save[k] = {'data': data[k], 'long_name': None, 'units':None}
 
+    # Opening file and dumping data in it.
     with open(out_file + ".pkl", 'wb') as fid:
         pickle.dump(to_save, fid)
 

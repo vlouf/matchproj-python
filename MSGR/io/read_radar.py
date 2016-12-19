@@ -6,14 +6,21 @@ from ..util_fun import print_yellow
 
 def correct_attenuation(radar, refl_field_name='DBZ_F',
                         rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'):
+    """
+    CORRECT_ATTENUATION
+    Use of pyart correction capabilities to estimate the attenuation and
+    correct it
+    Returns a pyart radar structure.
+    """
 
     the_radar = copy.deepcopy(radar)
     print_yellow("Correcting ground radar attenuation.")
-    # Creating fake NCP field.
 
     try:
+        # Tries if normalised coherent poiwer field exist
         ncp = radar.fields['NCP']
     except KeyError:
+        # Creates a dummy NCP field.
         reflec = the_radar.fields[refl_field_name]['data']
         ncp = np.zeros_like(reflec) + 1
         the_radar.add_field_like(refl_field_name, 'NCP', ncp)
@@ -24,11 +31,18 @@ def correct_attenuation(radar, refl_field_name='DBZ_F',
 
     the_radar.add_field('specific_attenuation', spec_at)
     the_radar.add_field('corrected_reflectivity_horizontal', cor_z)
+
     return the_radar
 
 
 def populate_missing_azimuth(azi, refl_slice, ngate):
-    '''POPULATE_MISSING_AZIMUTH'''
+    '''
+    POPULATE_MISSING_AZIMUTH
+    If the number of azimuth of one sweep is lower than 360, create empty
+    columns corresponding to the missing azimuth.
+
+    Returns the new azimuth and the reflectvity field
+    '''
 
     a = azi.tolist()
     tmp_refl = refl_slice
@@ -42,9 +56,11 @@ def populate_missing_azimuth(azi, refl_slice, ngate):
 
 
 def what_is_the_reflectivity_field_name(radar):
-    '''WHAT_IS_THE_REFLECTIVITY_FIELD_NAME'''
-    '''Try a variety of different reflectvity name and return the first one
-    that works'''
+    '''
+    WHAT_IS_THE_REFLECTIVITY_FIELD_NAME
+    Because of different conventions for naming fields, it will try a variety
+    of different reflectvity name and return the first one that works
+    '''
 
     potential_name = ['DBZ_F', 'DBZ', 'reflectivity']
     for pn in potential_name:
@@ -58,7 +74,11 @@ def what_is_the_reflectivity_field_name(radar):
 
 
 def read_radar(infile, attenuation_correction=True):
-    '''READ_RADAR'''
+    '''
+    READ_RADAR
+    Read a radar data file, will correct the attenuation if kindly asked.
+    Returns a dictionnary containing the necessary parameters.
+    '''
 
     try:
         radar = pyart.io.read(infile)

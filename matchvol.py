@@ -41,10 +41,13 @@ from MSGR.util_fun import *                 # bunch of useful functions
 
 
 def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
-    '''MATCHPROJ_FUN'''
-    '''the_file: name of the satellite data file. Type: str'''
-    '''julday: date of the day of comparison. Type: datetime'''
-    '''returns a dictionnary structure containing the comparable reflectivities.'''
+    '''
+    MATCHPROJ_FUN
+    the_file: name of the satellite data file. 
+    file_2A25_trmm: TRMM only. its data comes in set of 2 files.
+    julday: date of the day of comparison. Type: datetime
+    returns a dictionnary structure containing the comparable reflectivities.
+    '''
 
     julday = dtime
     if l_gpm:
@@ -496,9 +499,11 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 
 
 def MAIN_matchproj_fun(the_date):
-    """MAIN_MATCHPROJ_FUN"""
-    """Here we loop over the satellite files and call matchproj_fun."""
-    """the_date: a datetime structure for which to run the code"""
+    """
+    MAIN_MATCHPROJ_FUN
+    Here we loop over the satellite files and call matchproj_fun.
+    the_date: a datetime structure for which to run the code.
+    """
 
     # Note the Julian day corresponding to 00 UTC
     julday = datetime.datetime(the_date.year, the_date.month, the_date.day, 0, 0, 0)
@@ -551,8 +556,10 @@ def MAIN_matchproj_fun(the_date):
 
 
 def welcome_message():
-    '''WELCOME_MESSAGE'''
-    '''Print a welcome message with a recap on the main global variables status'''
+    '''
+    WELCOME_MESSAGE
+    Print a welcome message with a recap on the main global variables status
+    '''
 
     msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
 
@@ -585,8 +592,10 @@ def welcome_message():
 
 
 def main():
-    """MAIN"""
-    """Multiprocessing control room"""
+    """
+    MAIN
+    Multiprocessing control room
+    """
 
     date_range = pd.date_range(start_date, end_date)
 
@@ -609,7 +618,9 @@ def main():
 
 
 if __name__=='__main__':
-    """GLOBAL variables declaration"""
+    """
+    GLOBAL variables declaration
+    """
 
     """ User-defined parameters """
     config = configparser.ConfigParser()

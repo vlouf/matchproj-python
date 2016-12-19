@@ -5,8 +5,12 @@ from ..util_fun import print_red
 
 
 def read_trmm(hdf_file1, hdf_file2):
-    '''READ_TRMM'''
-    '''File 1 and File 2'''
+    '''
+    READ_TRMM
+    File 1: 2A23
+    File 2: 2A25
+    Returns a dictionnary containing the necessary parameters.
+    '''
 
     hdf = SD(hdf_file1, SDC.READ)
     year = hdf.select('Year').get()
@@ -15,8 +19,8 @@ def read_trmm(hdf_file1, hdf_file2):
     hour = hdf.select('Hour').get()
     minute = hdf.select('Minute').get()
     second = hdf.select('Second').get()
-    # DayOfYear = hdf.select('DayOfYear').get()
-    # scanTime_sec = hdf.select('scanTime_sec').get()
+    # DayOfYear = hdf.select('DayOfYear').get()  # Useless
+    # scanTime_sec = hdf.select('scanTime_sec').get()  # Useless
     Latitude = hdf.select('Latitude').get()
     Longitude = hdf.select('Longitude').get()
     bbwidth = hdf.select('BBwidth').get()

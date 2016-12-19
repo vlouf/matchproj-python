@@ -4,8 +4,10 @@ from numba import jit
 
 @jit
 def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
-    """_CONVERT_REFLECTIVITY_FROM_KU"""
-    """Convert to S-band using method of Cao et al. (2013)"""
+    """
+    _CONVERT_REFLECTIVITY_FROM_KU
+    Convert to S-band using method of Cao et al. (2013)
+    """
 
     # Set coefficients for conversion from Ku-band to S-band
     #        Rain      90%      80%      70%      60%      50%      40%      30%      20%      10%     Snow
@@ -66,20 +68,28 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
 
 
 def convert_to_Sband(refp, zp, zbb, bbwidth):
-    """CONVERT_TO_SBAND"""
+    """
+    CONVERT_TO_SBAND
+    """
+
     to_send = copy.deepcopy(refp)
     return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 0)
 
 
 def convert_to_Cband(refp, zp, zbb, bbwidth):
-    """CONVERT_TO_CBAND"""
+    """
+    CONVERT_TO_CBAND
+    """
+
     to_send = copy.deepcopy(refp)
     return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 1)
 
 
 def convert_to_Ku(refg, zg, zbb, l_cband=1):
-    '''CONVERT_TO_KU'''
-    '''Method of Liao and Meneghini (2009)'''
+    '''
+    CONVERT_TO_KU
+    Method of Liao and Meneghini (2009)
+    '''
 
     refg_ku = np.zeros(refg.shape) + np.NaN
     iax, iay, iaz = np.where(zg >= zbb)

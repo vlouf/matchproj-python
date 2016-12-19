@@ -1,19 +1,23 @@
 import re
 import numpy as np
-from numba import jit
+from numba import jit  # It improves speed, as somebody told me, not yet convinced
 from numpy import sqrt, cos, sin, tan, pi
 
 @jit
 def correct_parallax(xc, yc, xp, yp, alpha, the_range):
-    # Correct for parallax to get x, y, z coordinates
-    # This function took 2 days to write....
+    """
+    CORRECT_PARALLAX
+    Correct for parallax to get x, y, z coordinates
+    This 'simple' function took 2 days to write....
 
-    # Remember Python's ways: unlike IDL, rebin cannot change the number
-    # of dimension. the_range dimension is equal to nbin, and we nw wnat
-    # to copy it for nprof x nbin
+    Remember Python's ways: unlike IDL, rebin cannot change the number
+    of dimension. the_range dimension is equal to nbin, and we now wnat
+    to copy it for nprof x nbin
 
-    # alpha dim is nprof x 1 and now we want nprof x nbin
-    # xc, yc, xp, yp dimensions are nprof x 1
+    alpha dim is nprof x 1 and now we want nprof x nbin
+    xc, yc, xp, yp dimensions are nprof x 1
+    """
+
     nprof, nbin = the_range.shape
     the_alpha = np.zeros((nprof, nbin))
     xc0 = np.zeros((nprof, nbin))
@@ -40,7 +44,10 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
 
 
 def satellite_params(sname='GPM'):
-    """SATELLITE_PARAMS"""
+    """
+    SATELLITE_PARAMS
+    return the gate spacing and the orbital height of the satellite
+    """
 
     sname = sname.upper()
     # Orbit parameters
@@ -49,7 +56,7 @@ def satellite_params(sname='GPM'):
         drt = 125.     # gate spacing of GPM
     elif sname == 'TRMM':
         zt = 402500.   # orbital height of TRMM (post boost)
-        drt = 250.     # gate spacing of TRMM        
+        drt = 250.     # gate spacing of TRMM
     else:
         raise ValueError("The available satellites are GPM or TRMM.")
     bwt=0.71
@@ -58,9 +65,11 @@ def satellite_params(sname='GPM'):
 
 
 def get_orbit_number(the_file):
-    """GET_ORBIT_NUMBER"""
-    '''Get the orbit number from filename (last serie of 6 consecutives numbers
-       in filename)'''
+    """
+    GET_ORBIT_NUMBER
+    Returns the orbit number from filename (last serie of 6 consecutives number
+    in filename
+    """
 
     to_return = re.findall("[0-9]{6}", the_file)[-1] #Get orbit number
     return to_return

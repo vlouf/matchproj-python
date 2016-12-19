@@ -15,14 +15,18 @@ import copy
 
 
 def find_file_with_string(flist, orb):
-    '''FIND_FILE_WITH_STRING'''
+    '''
+    FIND_FILE_WITH_STRING
+    '''
     return [fd for fd in flist if orb in fd][0]
 
 
 def nancumsum(a, ax=0):
-    '''NANCUMSUM'''
-    '''Cumsum in numpy does not ignore the NaN values, this one does'''
-    '''Note that nancumsum will be implemented in numpy v1.12'''
+    '''
+    NANCUMSUM
+    Cumsum in numpy does not ignore the NaN values, this one does
+    Note that nancumsum will be implemented in numpy v1.12
+    '''
 
     tmp = copy.deepcopy(a)
     tmp[np.isnan(tmp)] = 0
@@ -32,11 +36,13 @@ def nancumsum(a, ax=0):
     return rslt
 
 def get_files(inpath, date=None):
-    '''GET_FILES'''
-    '''Returns a list of with the supported extension (netcdf) in the given
+    '''
+    GET_FILES
+    Returns a list of with the supported extension (netcdf) in the given
     path. Will recursively search in subdirectories too. If provided a date
     (string or datetime object) it will only returns the files whose
-    filename matches.'''
+    filename matches.
+    '''
 
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5', '.H5']
     flist = []
@@ -75,8 +81,10 @@ def get_files(inpath, date=None):
 
 
 def get_time_from_filename(filename, date):
-    '''GET_TIME_FROM_FILENAME'''
-    '''Capture the time string inside the filename and returns it'''
+    '''
+    GET_TIME_FROM_FILENAME
+    Capture the time string inside the filename and returns it.
+    '''
 
     # Looking for date followed by underscore and 6 consecutives number (i.e.
     # the time)
@@ -91,8 +99,10 @@ def get_time_from_filename(filename, date):
 
 
 def get_closest_date(list_date, base_time):
-    '''GET_CLOSEST_DATE'''
-    """from:  http://stackoverflow.com/a/17249470/846892"""
+    '''
+    GET_CLOSEST_DATE
+    from:  http://stackoverflow.com/a/17249470/846892
+    '''
 
     b_d = base_time
 
@@ -105,9 +115,11 @@ def get_closest_date(list_date, base_time):
 
 
 def get_filename_from_date(file_list, the_date):
-    '''GET_FILENAME_FROM_DATE'''
-    '''Looks for a file in a list of file with the exact corresponding date and
-       returns it'''
+    '''
+    GET_FILENAME_FROM_DATE
+    Looks for a file in a list of file with the exact corresponding date and
+    returns it.
+    '''
 
     rt_str = the_date.strftime("%Y%m%d_%H%M%S")
     for the_file in file_list:
@@ -122,19 +134,24 @@ def get_filename_from_date(file_list, the_date):
 
 
 def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    """Use it to cut a big list into smaller chunks"""
+    """
+    Yield successive n-sized chunks from l.
+    Use it to cut a big list into smaller chunks.
+    """
     for i in range(0, len(l), n):
         yield l[i:i + n] # type: Generator[list of strings]
 
 
 def print_with_time(txt):
+    '''
+    PRINT_WITH_TIME    
+    '''
     pfix = "[" + str(datetime.datetime.now().isoformat()) + "]\t"
     print("\033[94m{}\033[00m" .format(pfix) + txt)
     return None
 
 
-# To print in color in the terminal
+# To print in color in the terminal. Pretty much self-explanatory.
 def print_red(txt):
     print_with_time("\033[91m{}\033[00m".format(txt))
     return None
