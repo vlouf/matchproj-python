@@ -596,25 +596,14 @@ def welcome_message():
 def main():
     """
     MAIN
-    Multiprocessing control room
+    Multiprocessing control room    
     """
 
     date_range = pd.date_range(start_date, end_date)
 
-    # Chunking the date_range list in order to make it smaller to ingest in
-    # multiprocessing. This allows to clear multiprocessing memory at every
-    # chunks and not going to cray with memory eating. It's just a little trick.
-    if len(date_range) > ncpu*2:
-
-        date_range_chunk = chunks(date_range, ncpu*2)  # Type: Generator
-        for date_range_slice in date_range_chunk:
-            with Pool(ncpu) as pool:
-                date_list = list(date_range_slice)
-                pool.map(MAIN_matchproj_fun, date_list)
-
-    else:
+     for date_range_slice in date_range:
         with Pool(ncpu) as pool:
-            pool.map(MAIN_matchproj_fun, date_range)
+            pool.map(MAIN_matchproj_fun, date_range_slice)
 
     return None
 

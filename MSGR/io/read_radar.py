@@ -171,6 +171,8 @@ def read_radar(infile, attenuation_correction=True):
         # print(azi[uniq_index][0], azi[uniq_index][-1])
 
     azimuth = np.arange(0, 360, dtype=int)
+    reflec[reflec >= 100] = np.NaN  # NaNing the weird values
+    reflec[reflec <= -20] = np.NaN
 
     to_return = dict()
     to_return = {'ngate': ngate,        # Number of gates
