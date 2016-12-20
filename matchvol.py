@@ -6,7 +6,7 @@
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
 @version: 0.2.161216
-@date: 2016-12-06 (creation) 2016-12-19 (current version)
+@date: 2016-12-06 (creation) 2016-12-20 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -216,7 +216,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         print_red('No radar file found for this date '+ julday.strftime("%d %b %Y"))
         return None
 
-    print_green("%i radar files found." % (len(radar_file_list)))
+    print_yellow("%i radar files found." % (len(radar_file_list)))
 
     # Get the datetime for each radar files
     dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
@@ -328,7 +328,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     irefp = 10**(irefp/10.0)
     irefg = 10**(irefg/10.0)
 
-    print_yellow("Starting comparison")
+    print_green("Starting comparison")
 
     # Loop over the TRMM/GPM profiles and Loop over the GR elevation scan
     for ii, jj in itertools.product(range(nprof), range(ntilt)):
@@ -596,15 +596,14 @@ def welcome_message():
 def main():
     """
     MAIN
-    Multiprocessing control room    
+    Multiprocessing control room
     """
 
     date_range = pd.date_range(start_date, end_date)
-
-     for date_range_slice in date_range:
+    for date_range_slice in date_range:
         with Pool(ncpu) as pool:
             pool.map(MAIN_matchproj_fun, date_range_slice)
-
+    
     return None
 
 

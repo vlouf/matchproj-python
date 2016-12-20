@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from numba import jit
+from numba import jit  # Supposedly it improves performances.
 
 @jit
 def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):

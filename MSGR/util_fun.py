@@ -1,5 +1,6 @@
 """
 This module regroups a bunch of usefull functions:
+    - find_file_with_string (return the element of a list containing a specific string)
     - nancumsum (numpy's cumsum with support of NaN values)
     - get_files (walks into directories and returns all the files with supported extension)
     - get_time_from_filename (uses regular expression to catch the date in a filename)
@@ -18,6 +19,7 @@ from dateutil import parser
 def find_file_with_string(flist, orb):
     '''
     FIND_FILE_WITH_STRING
+    Return the element of a list 'flist' containing the value of 'orb'
     '''
     return [fd for fd in flist if orb in fd][0]
 
@@ -139,7 +141,7 @@ def get_filename_from_date(file_list, the_date):
 def chunks(l, n):
     """
     Yield successive n-sized chunks from l.
-    Use it to cut a big list into smaller chunks.
+    Use it to cut a big list into smaller chunks. => memory efficient 
     """
     for i in range(0, len(l), n):
         yield l[i:i + n] # type: Generator[list of strings]
