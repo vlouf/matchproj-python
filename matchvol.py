@@ -6,7 +6,7 @@
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
 @version: 0.2.161216
-@date: 2016-12-06 (creation) 2016-12-20 (current version)
+@date: 2016-12-06 (creation) 2016-12-19 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 
@@ -600,10 +600,22 @@ def main():
     """
 
     date_range = pd.date_range(start_date, end_date)
-    for date_range_slice in date_range:
+
+    # Chunking the date_range list in order to make it smaller to ingest in
+    # multiprocessing. This allows to clear multiprocessing memory at every
+    # chunks and not going to cray with memory eating. It's just a little trick.
+    if len(date_range) > ncpu*2:
+
+        date_range_chunk = chunks(date_range, ncpu*2)  # Type: Generator
+        for date_range_slice in date_range_chunk:
+            with Pool(ncpu) as pool:
+                date_list = list(date_range_slice)
+                pool.map(MAIN_matchproj_fun, date_list)
+
+    else:
         with Pool(ncpu) as pool:
-            pool.map(MAIN_matchproj_fun, date_range_slice)
-    
+            pool.map(MAIN_matchproj_fun, date_range)
+
     return None
 
 
