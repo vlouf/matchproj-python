@@ -576,6 +576,8 @@ def welcome_message():
           start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
     if l_atten:
         print("Ground radar attenuation will be corrected.")
+    else:
+        print("Ground radar attenuation will NOT be corrected. I suppose it has already been done.")
     if l_dbz:
         print("The statistics will be done in dBZ.")
     else:
@@ -622,7 +624,7 @@ def main():
 if __name__=='__main__':
     """
     GLOBAL variables declaration
-    They are declared in the config.ini file.    
+    They are declared in the config.ini file.
     """
 
     """ User-defined parameters """
