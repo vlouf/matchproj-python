@@ -15,7 +15,23 @@ This code has been tested and conceived on Python 3.5 and should work for any ve
 
 ## Usage
 
-You should only modify the config.ini file to match your own configuration and then run python matchvol.py in a terminal.
+You should only modify the config.ini file to match your own configuration and then run python matchvol.py in a terminal. In the config.ini file you can choose:
+* Number of CPU for multiprocessing.
+* Start and end date of processing in YYYYMMDD format.
+* Input path for ground radar files, satellite files.
+* Output path for saved data.
+* The radar general information (name and ID, used for naming the output saving file), latitude, longitude, altitude, and beamwidth.
+* Min and max range (in m) of ground radar.
+* Different thresholds for comparison like:
+..* Threshold on minimum satellite and ground radar reflectivity.
+..* Minimum number of pair for comparison.
+..* Minimum number of satellite profiles for comparison.
+..* Maximum time difference between radar and satellite, in seconds.
+* Choose between the use of dBZ or natural units for the statistical calculations.
+* Declare that satellite is GPM (false for TRMM).
+* Ground radar is C-Band (false for S-Band).
+* Writing results in output directory.
+* Correct ground radar attenuation using pyart.
 
 ## Satellite data
 

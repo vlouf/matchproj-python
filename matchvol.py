@@ -622,6 +622,7 @@ def main():
 if __name__=='__main__':
     """
     GLOBAL variables declaration
+    They are declared in the config.ini file.    
     """
 
     """ User-defined parameters """
