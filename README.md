@@ -23,10 +23,10 @@ You should only modify the config.ini file to match your own configuration and t
 * The radar general information (name and ID, used for naming the output saving file), latitude, longitude, altitude, and beamwidth.
 * Min and max range (in m) of ground radar.
 * Different thresholds for comparison like:
-..* Threshold on minimum satellite and ground radar reflectivity.
-..* Minimum number of pair for comparison.
-..* Minimum number of satellite profiles for comparison.
-..* Maximum time difference between radar and satellite, in seconds.
+    - Threshold on minimum satellite and ground radar reflectivity.
+    - Minimum number of pair for comparison.
+    - Minimum number of satellite profiles for comparison.
+    - Maximum time difference between radar and satellite, in seconds.
 * Choose between the use of dBZ or natural units for the statistical calculations.
 * Declare that satellite is GPM (false for TRMM).
 * Ground radar is C-Band (false for S-Band).
