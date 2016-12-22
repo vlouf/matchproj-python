@@ -9,7 +9,7 @@
 @date: 2016-12-06 (creation) 2016-12-19 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
-
+TODO: see read_radar.py
 ################################################################################
 """
 

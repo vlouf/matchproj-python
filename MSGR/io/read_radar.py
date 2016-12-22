@@ -119,6 +119,10 @@ def read_radar(infile, attenuation_correction=True):
     try:
         radar = pyart.io.read(infile)
     except KeyError:
+        # TODO:
+        # Surendra had problem here. We had to comment the try/except and remove
+        # the io.read above just to keep the aux_io below. Need to inverstigate
+        # what is going on with odim HDF5 file.
         radar = pyart.aux_io.read_odim_h5(infile)
 
     refl_field_name = get_reflectivity_field_name(radar)
