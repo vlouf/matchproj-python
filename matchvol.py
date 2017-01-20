@@ -255,14 +255,15 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     ngate = radar['ngate']
     nbeam = radar['nbeam']
     ntilt = radar['ntilt']
-    r_range = radar['range']
-    azang = radar['azang']
+    rg = radar['range']
+    ag = radar['azang']
+    eg = radar['elev_3d']
     elang = radar['elang']
     dr = radar['dr']
     reflectivity_ground_radar = radar['reflec']
 
     # Determine the Cartesian coordinates of the ground radar's pixels
-    rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
+    # rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
     zg = sqrt(rg**2 + (earth_gaussian_radius + z0)**2 + \
          2*rg*(earth_gaussian_radius + z0)*sin(pi/180*eg)) - earth_gaussian_radius
     sg = earth_gaussian_radius*np.arcsin(rg*cos(pi/180*eg)/(earth_gaussian_radius + zg))
