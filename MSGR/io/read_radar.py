@@ -62,7 +62,7 @@ def get_reflectivity_field_name(radar):
     of different reflectvity name and return the first one that works
     '''
 
-    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'corrected_reflectivity']
+    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'Refl', 'corrected_reflectivity']
     for pn in potential_name:
         try:
             rd = radar.fields[pn]
@@ -126,6 +126,9 @@ def read_radar(infile, attenuation_correction=True):
         radar = pyart.aux_io.read_odim_h5(infile)
 
     refl_field_name = get_reflectivity_field_name(radar)
+    if refl_field_name is None:
+        print_red('Reflectivity field not found.')
+        return None
 
     if attenuation_correction:
         phidp_name = get_phidb_field_name(radar)
@@ -151,6 +154,9 @@ def read_radar(infile, attenuation_correction=True):
         # Allocate reflectivity array with dimensions (range, azimuth, elevation)
         reflec = np.zeros((ngate, nbeam, ntilt))
         elevation = np.zeros((ntilt, ))
+
+        if sweep_number[0] == 1:  # New pyart version causing problems ?
+            sweep_number = sweep_number-1
 
         for cnt, sw in enumerate(sweep_number):
             sweep_slice = radar.get_slice(sw)  # Get indices of given slice

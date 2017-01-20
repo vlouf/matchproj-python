@@ -45,9 +45,9 @@ def read_trmm(hdf_file1, hdf_file2):
     nbin = hdf_25.select('correctZFactor').dimensions()['ncell1']
     hdf_25.end()
 
-    if not (Latitude == Latitude25).all() and (Longitude == Longitude25).all():
-        print_red("Lat/Lon are differents between {} and {}. Returning None.".format(hdf_file1, hdf_file2))
-        return None
+    # if not (Latitude == Latitude25).all() and (Longitude == Longitude25).all():
+    #     print_red("Lat/Lon are differents between {} and {}. Returning None.".format(hdf_file1, hdf_file2))
+    #     return None
 
     reflectivity = correctZFactor/100.0
 

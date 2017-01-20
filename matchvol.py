@@ -5,8 +5,8 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.2.161216
-@date: 2016-12-06 (creation) 2016-12-19 (current version)
+@version: 0.3.170120
+@date: 2016-12-06 (creation) 2017-1-20 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 TODO: see read_radar.py
