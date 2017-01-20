@@ -252,6 +252,9 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     print_with_time('READING ' + radfile)
     radar = read_radar(radfile, l_atten)
 
+    if radar is None:
+        return None  # Bad dimensions message already printed
+
     ngate = radar['ngate']
     nbeam = radar['nbeam']
     ntilt = radar['ntilt']
