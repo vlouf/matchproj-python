@@ -9,7 +9,9 @@
 @date: 2016-12-06 (creation) 2017-1-24 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
-TODO: see read_radar.py
+TODO: see read_radar.py. Surendra had problem here. We had to comment the
+try/except and remove the io.read above just to keep the aux_io below. Need to
+inverstigate what is going on with odim HDF5 file.
 ################################################################################
 """
 
@@ -136,9 +138,6 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         nerr[2] += 1
         print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
         return None
-
-    # Note the scan and ray indices for these rays
-    # iscan, iray = np.unravel_index(iprof, d.shape)
 
     # Extract data for these rays
     xp = xp[iscan, iray]
@@ -590,7 +589,7 @@ def main():
 if __name__=='__main__':
     """
     GLOBAL variables declaration
-    They are declared in the config.ini file.
+    Reading configuration file.
     """
 
     """ User-defined parameters """
