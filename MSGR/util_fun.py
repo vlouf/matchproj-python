@@ -10,9 +10,10 @@ This module regroups a bunch of usefull functions:
 
 import re
 import os
+import copy
+import crayons  # Color terminal
 import datetime
 import numpy as np
-import copy
 from dateutil import parser
 
 
@@ -141,7 +142,7 @@ def get_filename_from_date(file_list, the_date):
 def chunks(l, n):
     """
     Yield successive n-sized chunks from l.
-    Use it to cut a big list into smaller chunks. => memory efficient 
+    Use it to cut a big list into smaller chunks. => memory efficient
     """
     for i in range(0, len(l), n):
         yield l[i:i + n] # type: Generator[list of strings]
@@ -152,26 +153,31 @@ def print_with_time(txt):
     PRINT_WITH_TIME
     '''
     pfix = "[" + str(datetime.datetime.now().isoformat()) + "]\t"
-    print("\033[94m{}\033[00m" .format(pfix) + txt)
+    print(crayons.blue(pfix, bold=True) + txt)    
     return None
 
 
 # To print in color in the terminal. Pretty much self-explanatory.
-def print_red(txt):
-    print_with_time("\033[91m{}\033[00m".format(txt))
+def print_red(txt, bold=False):
+    print_with_time(crayons.red(txt, bold))
     return None
 
 
-def print_green(txt):
-    print_with_time("\033[92m{}\033[00m" .format(txt))
+def print_green(txt, bold=False):
+    print_with_time(crayons.green(txt, bold))
     return None
 
 
-def print_yellow(txt):
-    print_with_time("\033[93m{}\033[00m" .format(txt))
+def print_yellow(txt, bold=False):
+    print_with_time(crayons.yellow(txt, bold))
     return None
 
 
-def print_blue(txt):
-    print("\033[95m{}\033[00m" .format(txt))
+def print_blue(txt, bold=False):
+    print(crayons.blue(txt, bold))
+    return None
+
+
+def print_magenta(txt, bold=False):
+    print(crayons.magenta(txt, bold))
     return None

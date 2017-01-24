@@ -198,15 +198,15 @@ def read_radar(infile, attenuation_correction=True):
         to_return = {'ngate': ngate,        # Number of gates
                      'nbeam': nbeam,        # Number of azimuth by elevation
                      'ntilt': ntilt,        # Number of sweeps
-                     'azang': az3d,           # Azimuth
-                     'elev_3d': el3d,           # Elevation angle
-                     'range': rg3d,           # Radar's range
+                     'azang': az3d,         # Azimuth
+                     'elev_3d': el3d,       # Elevation angle
+                     'range': rg3d,         # Radar's range
                      'elang' : elevation,
                      'dr': rg[2]-rg[1],     # Gate spacing
                      'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
 
     else:
-        print_red('Radar: bad dimensions, returning None')
+        print_red('Radar: bad dimensions, skipping...', bold=True)
         to_return = None
 
     return to_return  # Type: Dict

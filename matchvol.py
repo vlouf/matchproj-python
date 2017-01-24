@@ -5,8 +5,8 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.3.170120
-@date: 2016-12-06 (creation) 2017-1-20 (current version)
+@version: 0.4
+@date: 2016-12-06 (creation) 2017-1-24 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 TODO: see read_radar.py
@@ -239,7 +239,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 
     # Looking at the time difference between satellite and radar
     if time_difference.seconds > maxdt:
-        print_red('Time difference is of %i s.' % (time_difference.seconds))
+        print_red('Time difference is of %i s.' % (time_difference.seconds), bold=True)
         print_red('This time difference is bigger' +
               ' than the acceptable value of %i s.' % (maxdt))
         nerr[5] += 1
@@ -555,7 +555,7 @@ def MAIN_matchproj_fun(the_date):
                        julday.strftime("%Y%m%d")
             txt = "Saving data to " + out_name + \
                   ". For orbit " + orbit + " on " + julday.strftime("%d %B %Y")
-            print_green(txt)
+            print_green(txt, bold=True)
             save_data(out_name, match_vol)
 
     return None
@@ -570,7 +570,7 @@ def welcome_message():
     msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
 
     print("#"*80)
-    print_blue("\n" + msg + "\n")
+    print_magenta("\n" + msg + "\n", bold=True)
     print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
     if l_gpm:
         print("The spaceborne instrument used is GPM.")
