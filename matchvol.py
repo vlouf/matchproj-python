@@ -57,9 +57,9 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         txt = 'READING ' + the_file
         print_with_time(txt)
     else:
-        sat = read_trmm(the_file, file_2A25_trmm)
-        txt = "READING " + the_file + "\n" + 32*" " + "READING " +  file_2A25_trmm
-        print_with_time(txt)
+        sat = read_trmm(the_file, file_2A25_trmm)        
+        print_with_time("READING " + the_file)
+        print_with_time("READING " + file_2A25_trmm)
 
     if sat is None:
         print_red('Bad satellite data')

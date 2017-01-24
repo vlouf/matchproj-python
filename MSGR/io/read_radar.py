@@ -109,6 +109,13 @@ def get_rhohv_field_name(radar):
     return None
 
 
+def get_azimuth_resolution(azimuth):
+    ra = np.diff(azimuth)
+    ra[(ra<0) | (ra>10)] = np.NaN
+    rslt = np.round(np.nanmean(ra), 1)
+    return rslt
+
+
 def read_radar(infile, attenuation_correction=True):
     '''
     READ_RADAR
@@ -147,66 +154,80 @@ def read_radar(infile, attenuation_correction=True):
 
     if (nrays/ntilt).is_integer():
         nbeam = int(nrays/ntilt)
-
-        el = np.zeros((nbeam, ntilt))
-        az = np.zeros((nbeam, ntilt))
-
-        # Allocate reflectivity array with dimensions (range, azimuth, elevation)
-        reflec = np.zeros((ngate, nbeam, ntilt))
-        elevation = np.zeros((ntilt, ))
-
-        if sweep_number[0] == 1:  # New pyart version causing problems ?
-            sweep_number = sweep_number-1
-
-        for cnt, sw in enumerate(sweep_number):
-            sweep_slice = radar.get_slice(sw)  # Get indices of given slice
-
-            raw_azi = radar.azimuth['data'][sweep_slice]
-            raw_azi[raw_azi==360] = 0
-            raw_elev = radar.elevation['data'][sweep_slice]
-
-            elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
-
-            # Extracting reflectivity
-            if attenuation_correction:
-                refl_slice = radar.fields['corrected_reflectivity_horizontal']['data'][sweep_slice]
-            else:
-                refl_slice = radar.fields[refl_field_name]['data'][sweep_slice]
-
-            _, uniq_index = np.unique(raw_azi, return_index=True)
-
-            azi = raw_azi[uniq_index]
-            elev = raw_elev[uniq_index]
-
-            relf_sort_uniq_slice = refl_slice[uniq_index, :]  # Shape  (azi, r)
-
-            el[:, cnt] = elev
-            az[:, cnt] = azi
-
-            reflec[:, :, sw] = relf_sort_uniq_slice.T  # Shape  (r, azi, elev)
-
-        reflec[reflec >= 100] = np.NaN  # NaNing the weird values
-        reflec[reflec <= -20] = np.NaN
-
-        # Make 3D matrices for coordinates shape (r, azi, elev)
-        rg2d = np.repeat(rg[:, np.newaxis], nbeam, axis=1)
-        rg3d = np.repeat(rg2d[:, :, np.newaxis], ntilt, axis=2)
-        az3d = np.repeat(az[np.newaxis, :, :], ngate, axis=0)
-        el3d = np.repeat(el[np.newaxis, :, :], ngate, axis=0)
-
-        to_return = dict()
-        to_return = {'ngate': ngate,        # Number of gates
-                     'nbeam': nbeam,        # Number of azimuth by elevation
-                     'ntilt': ntilt,        # Number of sweeps
-                     'azang': az3d,         # Azimuth
-                     'elev_3d': el3d,       # Elevation angle
-                     'range': rg3d,         # Radar's range
-                     'elang' : elevation,
-                     'dr': rg[2]-rg[1],     # Gate spacing
-                     'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
-
     else:
-        print_red('Radar: bad dimensions, skipping...', bold=True)
-        to_return = None
+        azi = radar.azimuth['data'][radar.get_slice(0)]
+        res_azi = get_azimuth_resolution(azi)
+        nbeam = int(360/res_azi)
+
+    el = np.zeros((nbeam, ntilt))
+    az = np.zeros((nbeam, ntilt))
+
+    reflec = np.zeros((ngate, nbeam, ntilt))
+    elevation = np.zeros((ntilt, ))
+
+    if sweep_number[0] == 1:  # New pyart version causing problems ?
+        sweep_number = sweep_number-1
+
+    for cnt, sw in enumerate(sweep_number):
+        sweep_slice = radar.get_slice(sw)  # Get indices of given slice
+
+        raw_azi = radar.azimuth['data'][sweep_slice]
+        raw_azi[raw_azi==360] = 0
+        raw_elev = radar.elevation['data'][sweep_slice]
+
+        elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
+
+        # Extracting reflectivity
+        if attenuation_correction:
+            refl_slice = radar.fields['corrected_reflectivity_horizontal']['data'][sweep_slice]
+        else:
+            refl_slice = radar.fields[refl_field_name]['data'][sweep_slice]
+
+        _, uniq_index = np.unique(raw_azi, return_index=True)
+
+        azi = raw_azi[uniq_index]
+        elev = raw_elev[uniq_index]
+
+        relf_sort_uniq_slice = refl_slice[uniq_index, :]  # Shape  (azi, r)
+
+        if len(azi) > nbeam:            
+            val_pos = range(0, nbeam)
+            elev = elev[val_pos]
+            azi = azi[val_pos]
+            relf_sort_uniq_slice[val_pos, :]
+
+        while len(azi) < nbeam:
+            azi = np.append(azi, np.NaN)
+            elev = np.append(elev, elev[0])
+            tmp_refl = copy.deepcopy(relf_sort_uniq_slice)
+            empty_arr = np.zeros((ngate, ))
+            tmp_refl = np.vstack((tmp_refl, empty_arr))
+
+            relf_sort_uniq_slice = tmp_refl
+
+        el[:, cnt] = elev
+        az[:, cnt] = azi
+
+        reflec[:, :, sw] = relf_sort_uniq_slice.T  # Shape  (r, azi, elev)
+
+    reflec[reflec >= 100] = np.NaN  # NaNing the weird values
+    reflec[reflec <= -20] = np.NaN
+
+    # Make 3D matrices for coordinates shape (r, azi, elev)
+    rg2d = np.repeat(rg[:, np.newaxis], nbeam, axis=1)
+    rg3d = np.repeat(rg2d[:, :, np.newaxis], ntilt, axis=2)
+    az3d = np.repeat(az[np.newaxis, :, :], ngate, axis=0)
+    el3d = np.repeat(el[np.newaxis, :, :], ngate, axis=0)
+
+    to_return = dict()
+    to_return = {'ngate': ngate,        # Number of gates
+                 'nbeam': nbeam,        # Number of azimuth by elevation
+                 'ntilt': ntilt,        # Number of sweeps
+                 'azang': az3d,         # Azimuth
+                 'elev_3d': el3d,       # Elevation angle
+                 'range': rg3d,         # Radar's range
+                 'elang' : elevation,
+                 'dr': rg[2]-rg[1],     # Gate spacing
+                 'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
 
     return to_return  # Type: Dict
