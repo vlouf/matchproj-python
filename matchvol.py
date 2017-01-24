@@ -57,7 +57,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         txt = 'READING ' + the_file
         print_with_time(txt)
     else:
-        sat = read_trmm(the_file, file_2A25_trmm)        
+        sat = read_trmm(the_file, file_2A25_trmm)
         print_with_time("READING " + the_file)
         print_with_time("READING " + file_2A25_trmm)
 

@@ -153,6 +153,9 @@ def read_radar(infile, attenuation_correction=True):
     sweep_number = radar.sweep_number['data']  # Extract number of tilt
 
     if (nrays/ntilt).is_integer():
+        # Checking that the number of rays does not change with azimuth.
+        # If it does we will have to create (or remove) the missing
+        # (or the extra) dimension.
         nbeam = int(nrays/ntilt)
     else:
         azi = radar.azimuth['data'][radar.get_slice(0)]
@@ -190,13 +193,15 @@ def read_radar(infile, attenuation_correction=True):
 
         relf_sort_uniq_slice = refl_slice[uniq_index, :]  # Shape  (azi, r)
 
-        if len(azi) > nbeam:            
+        if len(azi) > nbeam:
+            # In case that the number of rays change with the elevation
             val_pos = range(0, nbeam)
             elev = elev[val_pos]
             azi = azi[val_pos]
             relf_sort_uniq_slice[val_pos, :]
 
         while len(azi) < nbeam:
+            # Idem
             azi = np.append(azi, np.NaN)
             elev = np.append(elev, elev[0])
             tmp_refl = copy.deepcopy(relf_sort_uniq_slice)
