@@ -153,7 +153,7 @@ def print_with_time(txt):
     PRINT_WITH_TIME
     '''
     pfix = "[" + str(datetime.datetime.now().isoformat()) + "]\t"
-    print(crayons.blue(pfix, bold=True) + txt)    
+    print(crayons.blue(pfix, bold=True) + txt)
     return None
 
 
@@ -180,4 +180,43 @@ def print_blue(txt, bold=False):
 
 def print_magenta(txt, bold=False):
     print(crayons.magenta(txt, bold))
+    return None
+
+
+def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
+                    ncpu, start_date, end_date):
+    '''
+    WELCOME_MESSAGE
+    Print a welcome message with a recap on the main global variables status
+    '''
+
+    msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
+
+    print("#"*80)
+    print_magenta("\n" + msg + "\n", bold=True)
+    print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
+    if l_gpm:
+        print("The spaceborne instrument used is GPM.")
+    else:
+        print("The spaceborne instrument used is TRMM.")
+    print("The volume matching will be executed between " +
+          start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
+    if l_atten:
+        print("Ground radar attenuation will be corrected.")
+    else:
+        print("Ground radar attenuation will NOT be corrected. I suppose it has already been done.")
+    if l_dbz:
+        print("The statistics will be done in dBZ.")
+    else:
+        print("The statistics will be done in natural units.")
+    if l_write:
+        print("The results will be saved in " + outdir)
+    else:
+        print("The results won't be saved.")
+    print("This program will look for satellite data in " + satdir)
+    print("This program will look for ground radar data in " + raddir)
+    print("This program will run on %i cpu(s)." % (ncpu))
+    print("#"*80)
+    print("\n\n")
+
     return None
