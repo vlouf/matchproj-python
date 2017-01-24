@@ -198,7 +198,7 @@ def read_radar(infile, attenuation_correction=True):
             val_pos = range(0, nbeam)
             elev = elev[val_pos]
             azi = azi[val_pos]
-            relf_sort_uniq_slice[val_pos, :]
+            relf_sort_uniq_slice = relf_sort_uniq_slice[val_pos, :]
 
         while len(azi) < nbeam:
             # Idem
@@ -215,8 +215,10 @@ def read_radar(infile, attenuation_correction=True):
 
         reflec[:, :, sw] = relf_sort_uniq_slice.T  # Shape  (r, azi, elev)
 
-    reflec[reflec >= 100] = np.NaN  # NaNing the weird values
-    reflec[reflec <= -20] = np.NaN
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        reflec[reflec >= 100] = np.NaN  # NaNing the weird values
+        reflec[reflec <= -20] = np.NaN
 
     # Make 3D matrices for coordinates shape (r, azi, elev)
     rg2d = np.repeat(rg[:, np.newaxis], nbeam, axis=1)
