@@ -199,9 +199,10 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         return None
 
     # Set all values less than minrefp as missing
-    ibadx, ibady = np.where(reflectivity_satellite < minrefp)
-    if len(ibadx) > 0:
-        reflectivity_satellite[ibadx, ibady] = np.NaN
+    # ibadx, ibady = np.where(reflectivity_satellite < minrefp)
+    # if len(ibadx) > 0:
+    #     reflectivity_satellite[ibadx, ibady] = np.NaN
+    reflectivity_satellite[reflectivity_satellite < minrefp] = np.NaN
 
     # Convert to S-band using method of Cao et al. (2013)
     if l_cband:
@@ -264,6 +265,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     dr = radar['dr']
     reflectivity_ground_radar = radar['reflec']
 
+    reflectivity_ground_radar[reflectivity_ground_radar < minrefg] = np.NaN
+
     # Determine the Cartesian coordinates of the ground radar's pixels
     # rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
     zg = sqrt(rg**2 + (earth_gaussian_radius + z0)**2 + \
@@ -274,10 +277,6 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 
     # Compute the volume of each radar bin
     volg = 1e-9*pi*dr*(pi/180*bwr/2*rg)**2
-
-    #  Set all values less than minref as missing
-    rbad, azbad, elbad = np.where(reflectivity_ground_radar < minrefg)
-    reflectivity_ground_radar[rbad, azbad, elbad] = np.NaN
 
     # Convert S-band GR reflectivities to Ku-band
     refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, l_cband)
@@ -321,7 +320,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     irefg = 10*np.log10(irefg)
 
     # Convert to linear units
-    if l_dbz == 0:
+    if not l_dbz:
         reflectivity_satellite = 10**(reflectivity_satellite/10.0)
         reflectivity_ground_radar = 10**(reflectivity_ground_radar/10.0)
         refp_ss = 10**(refp_ss/10.0)
@@ -383,7 +382,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
             ref3[ii, jj] = np.nanmean(refp3)
             iref1[ii, jj] = np.nanmean(irefp1)
 
-            if l_dbz == 0:
+            if not l_dbz:
                 stdv1[ii, jj] = np.nanstd(10*np.log10(refp1))
             else:
                 stdv1[ii, jj] = np.nanstd(refp1)
@@ -422,7 +421,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
             ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
             iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
 
-            if l_dbz == 0:
+            if not l_dbz:
                 stdv2[ii, jj] = np.nanstd(10*np.log10(refg1))
             else:
                 stdv2[ii, jj] = np.nanstd(refg1)
@@ -440,7 +439,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     # Convert back to dBZ
     iref1 = 10*np.log10(iref1)
     iref2 = 10*np.log10(iref2)
-    if l_dbz == 0:
+    if not l_dbz:
         reflectivity_satellite = 10*np.log10(reflectivity_satellite)
         reflectivity_ground_radar = 10*np.log10(reflectivity_ground_radar)
         refp_ss = 10*np.log10(refp_ss)
