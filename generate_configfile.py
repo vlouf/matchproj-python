@@ -1,3 +1,9 @@
+################################################################################
+#
+#   Automatic creation of the configuration file for CPOL data on RAIJIN (only).
+#
+################################################################################
+
 import argparse
 
 
@@ -123,16 +129,11 @@ correct_gr_attenuation = True
 
 if __name__ == '__main__':
     '''GLOBAL --- global variables are:'''
-    '''PATH_DIC: contains INPATH and the subdir flag''' # type: Dict[str, bool]
-    '''INPATH: parent directory of the radar data location''' # type: str
-    '''OUTPATH: path for output files''' # type: str
-    '''YEAR: years corresponding to the season (e.g. [2002, 2003] sor season
-       "0203")''' # type: List[int, int]
     '''npcu: number of process''' # type: int
     '''season: string of the type "0203" (for season 2002/2003)''' # type: str
 
-    welcome_msg =  "Python implementation of the Relative Calibration Technique"
-    welcome_msg += " for calibrating radars."
+    welcome_msg =  "Automatic creation of the configuration file for MSGR for" +
+                   " CPOL data on RAIJIN (only)."
 
     parser = argparse.ArgumentParser(description=welcome_msg)
     parser.add_argument('-j',
