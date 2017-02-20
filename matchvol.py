@@ -384,6 +384,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 
             # Average over those bins that exceed the reflectivity
             # threshold (linear average)
+
             ref1[ii, jj] = np.nanmean(refp1)
             ref2[ii, jj] = np.nanmean(refp2)
             ref3[ii, jj] = np.nanmean(refp3)
@@ -425,6 +426,10 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
             w = w*refg1/refg2
 
             ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
+
+            if ref2[ii, jj] < minrefp:
+                ref2[ii, jj] = np.NaN
+
             ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
             iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
 
