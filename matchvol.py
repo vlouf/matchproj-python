@@ -427,8 +427,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 
             ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
 
-            if ref2[ii, jj] < minrefp:
-                ref2[ii, jj] = np.NaN
+            # if ref2[ii, jj] < minrefp:
+            #     ref2[ii, jj] = np.NaN
 
             ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
             iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
@@ -463,6 +463,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         ref3 = 10*np.log10(ref3)
         ref4 = 10*np.log10(ref4)
         ref5 = 10*np.log10(ref5)
+
+    ref2[ref2 < minrefp] = np.NaN
 
     # Extract comparison pairs
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
