@@ -386,8 +386,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
             # threshold (linear average)
 
             ref1[ii, jj] = np.nanmean(refp1)
-            ref2[ii, jj] = np.nanmean(refp2)
-            ref3[ii, jj] = np.nanmean(refp3)
+            ref3[ii, jj] = np.nanmean(refp2)
+            ref4[ii, jj] = np.nanmean(refp3)
             iref1[ii, jj] = np.nanmean(irefp1)
 
             if not l_dbz:
@@ -451,6 +451,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     # Convert back to dBZ
     iref1 = 10*np.log10(iref1)
     iref2 = 10*np.log10(iref2)
+
     if not l_dbz:
         reflectivity_satellite = 10*np.log10(reflectivity_satellite)
         reflectivity_ground_radar = 10*np.log10(reflectivity_ground_radar)
