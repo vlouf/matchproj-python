@@ -15,12 +15,8 @@ inverstigate what is going on with odim HDF5 file.
 ################################################################################
 """
 
-import os
-import re
 import glob
-import h5py
-import pyhdf
-import pyart  # Preload for child's module
+import pyart
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
 import warnings
@@ -28,7 +24,7 @@ import configparser
 import numpy as np
 import pandas as pd
 import itertools
-from numpy import sqrt, cos, sin, tan, pi, exp
+from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
@@ -37,18 +33,28 @@ from MSGR.io.read_gpm import read_gpm
 from MSGR.io.read_trmm import read_trmm
 from MSGR.io.read_radar import read_radar
 from MSGR.io.save_data import save_data
-from MSGR.instruments.ground_radar import * # functions related to the ground radar data
-from MSGR.instruments.satellite import *    # functions related to the satellite data
-from MSGR.util_fun import *                 # bunch of useful functions
+from MSGR.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
+from MSGR.instruments.satellite import get_orbit_number, satellite_params, correct_parallax    # functions related to the satellite data
+from MSGR.util_fun import * # bunch of useful functions
 
 
 def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     '''
     MATCHPROJ_FUN
-    the_file: name of the satellite data file.
-    file_2A25_trmm: TRMM only. its data comes in set of 2 files.
-    julday: date of the day of comparison. Type: datetime
-    returns a dictionnary structure containing the comparable reflectivities.
+
+    Parameters
+    ==========
+        the_file:
+            Satellite data filename (just one file for GPM, or 2A23 for TRMM).
+        file_2A25_trmm:
+            Second satellite file (TRMM only).
+        dtime: dateime
+            Date of the day of comparison.
+
+    Returns
+    =======
+        match_vol: dict
+            A dictionnary structure containing the comparable reflectivities.
     '''
 
     julday = dtime
@@ -181,7 +187,8 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     # Compute the ground-radar coordinates of the PR pixels
     sp = sqrt(xp**2 + yp**2)
     gamma = sp/earth_gaussian_radius
-    ep = 180/pi*np.arctan((cos(gamma) - (earth_gaussian_radius + z0)/(earth_gaussian_radius + zp))/sin(gamma))
+    ep = 180/pi*np.arctan((cos(gamma) - \
+         (earth_gaussian_radius + z0)/(earth_gaussian_radius + zp))/sin(gamma))
     # rp = (earth_gaussian_radius + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
     # ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)  # Not used
 
@@ -505,8 +512,13 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
 def MAIN_matchproj_fun(the_date):
     """
     MAIN_MATCHPROJ_FUN
-    Here we loop over the satellite files and call matchproj_fun.
-    the_date: a datetime structure for which to run the code.
+    Here we locate the satellite files, call the comparison function
+    matchproj_fun, and send the results for saving.
+
+    Parameters
+    ==========
+        the_date: datetime
+            The day for comparison.
     """
 
     # Note the Julian day corresponding to 00 UTC
@@ -585,15 +597,15 @@ def main():
     return None
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     """
     GLOBAL variables declaration
     Reading configuration file.
     """
 
-    """ User-defined parameters """
+    #  Reading configuration file
     config = configparser.ConfigParser()
-    config.read('config.ini')  # Reading configuration file
+    config.read('config.ini')
 
     general = config['general']
     ncpu = general.getint('ncpu')

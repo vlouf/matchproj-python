@@ -18,10 +18,21 @@ from dateutil import parser
 
 
 def find_file_with_string(flist, orb):
-    '''
+    """
     FIND_FILE_WITH_STRING
-    Return the element of a list 'flist' containing the value of 'orb'
-    '''
+    Return the element of a list flist containing the value of orb
+
+    Parameters
+    ==========
+        flist: list[str]
+            List of file list
+        orb: str
+            String we are looking for in the list
+
+    Returns
+    =======
+        Element of a list flist containing the value of orb
+    """
     return [fd for fd in flist if orb in fd][0]
 
 

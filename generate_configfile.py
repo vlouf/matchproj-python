@@ -38,10 +38,22 @@ def get_gnrl_path(season):
 
 
 def get_date(season_str):
-    '''GET_YEAR'''
-    '''Does not work for season BEFORE 1998 or AFTER 2020 (just add dates)'''
-    '''season_str: string of season, e.g. "1213" for 2012/2013 '''
-    '''return the couple of YEAR corresponding to the season'''
+    '''
+    GET_YEAR
+    Does not work for season BEFORE 1998 or AFTER 2020 (just add dates)
+
+    Parameter
+    ==========
+        season_str: str
+            string of season, e.g. "1213" for 2012/2013
+
+    Returns
+    =======
+        season_start: str
+            Beginning of the season
+        season_end: str
+            End of the season
+    '''
 
     the_years = {"9899": ['19981206', '19990507'],
                  "9900": ['19991104', '20000403'],
@@ -58,9 +70,9 @@ def get_date(season_str):
                  "1314": ['20131011', '20140504'],
                  "1415": ['20141203', '20150602'],
                  "1516": ['20151006', '20160215']
-                }
+                 }
 
-    return the_years[season_str] # type: List[int, int]
+    return the_years[season_str]  # type: List[int, int]
 
 
 def main():
@@ -132,7 +144,7 @@ if __name__ == '__main__':
     '''npcu: number of process''' # type: int
     '''season: string of the type "0203" (for season 2002/2003)''' # type: str
 
-    welcome_msg =  "Automatic creation of the configuration file for MSGR for" +
+    welcome_msg =  "Automatic creation of the configuration file for MSGR for" +\
                    " CPOL data on RAIJIN (only)."
 
     parser = argparse.ArgumentParser(description=welcome_msg)

@@ -6,7 +6,28 @@ from numba import jit  # Supposedly it improves performances.
 def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
     """
     _CONVERT_REFLECTIVITY_FROM_KU
-    Convert to S-band using method of Cao et al. (2013)
+    Convert to S/C-band using method of Cao et al. (2013)
+
+    Parameters
+    ==========
+        refp:
+            Satellite reflectivity field.
+        zp:
+            Altitude.
+        zbb:
+            Bright band height.
+        bbwidth:
+            Bright band width.
+        l_cband: bool
+            Is radar C-band? (if not then S-band).
+
+    Return
+    ======
+        refp_ss:
+            Stratiform reflectivity conversion from Ku-band to S-band
+        refp_sh:
+            Convective reflectivity conversion from Ku-band to S-band
+
     """
 
     # Set coefficients for conversion from Ku-band to S-band
@@ -70,6 +91,26 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
 def convert_to_Sband(refp, zp, zbb, bbwidth):
     """
     CONVERT_TO_SBAND
+    Convert to S-band using method of Cao et al. (2013)
+
+    Parameters
+    ==========
+        refp:
+            Satellite reflectivity field.
+        zp:
+            Altitude.
+        zbb:
+            Bright band height.
+        bbwidth:
+            Bright band width.
+
+    Return
+    ======
+        refp_ss:
+            Stratiform reflectivity conversion from Ku-band to S-band
+        refp_sh:
+            Convective reflectivity conversion from Ku-band to S-band
+
     """
 
     to_send = copy.deepcopy(refp)
@@ -78,7 +119,27 @@ def convert_to_Sband(refp, zp, zbb, bbwidth):
 
 def convert_to_Cband(refp, zp, zbb, bbwidth):
     """
-    CONVERT_TO_CBAND
+    convert_to_Cband
+    Convert to C-band using method of Cao et al. (2013)
+
+    Parameters
+    ==========
+        refp:
+            Satellite reflectivity field.
+        zp:
+            Altitude.
+        zbb:
+            Bright band height.
+        bbwidth:
+            Bright band width.
+
+    Return
+    ======
+        refp_ss:
+            Stratiform reflectivity conversion from Ku-band to S-band
+        refp_sh:
+            Convective reflectivity conversion from Ku-band to S-band
+
     """
 
     to_send = copy.deepcopy(refp)
@@ -89,6 +150,24 @@ def convert_to_Ku(refg, zg, zbb, l_cband=1):
     '''
     CONVERT_TO_KU
     Method of Liao and Meneghini (2009)
+
+    Parameters
+    ==========
+        refg:
+            Ground radar reflectivity field.
+        zg:
+            Altitude.
+        zbb:
+            Bright band height.
+        bbwidth:
+            Bright band width.
+        l_cband: bool
+            If radar C-Band (if not then S-band).
+
+    Returns
+    =======
+        refg_ku:
+            Ground radar reflectivity field converted to Ku-band.
     '''
 
     refg_ku = np.zeros(refg.shape) + np.NaN

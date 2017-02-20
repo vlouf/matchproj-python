@@ -11,7 +11,7 @@ You will need:
 >- Python Data Analysis Library [(pandas)][3]
 >- [Pyproj][4]
 
-This code has been tested and conceived on Python 3.5 and should work for any versions 3 of Python. It won't work on Python versions that don't support the _with_ statement (below 2.5). Note that it has not been tested on 2.7.
+This code has been tested and conceived on Python 3.5 and should work for any versions 3 of Python. It will *NOT* work with python 2.X versions.
 
 ## Usage
 
