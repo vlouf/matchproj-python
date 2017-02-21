@@ -3,11 +3,13 @@ import pyart
 import warnings
 import numpy as np
 
+from scipy.integrate import cumtrapz
 from ..util_fun import print_red, print_yellow
 
 
-def correct_attenuation(radar, refl_field_name='DBZ_F',
-                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'):
+def correct_attenuation(radar, method='bringi', refl_field_name='DBZ_F',
+                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'
+                        kdp_field_name='KDP_F'):
     """
     CORRECT_ATTENUATION
     Use of pyart correction capabilities to estimate the attenuation and
@@ -18,18 +20,32 @@ def correct_attenuation(radar, refl_field_name='DBZ_F',
     the_radar = copy.deepcopy(radar)
     print_yellow("Correcting ground radar attenuation.")
 
-    try:
-        # Tries if normalised coherent poiwer field exist
-        ncp = radar.fields['NCP']
-    except KeyError:
-        # Creates a dummy NCP field.
-        reflec = the_radar.fields[refl_field_name]['data']
-        ncp = np.zeros_like(reflec) + 1
-        the_radar.add_field_like(refl_field_name, 'NCP', ncp)
+    if method == 'pyart':
+        try:
+            # Tries if normalised coherent poiwer field exist
+            ncp = radar.fields['NCP']
+        except KeyError:
+            # Creates a dummy NCP field.
+            reflec = the_radar.fields[refl_field_name]['data']
+            ncp = np.zeros_like(reflec) + 1
+            the_radar.add_field_like(refl_field_name, 'NCP', ncp)
 
-    spec_at, cor_z = pyart.correct.calculate_attenuation(the_radar, 0,
-                     refl_field=refl_field_name, ncp_field='NCP',
-                     rhv_field=rhv_field_name, phidp_field=phidp_field_name)
+        spec_at, cor_z = pyart.correct.calculate_attenuation(the_radar, 0,
+                         refl_field=refl_field_name, ncp_field='NCP',
+                         rhv_field=rhv_field_name, phidp_field=phidp_field_name)
+
+    elif method == 'bringi':
+        kdp = radar.fields[kdp_field_name]['data']
+        alpha = 0.08
+        spec_at = alpha*kdp
+        atten = np.zeros(kdp.shape, dtype='float32')
+
+        for i in range(0, atten.shape[0]):
+            atten[i, :-1] = cumtrapz(spec_at[i, :]) * dr * 2.0
+            atten[i, -1] = atten[i, -2]
+
+        zh = radar.fields[refl_field_name]['data']
+        cor_z = zh + atten
 
     the_radar.add_field('specific_attenuation', spec_at)
     the_radar.add_field('corrected_reflectivity_horizontal', cor_z)
@@ -93,6 +109,24 @@ def get_phidb_field_name(radar):
     return None
 
 
+def get_kdp_field_name(radar):
+    '''
+    GET_KDP_FIELD_NAME
+    Because of different conventions for naming fields, it will try a variety
+    of different reflectvity name and return the first one that works
+    '''
+
+    potential_name = ['KDP_F', 'KDP', 'differential_phase']
+    for pn in potential_name:
+        try:
+            rd = radar.fields[pn]
+            return pn
+        except KeyError:
+            continue
+
+    return None
+
+
 def get_rhohv_field_name(radar):
     '''
     GET_RHOHV_FIELD_NAME
@@ -142,10 +176,13 @@ def read_radar(infile, attenuation_correction=True):
     if attenuation_correction:
         phidp_name = get_phidb_field_name(radar)
         rhohv_name = get_rhohv_field_name(radar)
+        kdp_name = get_kdp_field_name(radar)
         radar = correct_attenuation(radar,
+                                    method='bringi'
                                     refl_field_name=refl_field_name,
                                     rhv_field_name=rhohv_name,
-                                    phidp_field_name=phidp_name)
+                                    phidp_field_name=phidp_name,
+                                    kdp_field_name=kdp_name)
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates

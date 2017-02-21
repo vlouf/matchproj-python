@@ -5,13 +5,10 @@
                       Matching Satellite and Ground Radar
 
 @author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.4
-@date: 2016-12-06 (creation) 2017-1-24 (current version)
+@version: 0.5
+@date: 2016-12-06 (creation) 2017-2-21 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
-TODO: see read_radar.py. Surendra had problem here. We had to comment the
-try/except and remove the io.read above just to keep the aux_io below. Need to
-inverstigate what is going on with odim HDF5 file.
 ################################################################################
 """
 
@@ -272,6 +269,9 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     dr = radar['dr']
     reflectivity_ground_radar = radar['reflec']
 
+    # Correcting ground radar reflectivity by the offset.
+    reflectivity_ground_radar += gr_reflectivity_offset
+
     reflectivity_ground_radar[reflectivity_ground_radar < minrefg] = np.NaN
 
     # Determine the Cartesian coordinates of the ground radar's pixels
@@ -464,7 +464,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
         ref4 = 10*np.log10(ref4)
         ref5 = 10*np.log10(ref5)
 
-    ref2[ref2 < minrefp] = np.NaN
+    ref2[ref2 < minrefg] = np.NaN
 
     # Extract comparison pairs
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
@@ -641,6 +641,7 @@ if __name__ == '__main__':
     lat0 = GR_param.getfloat('latitude')
     z0 = GR_param.getfloat('altitude')
     bwr = GR_param.getfloat('beamwidth')
+    gr_reflectivity_offset = GR_param.getfloat('offset')
 
     thresholds = config['thresholds']
     minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
