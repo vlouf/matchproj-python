@@ -105,6 +105,7 @@ longitude = 131.04530334
 latitude = -12.24880028
 altitude = 42
 beamwidth = 1.0
+offset = 0
 
 [thresholds]
 # Threshold on satellite reflectivity
@@ -117,7 +118,6 @@ min_pair = 10
 min_profiles = 10
 max_time_delta = 300
 min_gr_reflec = 15
-offset = 15
 
 [switch]
 # Case insenstive, can be yes/no, y/n, true/false, 1/0
