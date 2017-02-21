@@ -254,7 +254,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     time = closest_dtime_rad  # Keeping the IDL program notation
 
     print_with_time('READING ' + radfile)
-    radar = read_radar(radfile, l_atten)
+    radar = read_radar(radfile, l_atten, gr_reflectivity_offset)
 
     if radar is None:
         return None  # Bad dimensions message already printed
@@ -268,9 +268,6 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     elang = radar['elang']
     dr = radar['dr']
     reflectivity_ground_radar = radar['reflec']
-
-    # Correcting ground radar reflectivity by the offset.
-    reflectivity_ground_radar += gr_reflectivity_offset
 
     reflectivity_ground_radar[reflectivity_ground_radar < minrefg] = np.NaN
 

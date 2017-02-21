@@ -7,7 +7,7 @@ from scipy.integrate import cumtrapz
 from ..util_fun import print_red, print_yellow
 
 
-def correct_attenuation(radar, method='bringi', refl_field_name='DBZ_F',
+def correct_attenuation(radar, method='pyart', refl_field_name='DBZ_F',
                         rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F',
                         kdp_field_name='KDP_F'):
     """
@@ -152,7 +152,7 @@ def get_azimuth_resolution(azimuth):
     return rslt
 
 
-def read_radar(infile, attenuation_correction=True):
+def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     '''
     READ_RADAR
     Read a radar data file, will correct the attenuation if kindly asked.
@@ -178,7 +178,7 @@ def read_radar(infile, attenuation_correction=True):
         rhohv_name = get_rhohv_field_name(radar)
         kdp_name = get_kdp_field_name(radar)
         radar = correct_attenuation(radar,
-                                    method='bringi',
+                                    method='pyart',
                                     refl_field_name=refl_field_name,
                                     rhv_field_name=rhohv_name,
                                     phidp_field_name=phidp_name,
@@ -258,6 +258,9 @@ def read_radar(infile, attenuation_correction=True):
         warnings.simplefilter("ignore", category=RuntimeWarning)
         reflec[reflec >= 100] = np.NaN  # NaNing the weird values
         reflec[reflec <= -20] = np.NaN
+
+    # Apply9ing the offset
+    reflec = reflec + reflec_offset
 
     # Make 3D matrices for coordinates shape (r, azi, elev)
     rg2d = np.repeat(rg[:, np.newaxis], nbeam, axis=1)
