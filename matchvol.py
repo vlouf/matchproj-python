@@ -269,7 +269,7 @@ def matchproj_fun(the_file, file_2A25_trmm=None, dtime=None):
     dr = radar['dr']
     reflectivity_ground_radar = radar['reflec']
 
-    reflectivity_ground_radar[reflectivity_ground_radar < minrefg] = np.NaN
+    reflectivity_ground_radar[reflectivity_ground_radar < 10] = np.NaN
 
     # Determine the Cartesian coordinates of the ground radar's pixels
     # rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
