@@ -8,7 +8,7 @@ from ..util_fun import print_red, print_yellow
 
 
 def correct_attenuation(radar, method='bringi', refl_field_name='DBZ_F',
-                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'
+                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F',
                         kdp_field_name='KDP_F'):
     """
     CORRECT_ATTENUATION
@@ -178,7 +178,7 @@ def read_radar(infile, attenuation_correction=True):
         rhohv_name = get_rhohv_field_name(radar)
         kdp_name = get_kdp_field_name(radar)
         radar = correct_attenuation(radar,
-                                    method='bringi'
+                                    method='bringi',
                                     refl_field_name=refl_field_name,
                                     rhv_field_name=rhohv_name,
                                     phidp_field_name=phidp_name,
