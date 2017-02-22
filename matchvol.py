@@ -566,9 +566,12 @@ def MAIN_matchproj_fun(the_date):
 
         # Saving data
         if l_write:
-            out_name = outdir + "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + \
+            outfilename = "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + \
                        julday.strftime("%Y%m%d") + \
                        "_OFFSET_%1.2fdB" % (gr_reflectivity_offset)
+
+            out_name = os.path.join(outdir, outfilename)
+
             txt = "Saving data to " + out_name + \
                   ". For orbit " + orbit + " on " + julday.strftime("%d %B %Y")
             print_green(txt, bold=True)
