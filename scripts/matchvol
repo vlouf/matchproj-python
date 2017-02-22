@@ -1,5 +1,11 @@
 #! /usr/bin/env python
 
+__title__ = 'matchvol'
+__version__ = '0.5'
+__author__ = 'Valentin Louf'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2017 Valentin Louf'
+
 import sys
 import msgr.__main__
 msgr.__main__.main(sys.argv)

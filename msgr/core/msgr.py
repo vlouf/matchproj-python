@@ -1,15 +1,10 @@
+# Serious business is done here.
 
-import glob
-import pyart
-import pyproj  # For cartographic transformations and geodetic computations
 import datetime
 import warnings
-import configparser
 import numpy as np
-import pandas as pd
 import itertools
 from numpy import sqrt, cos, sin, pi, exp
-from multiprocessing import Pool
 
 # Custom modules
 from . import reflectivity_conversion
@@ -500,9 +495,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
     if len(ipairx) < minpair:
         print_red('Insufficient comparison pairs for ' + julday.strftime("%d %b %Y"))
-        return None
-
-    print_green("Comparison done.")
+        return None    
 
     iprof = ipairx
     itilt = ipairy

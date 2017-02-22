@@ -9,25 +9,16 @@ MSGR Matching Satellite and Ground Radar
 @company: Monash University/Bureau of Meteorology
 """
 
-__title__ = 'matchvol'
-__version__ = '0.5'
-__author__ = 'Valentin Louf'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2017 Valentin Louf'
-
 import os
 import sys
 import glob
 import msgr
 import time
-import pyart
+# import pyart
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
-import warnings
 import configparser
-import numpy as np
 import pandas as pd
-from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
@@ -153,12 +144,17 @@ def MAIN_matchproj_fun(kwarg):
     """
     MAIN_MATCHPROJ_FUN
     Here we locate the satellite files, call the comparison function
-    matchproj_fun, and send the results for saving.
+    matchproj_fun, and send the results for saving. The real deal is the
+    matchproj_fun from msgr.core.msgr module.
 
     Parameters
     ==========
-        the_date: datetime
-            The day for comparison.
+        kwarg: tuple containing:
+            the_date: datetime
+                The day for comparison.
+            PARAMETERS_dict: dict
+                Dictionnary containing all parameters from the configuration
+                file.
     """
 
     the_date, PARAMETERS_dict = kwarg
@@ -224,7 +220,7 @@ def MAIN_matchproj_fun(kwarg):
         if match_vol is None:
             continue
 
-        print_with_time("Comparison took %.2fs." % (end_time - st_time))
+        print_with_time("Comparison done in %.2fs." % (end_time - st_time))
 
         # Saving data
         if l_write:
@@ -252,7 +248,8 @@ def main(argv):
     configuration_file = parse(argv)
 
     if configuration_file is None:
-        print_red("No configuration given.")
+        print_red("No configuration file given. Type `generate_config_matchvol" + \
+                  " -e` for generating a configuration file example.")
         sys.exit()
 
     # Reading the configuration file.
@@ -288,9 +285,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    """
-    GLOBAL variables declaration
-    Reading configuration file.
-    """
-    # Serious business starting here.
     main(sys.argv)

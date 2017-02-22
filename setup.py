@@ -38,5 +38,5 @@ setup(
     license=license,
     packages=find_packages(exclude=('config', 'docs')),
     configuration=configuration,
-    scripts=['scripts/matchvol']
+    scripts=['scripts/matchvol', 'scripts/generate_config_matchvol']
 )
