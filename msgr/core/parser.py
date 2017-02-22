@@ -29,9 +29,7 @@ def parse(argv):
         help='Path to configuration file.', default=None)
 
     # Parse the args
-    args = parser.parse_args(argv)
-
-    if args.script is None:
-        sys.exit()
+    print(argv)
+    args = parser.parse_args(argv[1:])
 
     return args.script

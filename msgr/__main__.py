@@ -24,13 +24,14 @@ import pyart
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
 import warnings
+import configparser
 import numpy as np
 import pandas as pd
 from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
-from msgr import parser
+from msgr.core.parser import parse
 from msgr.core.util_fun import * # bunch of useful functions
 from msgr.core.msgr import matchproj_fun
 from msgr.core.io.save_data import save_data
@@ -145,7 +146,7 @@ def read_configuration_file(config_file):
     PARAMETERS_dict['SWITCH_params'] = SWITCH_params
     PARAMETERS_dict['THRESHOLDS_params'] = THRESHOLDS_params
 
-    return start_date, end_date, PARAMETERS_dict
+    return start_date, end_date, ncpu, PARAMETERS_dict
 
 
 def MAIN_matchproj_fun(kwarg):
@@ -171,6 +172,7 @@ def MAIN_matchproj_fun(kwarg):
     THRESHOLDS_params = PARAMETERS_dict['THRESHOLDS_params']
 
     l_write = SWITCH_params['l_write']
+    l_gpm = SWITCH_params['l_gpm']
     satdir = PATH_params['satdir']
     rid = RADAR_params['rid']
     gr_reflectivity_offset = RADAR_params['gr_reflectivity_offset']
@@ -245,8 +247,15 @@ def main(argv):
     Multiprocessing control room
     """
 
-    configuration_file = parser.parse(argv)
-    start_date, end_date, PARAMETERS_dict = read_configuration_file(configuration_file)
+    # Parsing argv to get the configuration file.
+    configuration_file = parse(argv)
+
+    if configuration_file is None:
+        print_red("No configuration given.")
+        sys.exit()
+
+    # Reading the configuration file.
+    start_date, end_date, ncpu, PARAMETERS_dict = read_configuration_file(configuration_file)
 
     # Printing some information about the global variables and switches
     date_range = pd.date_range(start_date, end_date)
