@@ -260,7 +260,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         reflec[reflec >= 100] = np.NaN  # NaNing the weird values
         reflec[reflec <= -20] = np.NaN
 
-    # Apply9ing the offset
+    # Applying the offset
     reflec = reflec + reflec_offset
 
     # Make 3D matrices for coordinates shape (r, azi, elev)

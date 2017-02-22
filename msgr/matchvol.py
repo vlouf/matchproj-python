@@ -1,16 +1,19 @@
+#!python
+
 """
-################################################################################
+MSGR Matching Satellite and Ground Radar
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                                      MSGR
-                      Matching Satellite and Ground Radar
-
-@author: Valentin Louf (from an original IDL code of Rob Warren)
-@version: 0.5
-@date: 2016-12-06 (creation) 2017-2-21 (current version)
+@date: 2016-12-06 (creation) 2017-2-22 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
-################################################################################
 """
+
+__title__ = 'matchvol'
+__version__ = '0.5'
+__author__ = 'Valentin Louf'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2017 Valentin Louf'
 
 import glob
 import time
@@ -25,11 +28,11 @@ from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
-from MSGR.util_fun import * # bunch of useful functions
-from MSGR.msgr import matchproj_fun
-from MSGR.io.save_data import save_data
-from MSGR.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
-from MSGR.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
+from core.util_fun import * # bunch of useful functions
+from core.msgr import matchproj_fun
+from core.io.save_data import save_data
+from core.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
+from core.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
 
 
 def MAIN_matchproj_fun(the_date):
