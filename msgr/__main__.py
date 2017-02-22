@@ -15,123 +15,140 @@ __author__ = 'Valentin Louf'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 Valentin Louf'
 
+import os
+import sys
 import glob
+import msgr
 import time
 import pyart
 import pyproj  # For cartographic transformations and geodetic computations
 import datetime
 import warnings
-import configparser
 import numpy as np
 import pandas as pd
 from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
+from msgr import parser
 from msgr.core.util_fun import * # bunch of useful functions
 from msgr.core.msgr import matchproj_fun
 from msgr.core.io.save_data import save_data
 from msgr.core.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
 from msgr.core.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
 
-#  Reading configuration file
-config = configparser.ConfigParser()
-config.read('config.ini')
 
-general = config['general']
-ncpu = general.getint('ncpu')
-date1 = general.get('start_date')
-date2 = general.get('end_date')
+def read_configuration_file(config_file):
+    #  Reading configuration file
+    config = configparser.ConfigParser()
+    config.read('config.ini')
 
-switch = config['switch']
-l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
-l_cband = switch.getboolean('cband')   # Switch for C-band GR
-l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
-l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
-l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
+    general = config['general']
+    ncpu = general.getint('ncpu')
+    date1 = general.get('start_date')
+    date2 = general.get('end_date')
 
-path = config['path']
-raddir = path.get('ground_radar')
-satdir = path.get('satellite')
-outdir = path.get('output')
+    switch = config['switch']
+    l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
+    l_cband = switch.getboolean('cband')   # Switch for C-band GR
+    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
+    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
+    l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
 
-GR_param = config['radar']
-radstr = GR_param.get('radar_name')
-rmin = GR_param.getfloat('rmin')  # minimum GR range (m)
-rmax = GR_param.getfloat('rmax')  # maximum GR range (m)
-rid = GR_param.get('radar_id')
-lon0 = GR_param.getfloat('longitude')
-lat0 = GR_param.getfloat('latitude')
-z0 = GR_param.getfloat('altitude')
-bwr = GR_param.getfloat('beamwidth')
-gr_reflectivity_offset = GR_param.getfloat('offset')
+    path = config['path']
+    raddir = path.get('ground_radar')
+    satdir = path.get('satellite')
+    outdir = path.get('output')
 
-thresholds = config['thresholds']
-minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
-maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
-minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
-minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
-minpair = thresholds.getint('min_pair')  # minimum number of paired samples
-""" End of the section for user-defined parameters """
+    GR_param = config['radar']
+    radstr = GR_param.get('radar_name')
+    rmin = GR_param.getfloat('rmin')  # minimum GR range (m)
+    rmax = GR_param.getfloat('rmax')  # maximum GR range (m)
+    rid = GR_param.get('radar_id')
+    lon0 = GR_param.getfloat('longitude')
+    lat0 = GR_param.getfloat('latitude')
+    z0 = GR_param.getfloat('altitude')
+    bwr = GR_param.getfloat('beamwidth')
+    gr_reflectivity_offset = GR_param.getfloat('offset')
 
-start_date = datetime.datetime.strptime(date1, '%Y%m%d')
-end_date = datetime.datetime.strptime(date2, '%Y%m%d')
+    thresholds = config['thresholds']
+    minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
+    maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
+    minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
+    minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
+    minpair = thresholds.getint('min_pair')  # minimum number of paired samples
+    """ End of the section for user-defined parameters """
 
-# Map Projection
-# Options: projection transverse mercator, lon and lat of radar, and
-# ellipsoid WGS84
-pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
-smap = pyproj.Proj(pyproj_config)
+    start_date = datetime.datetime.strptime(date1, '%Y%m%d')
+    end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
-# Gaussian radius of curvatur for the radar's position
-earth_gaussian_radius = radar_gaussian_curve(lat0)
+    welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
+                    ncpu, start_date, end_date)
 
-"""Stocking parameters in dictionnaries"""
-if l_gpm:
-    SAT_params = satellite_params('gpm')
-else:
-    SAT_params = satellite_params('trmm')
+    # Map Projection
+    # Options: projection transverse mercator, lon and lat of radar, and
+    # ellipsoid WGS84
+    pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
+    smap = pyproj.Proj(pyproj_config)
 
-PATH_params = dict()
-PROJ_params = dict()
-RADAR_params = dict()
-SWITCH_params = dict()
-THRESHOLDS_params = dict()
+    # Gaussian radius of curvatur for the radar's position
+    earth_gaussian_radius = radar_gaussian_curve(lat0)
 
-SWITCH_params['l_cband'] = l_cband
-SWITCH_params['l_dbz'] = l_dbz
-SWITCH_params['l_gpm'] = l_gpm
-SWITCH_params['l_atten'] = l_atten
+    """Stocking parameters in dictionnaries"""
+    if l_gpm:
+       SAT_params = satellite_params('gpm')
+    else:
+       SAT_params = satellite_params('trmm')
 
-PATH_params['raddir'] = raddir
-PATH_params['outdir'] = outdir
+    PATH_params = dict()
+    PROJ_params = dict()
+    RADAR_params = dict()
+    SWITCH_params = dict()
+    THRESHOLDS_params = dict()
 
-RADAR_params['xmin'] = -1*rmax
-RADAR_params['xmax'] = rmax
-RADAR_params['ymin'] = -1*rmax
-RADAR_params['ymax'] = rmax
-RADAR_params['rmax'] = rmax
-RADAR_params['rmin'] = rmin
-RADAR_params['rid'] = rid
-RADAR_params['z0'] = z0
-RADAR_params['bwr'] = bwr
-RADAR_params['gr_reflectivity_offset'] = gr_reflectivity_offset
+    SWITCH_params['l_cband'] = l_cband
+    SWITCH_params['l_dbz'] = l_dbz
+    SWITCH_params['l_gpm'] = l_gpm
+    SWITCH_params['l_write'] = l_write
+    SWITCH_params['l_atten'] = l_atten
 
-THRESHOLDS_params['minprof'] = minprof
-THRESHOLDS_params['maxdt'] = maxdt
-THRESHOLDS_params['minrefg'] = minrefg
-THRESHOLDS_params['minrefp'] = minrefp
-THRESHOLDS_params['minpair'] = minpair
+    PATH_params['raddir'] = raddir
+    PATH_params['satdir'] = satdir
+    PATH_params['outdir'] = outdir
 
-PROJ_params['earth_gaussian_radius'] = earth_gaussian_radius
-PROJ_params['smap'] = smap
+    RADAR_params['xmin'] = -1*rmax
+    RADAR_params['xmax'] = rmax
+    RADAR_params['ymin'] = -1*rmax
+    RADAR_params['ymax'] = rmax
+    RADAR_params['rmax'] = rmax
+    RADAR_params['rmin'] = rmin
+    RADAR_params['rid'] = rid
+    RADAR_params['z0'] = z0
+    RADAR_params['bwr'] = bwr
+    RADAR_params['gr_reflectivity_offset'] = gr_reflectivity_offset
 
-# Printing some information about the global variables and switches
-welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
-                ncpu, start_date, end_date)
+    THRESHOLDS_params['minprof'] = minprof
+    THRESHOLDS_params['maxdt'] = maxdt
+    THRESHOLDS_params['minrefg'] = minrefg
+    THRESHOLDS_params['minrefp'] = minrefp
+    THRESHOLDS_params['minpair'] = minpair
+
+    PROJ_params['earth_gaussian_radius'] = earth_gaussian_radius
+    PROJ_params['smap'] = smap
+
+    PARAMETERS_dict = dict()
+
+    PARAMETERS_dict['PATH_params'] = PATH_params
+    PARAMETERS_dict['PROJ_params'] = PROJ_params
+    PARAMETERS_dict['RADAR_params'] = RADAR_params
+    PARAMETERS_dict['SAT_params'] = SAT_params
+    PARAMETERS_dict['SWITCH_params'] = SWITCH_params
+    PARAMETERS_dict['THRESHOLDS_params'] = THRESHOLDS_params
+
+    return start_date, end_date, PARAMETERS_dict
 
 
-def MAIN_matchproj_fun(the_date):
+def MAIN_matchproj_fun(kwarg):
     """
     MAIN_MATCHPROJ_FUN
     Here we locate the satellite files, call the comparison function
@@ -142,6 +159,21 @@ def MAIN_matchproj_fun(the_date):
         the_date: datetime
             The day for comparison.
     """
+
+    the_date, PARAMETERS_dict = kwarg
+
+    # Unpack the parameter dictionnaries
+    PATH_params = PARAMETERS_dict['PATH_params']
+    PROJ_params = PARAMETERS_dict['PROJ_params']
+    RADAR_params = PARAMETERS_dict['RADAR_params']
+    SAT_params = PARAMETERS_dict['SAT_params']
+    SWITCH_params = PARAMETERS_dict['SWITCH_params']
+    THRESHOLDS_params = PARAMETERS_dict['THRESHOLDS_params']
+
+    l_write = SWITCH_params['l_write']
+    satdir = PATH_params['satdir']
+    rid = RADAR_params['rid']
+    gr_reflectivity_offset = RADAR_params['gr_reflectivity_offset']
 
     # Note the Julian day corresponding to 00 UTC
     julday = datetime.datetime(the_date.year, the_date.month, the_date.day, 0, 0, 0)
@@ -157,7 +189,7 @@ def MAIN_matchproj_fun(the_date):
     if len(satfiles) == 0:
         print('')  # line break
         txt = 'No satellite swaths for ' + julday.strftime("%d %b %Y")
-        print_red(txt)        
+        print_red(txt)
         return None
 
     for the_file in satfiles:
@@ -207,12 +239,16 @@ def MAIN_matchproj_fun(the_date):
     return None
 
 
-def main():
+def main(argv):
     """
     MAIN
     Multiprocessing control room
     """
 
+    configuration_file = parser.parse(argv)
+    start_date, end_date, PARAMETERS_dict = read_configuration_file(configuration_file)
+
+    # Printing some information about the global variables and switches
     date_range = pd.date_range(start_date, end_date)
 
     # Chunking the date_range list in order to make it smaller to ingest in
@@ -224,11 +260,19 @@ def main():
         for date_range_slice in date_range_chunk:
             with Pool(ncpu) as pool:
                 date_list = list(date_range_slice)
-                pool.map(MAIN_matchproj_fun, date_list)
+                kwarg = []
+                for dl in date_list:
+                    kwarg.append((dl, PARAMETERS_dict))
+
+                pool.map(MAIN_matchproj_fun, kwarg)
 
     else:
         with Pool(ncpu) as pool:
-            pool.map(MAIN_matchproj_fun, date_range)
+            kwarg = []
+            for dl in date_range:
+                kwarg.append((dl, PARAMETERS_dict))
+
+            pool.map(MAIN_matchproj_fun, kwarg)
 
     return None
 
@@ -239,4 +283,4 @@ if __name__ == '__main__':
     Reading configuration file.
     """
     # Serious business starting here.
-    main()
+    main(sys.argv)
