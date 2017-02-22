@@ -28,11 +28,107 @@ from numpy import sqrt, cos, sin, pi, exp
 from multiprocessing import Pool
 
 # Custom modules
-from core.util_fun import * # bunch of useful functions
-from core.msgr import matchproj_fun
-from core.io.save_data import save_data
-from core.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
-from core.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
+from msgr.core.util_fun import * # bunch of useful functions
+from msgr.core.msgr import matchproj_fun
+from msgr.core.io.save_data import save_data
+from msgr.core.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
+from msgr.core.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
+
+#  Reading configuration file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+general = config['general']
+ncpu = general.getint('ncpu')
+date1 = general.get('start_date')
+date2 = general.get('end_date')
+
+switch = config['switch']
+l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
+l_cband = switch.getboolean('cband')   # Switch for C-band GR
+l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
+l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
+l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
+
+path = config['path']
+raddir = path.get('ground_radar')
+satdir = path.get('satellite')
+outdir = path.get('output')
+
+GR_param = config['radar']
+radstr = GR_param.get('radar_name')
+rmin = GR_param.getfloat('rmin')  # minimum GR range (m)
+rmax = GR_param.getfloat('rmax')  # maximum GR range (m)
+rid = GR_param.get('radar_id')
+lon0 = GR_param.getfloat('longitude')
+lat0 = GR_param.getfloat('latitude')
+z0 = GR_param.getfloat('altitude')
+bwr = GR_param.getfloat('beamwidth')
+gr_reflectivity_offset = GR_param.getfloat('offset')
+
+thresholds = config['thresholds']
+minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
+maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
+minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
+minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
+minpair = thresholds.getint('min_pair')  # minimum number of paired samples
+""" End of the section for user-defined parameters """
+
+start_date = datetime.datetime.strptime(date1, '%Y%m%d')
+end_date = datetime.datetime.strptime(date2, '%Y%m%d')
+
+# Map Projection
+# Options: projection transverse mercator, lon and lat of radar, and
+# ellipsoid WGS84
+pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
+smap = pyproj.Proj(pyproj_config)
+
+# Gaussian radius of curvatur for the radar's position
+earth_gaussian_radius = radar_gaussian_curve(lat0)
+
+"""Stocking parameters in dictionnaries"""
+if l_gpm:
+    SAT_params = satellite_params('gpm')
+else:
+    SAT_params = satellite_params('trmm')
+
+PATH_params = dict()
+PROJ_params = dict()
+RADAR_params = dict()
+SWITCH_params = dict()
+THRESHOLDS_params = dict()
+
+SWITCH_params['l_cband'] = l_cband
+SWITCH_params['l_dbz'] = l_dbz
+SWITCH_params['l_gpm'] = l_gpm
+SWITCH_params['l_atten'] = l_atten
+
+PATH_params['raddir'] = raddir
+PATH_params['outdir'] = outdir
+
+RADAR_params['xmin'] = -1*rmax
+RADAR_params['xmax'] = rmax
+RADAR_params['ymin'] = -1*rmax
+RADAR_params['ymax'] = rmax
+RADAR_params['rmax'] = rmax
+RADAR_params['rmin'] = rmin
+RADAR_params['rid'] = rid
+RADAR_params['z0'] = z0
+RADAR_params['bwr'] = bwr
+RADAR_params['gr_reflectivity_offset'] = gr_reflectivity_offset
+
+THRESHOLDS_params['minprof'] = minprof
+THRESHOLDS_params['maxdt'] = maxdt
+THRESHOLDS_params['minrefg'] = minrefg
+THRESHOLDS_params['minrefp'] = minrefp
+THRESHOLDS_params['minpair'] = minpair
+
+PROJ_params['earth_gaussian_radius'] = earth_gaussian_radius
+PROJ_params['smap'] = smap
+
+# Printing some information about the global variables and switches
+welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
+                ncpu, start_date, end_date)
 
 
 def MAIN_matchproj_fun(the_date):
@@ -61,8 +157,7 @@ def MAIN_matchproj_fun(the_date):
     if len(satfiles) == 0:
         print('')  # line break
         txt = 'No satellite swaths for ' + julday.strftime("%d %b %Y")
-        print_red(txt)
-        nerr[0] += 1
+        print_red(txt)        
         return None
 
     for the_file in satfiles:
@@ -143,102 +238,5 @@ if __name__ == '__main__':
     GLOBAL variables declaration
     Reading configuration file.
     """
-
-    #  Reading configuration file
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    general = config['general']
-    ncpu = general.getint('ncpu')
-    date1 = general.get('start_date')
-    date2 = general.get('end_date')
-
-    switch = config['switch']
-    l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
-    l_cband = switch.getboolean('cband')   # Switch for C-band GR
-    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
-    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
-    l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
-
-    path = config['path']
-    raddir = path.get('ground_radar')
-    satdir = path.get('satellite')
-    outdir = path.get('output')
-
-    GR_param = config['radar']
-    radstr = GR_param.get('radar_name')
-    rmin = GR_param.getfloat('rmin')  # minimum GR range (m)
-    rmax = GR_param.getfloat('rmax')  # maximum GR range (m)
-    rid = GR_param.get('radar_id')
-    lon0 = GR_param.getfloat('longitude')
-    lat0 = GR_param.getfloat('latitude')
-    z0 = GR_param.getfloat('altitude')
-    bwr = GR_param.getfloat('beamwidth')
-    gr_reflectivity_offset = GR_param.getfloat('offset')
-
-    thresholds = config['thresholds']
-    minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
-    maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
-    minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
-    minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
-    minpair = thresholds.getint('min_pair')  # minimum number of paired samples
-    """ End of the section for user-defined parameters """
-
-    start_date = datetime.datetime.strptime(date1, '%Y%m%d')
-    end_date = datetime.datetime.strptime(date2, '%Y%m%d')
-
-    # Map Projection
-    # Options: projection transverse mercator, lon and lat of radar, and
-    # ellipsoid WGS84
-    pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
-    smap = pyproj.Proj(pyproj_config)
-
-    # Gaussian radius of curvatur for the radar's position
-    earth_gaussian_radius = radar_gaussian_curve(lat0)
-
-    """Stocking parameters in dictionnaries"""
-    if l_gpm:
-        SAT_params = satellite_params('gpm')
-    else:
-        SAT_params = satellite_params('trmm')
-
-    PATH_params = dict()
-    PROJ_params = dict()
-    RADAR_params = dict()
-    SWITCH_params = dict()
-    THRESHOLDS_params = dict()
-
-    SWITCH_params['l_cband'] = l_cband
-    SWITCH_params['l_dbz'] = l_dbz
-    SWITCH_params['l_gpm'] = l_gpm
-    SWITCH_params['l_atten'] = l_atten
-
-    PATH_params['raddir'] = raddir
-    PATH_params['outdir'] = outdir
-
-    RADAR_params['xmin'] = -1*rmax
-    RADAR_params['xmax'] = rmax
-    RADAR_params['ymin'] = -1*rmax
-    RADAR_params['ymax'] = rmax
-    RADAR_params['rmax'] = rmax
-    RADAR_params['rmin'] = rmin
-    RADAR_params['rid'] = rid
-    RADAR_params['z0'] = z0
-    RADAR_params['bwr'] = bwr
-    RADAR_params['gr_reflectivity_offset'] = gr_reflectivity_offset
-
-    THRESHOLDS_params['minprof'] = minprof
-    THRESHOLDS_params['maxdt'] = maxdt
-    THRESHOLDS_params['minrefg'] = minrefg
-    THRESHOLDS_params['minrefp'] = minrefp
-    THRESHOLDS_params['minpair'] = minpair
-
-    PROJ_params['earth_gaussian_radius'] = earth_gaussian_radius
-    PROJ_params['smap'] = smap
-
-    # Printing some information about the global variables and switches
-    welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
-                    ncpu, start_date, end_date)
-
     # Serious business starting here.
     main()
