@@ -162,7 +162,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     if ".h5" in infile or ".H5" in infile:
         radar = pyart.aux_io.read_odim_h5(infile)
     else:
-        radar = pyart.io.read(infile)            
+        radar = pyart.io.read(infile)
 
     refl_field_name = get_reflectivity_field_name(radar)
     if refl_field_name is None:
@@ -173,12 +173,17 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         phidp_name = get_phidb_field_name(radar)
         rhohv_name = get_rhohv_field_name(radar)
         kdp_name = get_kdp_field_name(radar)
-        radar = correct_attenuation(radar,
-                                    method='pyart',
-                                    refl_field_name=refl_field_name,
-                                    rhv_field_name=rhohv_name,
-                                    phidp_field_name=phidp_name,
-                                    kdp_field_name=kdp_name)
+
+        if phidp_name is None or rhohv_name is None or kdp_name is None:
+            attenuation_correction = False
+            print_red("Attenuation correction impossible, missing dualpol field.")
+        else:
+            radar = correct_attenuation(radar,
+                                       method='pyart',
+                                       refl_field_name=refl_field_name,
+                                       rhv_field_name=rhohv_name,
+                                       phidp_field_name=phidp_name,
+                                       kdp_field_name=kdp_name)
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates
