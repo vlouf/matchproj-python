@@ -173,6 +173,7 @@ def MAIN_matchproj_fun(kwarg):
 
     l_write = SWITCH_params['l_write']
     l_gpm = SWITCH_params['l_gpm']
+    outdir = PATH_params['outdir']
     satdir = PATH_params['satdir']
     rid = RADAR_params['rid']
     gr_reflectivity_offset = RADAR_params['gr_reflectivity_offset']
