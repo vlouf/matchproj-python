@@ -74,7 +74,8 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     l_cband = SWITCH_params['l_cband']
     l_dbz = SWITCH_params['l_dbz']
     l_gpm = SWITCH_params['l_gpm']
-    l_atten = SWITCH_params['l_atten']
+    l_atten  = SWITCH_params['l_atten']
+    l_intermediary = SWITCH_params['l_intermediary']
 
     minprof = THRESHOLDS_params['minprof']
     maxdt = THRESHOLDS_params['maxdt']
@@ -272,6 +273,14 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
         print_red('This time difference is bigger' +
               ' than the acceptable value of %i s.' % (maxdt))
         return None  # To the next satellite file
+
+    if l_intermediary:
+        ofname = os.path.join(os.path.expanduser('~'), 'kt_woorking_dates.txt')
+        to_write = julday.strftime("%Y%m%d") + "\n"
+        with open(ofname, 'a') as fid:
+            fid.write(to_write)
+
+        return None
 
     # Radar file corresponding to the nearest scan time
     radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
@@ -495,7 +504,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
     if len(ipairx) < minpair:
         print_red('Insufficient comparison pairs for ' + julday.strftime("%d %b %Y"))
-        return None    
+        return None
 
     iprof = ipairx
     itilt = ipairy

@@ -196,9 +196,10 @@ gpm = False
 cband = True
 write = True
 correct_gr_attenuation = True
+intermediary = True
 '''
 
-    with open('config.ini', 'w') as fid:
+    with open(output_fname, 'w') as fid:
         fid.write(pfix)
         fid.write(sfix)
 
@@ -220,6 +221,13 @@ if __name__ == '__main__':
                         default=16,
                         type=int,
                         help='Number of process')
+
+    parser.add_argument('-o',
+                        '--output',
+                        dest='output',
+                        default=None,
+                        type=str,
+                        help='Name of the output file.')
 
     parser.add_argument('-s',
                         '--season',
@@ -247,6 +255,13 @@ if __name__ == '__main__':
     ncpu = args.ncpu
     season = args.season
     example = args.example
+    output_fname = args.output
+
+    if output_fname is None:
+        output_fname = "config.ini"
+
+    if ".ini" not in output_fname:
+        output_fname += ".ini"
 
     if season is None and example == False:
         print("You need to provide an argument, type `generate_config_matchvol -h` for help.")

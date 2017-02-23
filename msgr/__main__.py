@@ -33,7 +33,7 @@ from msgr.core.instruments.satellite import get_orbit_number, satellite_params #
 def read_configuration_file(config_file):
     #  Reading configuration file
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(config_file)
 
     general = config['general']
     ncpu = general.getint('ncpu')
@@ -46,6 +46,13 @@ def read_configuration_file(config_file):
     l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
     l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
+
+    try:  # Optionnal parameters
+        l_intermediary = switch.getboolean('intermediary')
+        if l_intermediary is None:
+            l_intermediary = False
+    except KeyError:
+        l_intermediary = False
 
     path = config['path']
     raddir = path.get('ground_radar')
@@ -103,6 +110,7 @@ def read_configuration_file(config_file):
     SWITCH_params['l_gpm'] = l_gpm
     SWITCH_params['l_write'] = l_write
     SWITCH_params['l_atten'] = l_atten
+    SWITCH_params['l_intermediary'] = l_intermediary
 
     PATH_params['raddir'] = raddir
     PATH_params['satdir'] = satdir
