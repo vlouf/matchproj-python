@@ -9,25 +9,25 @@ MSGR Matching Satellite and Ground Radar
 @company: Monash University/Bureau of Meteorology
 """
 
+import datetime
+import glob
 import os
 import sys
-import glob
-import msgr
 import time
-# import pyart
-import pyproj  # For cartographic transformations and geodetic computations
-import datetime
-import configparser
 import pandas as pd
+import configparser
+import msgr
+import pyproj  # For cartographic transformations and geodetic computations
+
 from multiprocessing import Pool
 
-# Custom modules
-from msgr.core.parser import parse
-from msgr.core.util_fun import * # bunch of useful functions
-from msgr.core.msgr import matchproj_fun
+from msgr.core.instruments.ground_radar import radar_gaussian_curve  
+from msgr.core.instruments.satellite import (get_orbit_number,
+                                             satellite_params)
 from msgr.core.io.save_data import save_data
-from msgr.core.instruments.ground_radar import radar_gaussian_curve # functions related to the ground radar data
-from msgr.core.instruments.satellite import get_orbit_number, satellite_params # functions related to the satellite data
+from msgr.core.msgr import matchproj_fun
+from msgr.core.parser import parse
+from msgr.core.util_fun import *  # bunch of useful functions
 
 
 def read_configuration_file(config_file):
@@ -41,11 +41,13 @@ def read_configuration_file(config_file):
     date2 = general.get('end_date')
 
     switch = config['switch']
-    l_write = switch.getboolean('write')   # Switch for writing out volume-matched data
+    # Switch for writing out volume-matched data
+    l_write = switch.getboolean('write')
     l_cband = switch.getboolean('cband')   # Switch for C-band GR
     l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
-    l_atten = switch.getboolean('correct_gr_attenuation')       # Switch for GPM PR data
+    # Switch for GPM PR data
+    l_atten = switch.getboolean('correct_gr_attenuation')
 
     try:  # Optionnal parameters
         l_intermediary = switch.getboolean('intermediary')
@@ -71,8 +73,10 @@ def read_configuration_file(config_file):
     gr_reflectivity_offset = GR_param.getfloat('offset')
 
     thresholds = config['thresholds']
-    minprof = thresholds.getint('min_profiles')  # minimum number of PR profiles with precip
-    maxdt = thresholds.getfloat('max_time_delta')   # maximum PR-GR time difference (s)
+    # minimum number of PR profiles with precip
+    minprof = thresholds.getint('min_profiles')
+    # maximum PR-GR time difference (s)
+    maxdt = thresholds.getfloat('max_time_delta')
     minrefg = thresholds.getfloat('min_gr_reflec')  # minimum GR reflectivity
     minrefp = thresholds.getfloat('min_sat_reflec')  # minimum PR reflectivity
     minpair = thresholds.getint('min_pair')  # minimum number of paired samples
@@ -87,17 +91,18 @@ def read_configuration_file(config_file):
     # Map Projection
     # Options: projection transverse mercator, lon and lat of radar, and
     # ellipsoid WGS84
-    pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (lon0, lat0)
+    pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (
+        lon0, lat0)
     smap = pyproj.Proj(pyproj_config)
 
     # Gaussian radius of curvatur for the radar's position
     earth_gaussian_radius = radar_gaussian_curve(lat0)
 
-    """Stocking parameters in dictionnaries"""
+    # Stocking parameters in dictionnaries
     if l_gpm:
-       SAT_params = satellite_params('gpm')
+        SAT_params = satellite_params('gpm')
     else:
-       SAT_params = satellite_params('trmm')
+        SAT_params = satellite_params('trmm')
 
     PATH_params = dict()
     PROJ_params = dict()
@@ -116,9 +121,9 @@ def read_configuration_file(config_file):
     PATH_params['satdir'] = satdir
     PATH_params['outdir'] = outdir
 
-    RADAR_params['xmin'] = -1*rmax
+    RADAR_params['xmin'] = -1 * rmax
     RADAR_params['xmax'] = rmax
-    RADAR_params['ymin'] = -1*rmax
+    RADAR_params['ymin'] = -1 * rmax
     RADAR_params['ymax'] = rmax
     RADAR_params['rmax'] = rmax
     RADAR_params['rmin'] = rmin
@@ -183,7 +188,13 @@ def MAIN_matchproj_fun(kwarg):
     gr_reflectivity_offset = RADAR_params['gr_reflectivity_offset']
 
     # Note the Julian day corresponding to 00 UTC
-    julday = datetime.datetime(the_date.year, the_date.month, the_date.day, 0, 0, 0)
+    julday = datetime.datetime(
+        the_date.year,
+        the_date.month,
+        the_date.day,
+        0,
+        0,
+        0)
     date = julday.strftime("%Y%m%d")
 
     # Note the number of satellite overpasses on this day
@@ -203,7 +214,11 @@ def MAIN_matchproj_fun(kwarg):
         orbit = get_orbit_number(the_file)
 
         print('')  # line break
-        print_with_time("Orbit " + orbit + " -- " + julday.strftime("%d %B %Y"))
+        print_with_time(
+            "Orbit " +
+            orbit +
+            " -- " +
+            julday.strftime("%d %B %Y"))
 
         st_time = time.time()
         if l_gpm:
@@ -213,7 +228,8 @@ def MAIN_matchproj_fun(kwarg):
                                       dtime=julday)
         else:
             try:
-                # Trying to find corresponding 2A25 TRMM file based on the orbit
+                # Trying to find corresponding 2A25 TRMM file based on the
+                # orbit
                 fd_25 = find_file_with_string(satfiles2, orbit)
             except IndexError:
                 print_red("No matching 2A25 file for TRMM.")
@@ -233,8 +249,8 @@ def MAIN_matchproj_fun(kwarg):
         # Saving data
         if l_write:
             outfilename = "RID_" + rid + "_ORBIT_" + orbit + "_DATE_" + \
-                       julday.strftime("%Y%m%d") + \
-                       "_OFFSET_%1.2fdB" % (gr_reflectivity_offset)
+                julday.strftime("%Y%m%d") + \
+                "_OFFSET_%1.2fdB" % (gr_reflectivity_offset)
 
             out_name = os.path.join(outdir, outfilename)
 
@@ -256,22 +272,25 @@ def main(argv):
     configuration_file = parse(argv)
 
     if configuration_file is None:
-        print_red("No configuration file given. Type `generate_config_matchvol" + \
-                  " -e` for generating a configuration file example.")
+        print_red(
+            "No configuration file given. Type `generate_config_matchvol " + \
+            " -e` for generating a configuration file example.")
         sys.exit()
 
     # Reading the configuration file.
-    start_date, end_date, ncpu, PARAMETERS_dict = read_configuration_file(configuration_file)
+    start_date, end_date, ncpu, PARAMETERS_dict = read_configuration_file(
+        configuration_file)
 
     # Printing some information about the global variables and switches
     date_range = pd.date_range(start_date, end_date)
 
     # Chunking the date_range list in order to make it smaller to ingest in
     # multiprocessing. This allows to clear multiprocessing memory at every
-    # chunks and not going to cray with memory eating. It's just a little trick.
-    if len(date_range) > ncpu*2:
+    # chunks and not going to cray with memory eating. It's just a little
+    # trick.
+    if len(date_range) > ncpu * 2:
 
-        date_range_chunk = chunks(date_range, ncpu*2)  # Type: Generator
+        date_range_chunk = chunks(date_range, ncpu * 2)  # Type: Generator
         for date_range_slice in date_range_chunk:
             with Pool(ncpu) as pool:
                 date_list = list(date_range_slice)

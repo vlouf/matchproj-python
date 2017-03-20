@@ -9,11 +9,12 @@ from numpy import sqrt, cos, sin, pi, exp
 # Custom modules
 from . import reflectivity_conversion
 
-from .util_fun import * # bunch of useful functions
+from .util_fun import *  # bunch of useful functions
 from .io.read_gpm import read_gpm
 from .io.read_trmm import read_trmm
 from .io.read_radar import read_radar
-from .instruments.satellite import correct_parallax    # functions related to the satellite data
+# functions related to the satellite data
+from .instruments.satellite import correct_parallax
 
 
 def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
@@ -74,7 +75,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     l_cband = SWITCH_params['l_cband']
     l_dbz = SWITCH_params['l_dbz']
     l_gpm = SWITCH_params['l_gpm']
-    l_atten  = SWITCH_params['l_atten']
+    l_atten = SWITCH_params['l_atten']
     l_intermediary = SWITCH_params['l_intermediary']
 
     minprof = THRESHOLDS_params['minprof']
@@ -111,7 +112,9 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
                               (yp >= ymin) & (yp <= ymax))
 
     if len(ioverx) == 0:
-        print_red("Insufficient satellite rays in domain for " + julday.strftime("%d %b %Y"))
+        print_red(
+            "Insufficient satellite rays in domain for " +
+            julday.strftime("%d %b %Y"))
         return None
 
     # Extracting the rest of the satellite data
@@ -166,7 +169,9 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     iscan, iray = np.where((d >= rmin) & (d <= rmax) & (pflag == 2))
     nprof = len(iscan)
     if nprof < minprof:
-        print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
+        print_red(
+            'Insufficient precipitating satellite rays in domain %i.' %
+            (nprof))
         return None
 
     # Extract data for these rays
@@ -187,16 +192,17 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     reflectivity_satellite = tmp
 
     # Note the scan angle for each ray
-    alpha = np.abs(-17.04 + np.arange(nray)*0.71)
+    alpha = np.abs(-17.04 + np.arange(nray) * 0.71)
     alpha = alpha[iray]
 
     # the_range shape is (nbin, ), and we now wnat to copy it for (nprof, nbin)
-    the_range_1d = np.arange(nbin)*drt
+    the_range_1d = np.arange(nbin) * drt
     the_range = np.zeros((nprof, nbin))
     for idx in range(0, nprof):
         the_range[idx, :] = the_range_1d[:]
 
-    xp, yp, zp, ds, the_alpha = correct_parallax(xc, yc, xp, yp, alpha, the_range)
+    xp, yp, zp, ds, the_alpha = correct_parallax(
+        xc, yc, xp, yp, alpha, the_range)
     alpha = the_alpha
 
     if len(ds) == 0:
@@ -205,14 +211,14 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
         return None
 
     # Compute the (approximate) volume of each PR bin
-    rt = zt/cos(pi/180*alpha) - the_range
-    volp = drt*(1.e-9)*pi*(rt*pi/180*bwt/2.)**2
+    rt = zt / cos(pi / 180 * alpha) - the_range
+    volp = drt * (1.e-9) * pi * (rt * pi / 180 * bwt / 2.)**2
 
     # Compute the ground-radar coordinates of the PR pixels
     sp = sqrt(xp**2 + yp**2)
-    gamma = sp/earth_gaussian_radius
-    ep = 180/pi*np.arctan((cos(gamma) - \
-         (earth_gaussian_radius + z0)/(earth_gaussian_radius + zp))/sin(gamma))
+    gamma = sp / earth_gaussian_radius
+    ep = 180 / pi * np.arctan((cos(gamma) - (earth_gaussian_radius + z0) /
+                               (earth_gaussian_radius + zp)) / sin(gamma))
     # rp = (earth_gaussian_radius + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
     # ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)  # Not used
 
@@ -236,27 +242,33 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
     # Convert to S-band using method of Cao et al. (2013)
     if l_cband:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(reflectivity_satellite, zp, zbb, bbwidth)
+        refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(
+            reflectivity_satellite, zp, zbb, bbwidth)
     else:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(reflectivity_satellite, zp, zbb, bbwidth)
+        refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(
+            reflectivity_satellite, zp, zbb, bbwidth)
 
     # Get the ground radar file lists (next 20 lines can be a function)
     radar_file_list = get_files(raddir + '/', julday)
     if len(radar_file_list) == 0:
-        print_red('No radar file found for this date '+ julday.strftime("%d %b %Y"))
+        print_red(
+            'No radar file found for this date ' +
+            julday.strftime("%d %b %Y"))
         return None
 
     print_yellow("%i radar files found." % (len(radar_file_list)))
 
     # Get the datetime for each radar files
-    dtime_radar = [None]*len(radar_file_list)  # Allocate empty list
+    dtime_radar = [None] * len(radar_file_list)  # Allocate empty list
     for cnt, radfile in enumerate(radar_file_list):
         dtime_radar[cnt] = get_time_from_filename(radfile, date)
 
     dtime_radar = list(filter(None, dtime_radar))  # Removing None values
 
     if len(dtime_radar) == 0:
-        print_red("No corresponding ground radar files for this date " + julday.strftime("%d %b %Y"))
+        print_red(
+            "No corresponding ground radar files for this date " +
+            julday.strftime("%d %b %Y"))
         return None
 
     # Find the nearest scan time    )
@@ -269,9 +281,12 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
     # Looking at the time difference between satellite and radar
     if time_difference.seconds > maxdt:
-        print_red('Time difference is of %i s.' % (time_difference.seconds), bold=True)
+        print_red(
+            'Time difference is of %i s.' %
+            (time_difference.seconds),
+            bold=True)
         print_red('This time difference is bigger' +
-              ' than the acceptable value of %i s.' % (maxdt))
+                  ' than the acceptable value of %i s.' % (maxdt))
         return None  # To the next satellite file
 
     if l_intermediary:
@@ -308,17 +323,19 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
     # Determine the Cartesian coordinates of the ground radar's pixels
     # rg, ag, eg = np.meshgrid(r_range, azang, elang, indexing='ij')
-    zg = sqrt(rg**2 + (earth_gaussian_radius + z0)**2 + \
-         2*rg*(earth_gaussian_radius + z0)*sin(pi/180*eg)) - earth_gaussian_radius
-    sg = earth_gaussian_radius*np.arcsin(rg*cos(pi/180*eg)/(earth_gaussian_radius + zg))
-    xg = sg*cos(pi/180*(90 - ag))
-    yg = sg*sin(pi/180*(90 - ag))
+    zg = sqrt(rg**2 + (earth_gaussian_radius + z0)**2 + 2 * rg * \
+              (earth_gaussian_radius + z0) * sin(pi / 180 * eg)) - earth_gaussian_radius
+    sg = earth_gaussian_radius * \
+        np.arcsin(rg * cos(pi / 180 * eg) / (earth_gaussian_radius + zg))
+    xg = sg * cos(pi / 180 * (90 - ag))
+    yg = sg * sin(pi / 180 * (90 - ag))
 
     # Compute the volume of each radar bin
-    volg = 1e-9*pi*dr*(pi/180*bwr/2*rg)**2
+    volg = 1e-9 * pi * dr * (pi / 180 * bwr / 2 * rg)**2
 
     # Convert S-band GR reflectivities to Ku-band
-    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, l_cband)
+    refg_ku = reflectivity_conversion.convert_to_Ku(
+        reflectivity_ground_radar, zg, zbb, l_cband)
 
     # Create arrays to store comparison variables
     '''Coordinates'''
@@ -342,32 +359,36 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
     '''Number of bins in sample'''
     ntot1 = np.zeros((nprof, ntilt), dtype=int)  # Total nb of PR bin in sample
-    nrej1 = np.zeros((nprof, ntilt), dtype=int)  # Nb of rejected PR bin in sample
+    # Nb of rejected PR bin in sample
+    nrej1 = np.zeros((nprof, ntilt), dtype=int)
     ntot2 = np.zeros((nprof, ntilt), dtype=int)  # Total nb of GR bin in sample
-    nrej2 = np.zeros((nprof, ntilt), dtype=int)  # Nb of rejected GR bin in sample
-    vol1 = np.zeros((nprof, ntilt)) + np.NaN  # Total volume of PR bins in sample
-    vol2 = np.zeros((nprof, ntilt)) + np.NaN  # Total volume of GR bins in sample
+    # Nb of rejected GR bin in sample
+    nrej2 = np.zeros((nprof, ntilt), dtype=int)
+    # Total volume of PR bins in sample
+    vol1 = np.zeros((nprof, ntilt)) + np.NaN
+    # Total volume of GR bins in sample
+    vol2 = np.zeros((nprof, ntilt)) + np.NaN
 
     # Compute the path-integrated reflectivities at every points
-    nat_refp = 10**(reflectivity_satellite/10.0)  # In natural units
-    nat_refg = 10**(reflectivity_ground_radar/10.0)
+    nat_refp = 10**(reflectivity_satellite / 10.0)  # In natural units
+    nat_refg = 10**(reflectivity_ground_radar / 10.0)
     irefp = np.fliplr(nancumsum(np.fliplr(nat_refp), 1))
     irefg = nancumsum(nat_refg)
-    irefp = drt*(irefp - nat_refp/2)
-    irefg = dr*(irefg - nat_refg/2)
-    irefp = 10*np.log10(irefp)
-    irefg = 10*np.log10(irefg)
+    irefp = drt * (irefp - nat_refp / 2)
+    irefg = dr * (irefg - nat_refg / 2)
+    irefp = 10 * np.log10(irefp)
+    irefg = 10 * np.log10(irefg)
 
     # Convert to linear units
     if not l_dbz:
-        reflectivity_satellite = 10**(reflectivity_satellite/10.0)
-        reflectivity_ground_radar = 10**(reflectivity_ground_radar/10.0)
-        refp_ss = 10**(refp_ss/10.0)
-        refp_sh = 10**(refp_sh/10.0)
-        refg_ku = 10**(refg_ku/10.0)
+        reflectivity_satellite = 10**(reflectivity_satellite / 10.0)
+        reflectivity_ground_radar = 10**(reflectivity_ground_radar / 10.0)
+        refp_ss = 10**(refp_ss / 10.0)
+        refp_sh = 10**(refp_sh / 10.0)
+        refg_ku = 10**(refg_ku / 10.0)
 
-    irefp = 10**(irefp/10.0)
-    irefg = 10**(irefg/10.0)
+    irefp = 10**(irefp / 10.0)
+    irefg = 10**(irefg / 10.0)
 
     print_green("Starting comparison")
 
@@ -378,8 +399,8 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
             # Identify those PR bins which fall within the GR sweep
-            ip = np.where((ep[ii, :] >= elang[jj] - bwr/2) &
-                          (ep[ii, :] <= elang[jj] + bwr/2))
+            ip = np.where((ep[ii, :] >= elang[jj] - bwr / 2) &
+                          (ep[ii, :] <= elang[jj] + bwr / 2))
 
             # Store the number of bins
             ntot1[ii, jj] = len(ip)
@@ -392,20 +413,22 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
             # Compute the thickness of the layer
             nip = len(ip)
-            dz[ii, jj] = nip*drt*cos(pi/180*alpha[ii, 0])
+            dz[ii, jj] = nip * drt * cos(pi / 180 * alpha[ii, 0])
 
             # Compute the PR averaging volume
             vol1[ii, jj] = np.sum(volp[ii, ip])
 
             # Note the mean TRMM beam diameter
-            ds[ii, jj] = pi/180*bwt*np.mean((zt - zp[ii, ip])/cos(pi/180*alpha[ii, ip]))
+            ds[ii, jj] = pi / 180 * bwt * \
+                np.mean((zt - zp[ii, ip]) / cos(pi / 180 * alpha[ii, ip]))
 
             # Note the radar range
             s = sqrt(x[ii, jj]**2 + y[ii, jj]**2)
-            r[ii, jj] = (earth_gaussian_radius + z[ii, jj])*sin(s/earth_gaussian_radius)/cos(pi/180*elang[jj])
+            r[ii, jj] = (earth_gaussian_radius + z[ii, jj]) * \
+                sin(s / earth_gaussian_radius) / cos(pi / 180 * elang[jj])
 
             # Check that sample is within radar range
-            if r[ii, jj] + ds[ii, jj]/2 > rmax:
+            if r[ii, jj] + ds[ii, jj] / 2 > rmax:
                 continue
 
             # Extract the relevant PR data
@@ -423,7 +446,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
             iref1[ii, jj] = np.nanmean(irefp1)
 
             if not l_dbz:
-                stdv1[ii, jj] = np.nanstd(10*np.log10(refp1))
+                stdv1[ii, jj] = np.nanstd(10 * np.log10(refp1))
             else:
                 stdv1[ii, jj] = np.nanstd(refp1)
 
@@ -433,10 +456,11 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
                 continue
 
             # Compute the horizontal distance to all the GR bins
-            d = sqrt((xg[:, :, jj] - x[ii, jj])**2 + (yg[:, :, jj] - y[ii, jj])**2)
+            d = sqrt((xg[:, :, jj] - x[ii, jj])**2 +
+                     (yg[:, :, jj] - y[ii, jj])**2)
 
             # Find all GR bins within the SR beam
-            igx, igy = np.where(d <= ds[ii, jj]/2)
+            igx, igy = np.where(d <= ds[ii, jj] / 2)
 
             # Store the number of bins
             ntot2[ii, jj] = len(igx)
@@ -454,19 +478,19 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
             # Average over those bins that exceed the reflectivity
             # threshold (exponential distance and volume weighting)
-            w = volg1*exp(-1*(d[igx, igy]/(ds[ii, jj]/2.))**2)
-            w = w*refg1/refg2
+            w = volg1 * exp(-1 * (d[igx, igy] / (ds[ii, jj] / 2.))**2)
+            w = w * refg1 / refg2
 
-            ref2[ii, jj] = np.nansum(w*refg1)/np.nansum(w)
+            ref2[ii, jj] = np.nansum(w * refg1) / np.nansum(w)
 
             # if ref2[ii, jj] < minrefp:
             #     ref2[ii, jj] = np.NaN
 
-            ref5[ii, jj] = np.nansum(w*refg2)/np.nansum(w)
-            iref2[ii, jj] = np.nansum(w*irefg1)/np.nansum(w)
+            ref5[ii, jj] = np.nansum(w * refg2) / np.nansum(w)
+            iref2[ii, jj] = np.nansum(w * irefg1) / np.nansum(w)
 
             if not l_dbz:
-                stdv2[ii, jj] = np.nanstd(10*np.log10(refg1))
+                stdv2[ii, jj] = np.nanstd(10 * np.log10(refg1))
             else:
                 stdv2[ii, jj] = np.nanstd(refg1)
 
@@ -481,20 +505,20 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     stdv2[np.isnan(stdv2)] = 0
 
     # Convert back to dBZ
-    iref1 = 10*np.log10(iref1)
-    iref2 = 10*np.log10(iref2)
+    iref1 = 10 * np.log10(iref1)
+    iref2 = 10 * np.log10(iref2)
 
     if not l_dbz:
-        reflectivity_satellite = 10*np.log10(reflectivity_satellite)
-        reflectivity_ground_radar = 10*np.log10(reflectivity_ground_radar)
-        refp_ss = 10*np.log10(refp_ss)
-        refp_sh = 10*np.log10(refp_sh)
-        refg_ku = 10*np.log10(refg_ku)
-        ref1 = 10*np.log10(ref1)
-        ref2 = 10*np.log10(ref2)
-        ref3 = 10*np.log10(ref3)
-        ref4 = 10*np.log10(ref4)
-        ref5 = 10*np.log10(ref5)
+        reflectivity_satellite = 10 * np.log10(reflectivity_satellite)
+        reflectivity_ground_radar = 10 * np.log10(reflectivity_ground_radar)
+        refp_ss = 10 * np.log10(refp_ss)
+        refp_sh = 10 * np.log10(refp_sh)
+        refg_ku = 10 * np.log10(refg_ku)
+        ref1 = 10 * np.log10(ref1)
+        ref2 = 10 * np.log10(ref2)
+        ref3 = 10 * np.log10(ref3)
+        ref4 = 10 * np.log10(ref4)
+        ref5 = 10 * np.log10(ref5)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -503,7 +527,9 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     # Extract comparison pairs
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
     if len(ipairx) < minpair:
-        print_red('Insufficient comparison pairs for ' + julday.strftime("%d %b %Y"))
+        print_red(
+            'Insufficient comparison pairs for ' +
+            julday.strftime("%d %b %Y"))
         return None
 
     iprof = ipairx
