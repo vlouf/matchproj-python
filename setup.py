@@ -21,15 +21,15 @@ def configuration(parent_package='', top_path=None):
                        quiet=True)
 
     config.add_subpackage('msgr')
-    config.add_subpackage('msgr.core')
-    config.add_subpackage('msgr.core.instruments')
-    config.add_subpackage('msgr.core.io')
+    # config.add_subpackage('msgr')
+    config.add_subpackage('msgr.instruments')
+    config.add_subpackage('msgr.io')
 
     return config
 
 setup(
     name='msgr',
-    version='0.5',
+    version='0.6',
     description='Matching Satellite and Ground Radar',
     long_description=readme,
     author='Valentin Louf',
