@@ -294,7 +294,7 @@ def main(configuration_file):
     MAIN
     Multiprocessing control room
     """
-    
+
     # Reading the configuration file.
     start_date, end_date, ncpu, PARAMETERS_dict = read_configuration_file(
         configuration_file)
@@ -334,7 +334,7 @@ if __name__ == '__main__':
         description="Start MSGR - volume Matching Satellite and Ground Radar.")
 
     parser.add_argument(
-        '-c', '--config', type=str, dest='config_file'
+        '-c', '--config', type=str, dest='config_file',
         help='Path to configuration file.', default=None)
 
     args = parser.parse_args()
