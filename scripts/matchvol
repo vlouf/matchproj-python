@@ -289,18 +289,12 @@ def MAIN_matchproj_fun(kwarg):
     return None
 
 
-def main():
+def main(configuration_file):
     """
     MAIN
     Multiprocessing control room
     """
-
-    if configuration_file is None:
-        print_red(
-            "No configuration file given. Type `generate_config_matchvol " + \
-            " -e` for generating a configuration file example.")
-        sys.exit()
-
+    
     # Reading the configuration file.
     start_date, end_date, ncpu, PARAMETERS_dict = read_configuration_file(
         configuration_file)
@@ -340,7 +334,16 @@ if __name__ == '__main__':
         description="Start MSGR - volume Matching Satellite and Ground Radar.")
 
     parser.add_argument(
-        '-s', '--script', type=str,
+        '-c', '--config', type=str, dest='config_file'
         help='Path to configuration file.', default=None)
 
-    main()
+    args = parser.parse_args()
+    config_file = args.config_file
+
+    if config_file is None:
+        print_red(
+            "No configuration file given. Type `generate_config_matchvol " + \
+            " -e` for generating a configuration file example.")
+        sys.exit()
+
+    main(config_file)
