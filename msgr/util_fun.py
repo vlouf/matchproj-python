@@ -62,38 +62,39 @@ def get_files(inpath, date=None):
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5',
                            '.H5', '.lassen', '.PPI', '.UF', '.gz', '.GZ']
     flist = []
-
+    
     # Check date type
     if type(date) == datetime.datetime:
         date = date.strftime("%Y%m%d")
 
     for dirpath, dirnames, filenames in os.walk(inpath):
-        for filenames_slice in filenames:
+        for one_file in filenames:
 
             # If no date provided, nothing new under the sun
             if date is None:
                 pass  # pretends there was no if statement
-            elif date in filenames_slice:
+            elif date in one_file:
                 pass  # pretends there was no if statement
             else:
                 continue
 
-            file_extension = os.path.splitext(str(filenames_slice))[1]
+            file_extension = os.path.splitext(str(one_file))[1]
             # Get extension
 
             if np.any(np.in1d(supported_extension, file_extension)):
                 # Check if file extension is in the list of supported ones
-                the_path = os.path.join(dirpath, filenames_slice)
+                input_file = os.path.join(dirpath, one_file)
             else:  # If not test next file.
                 continue
 
-            # File does have the supported extension, we keep it for returning
-            # list
-            flist.append(the_path)
+            # File does have the supported extension, check if gzip file size
+            # is above 1M
+            if os.path.getsize(input_file) < 1e6 and ".gz" in input_file:
+                continue
 
-    to_return = flist
+            flist.append(input_file)
 
-    return sorted(to_return)  # Type: List[str, ...]
+    return sorted(flist)  # Type: List[str, ...]
 
 
 def get_time_from_filename(filename, date):

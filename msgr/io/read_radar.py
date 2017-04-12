@@ -170,7 +170,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
                 radar = pyart.io.read(unzip_infile)
         # Reading normal (cf/radial) file.
         else:
-            radar = pyart.io.read(infile)            
+            radar = pyart.io.read(infile)
     except KeyError:
         print_red("Can't read input radar file.")
         return None
