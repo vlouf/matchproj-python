@@ -1,4 +1,5 @@
 import copy
+import gzip
 import pyart
 import warnings
 import numpy as np
@@ -159,10 +160,20 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     Returns a dictionnary containing the necessary parameters.
     '''
 
-    if ".h5" in infile or ".H5" in infile:
-        radar = pyart.aux_io.read_odim_h5(infile)
-    else:
-        radar = pyart.io.read(infile)
+    try:
+        # Reading ODIM HDF5 file.
+        if ".h5" in infile or ".H5" in infile:
+            radar = pyart.aux_io.read_odim_h5(infile)
+        # Reading gzip SIGMET file.
+        elif ".gz" in infile:
+            with gzip.open(filename=infile) as unzip_infile:
+                radar = pyart.io.read(unzip_infile)
+        # Reading normal (cf/radial) file.
+        else:
+            radar = pyart.io.read(infile)            
+    except KeyError:
+        print_red("Can't read input radar file.")
+        return None
 
     refl_field_name = get_reflectivity_field_name(radar)
     if refl_field_name is None:
