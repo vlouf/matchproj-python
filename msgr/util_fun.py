@@ -60,7 +60,7 @@ def get_files(inpath, date=None):
     '''
 
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5',
-                           '.H5', '.lassen', '.PPI', '.UF']
+                           '.H5', '.lassen', '.PPI', '.UF', '.gz', '.GZ']
     flist = []
 
     # Check date type
@@ -109,7 +109,12 @@ def get_time_from_filename(filename, date):
         date_time_str = re.findall(date + ".?[0-9]{6}", filename)[0]
         to_return = parser.parse(date_time_str, fuzzy=True)
     except IndexError:
-        to_return = None
+        # For cases where the date is YYMMDD
+        try:
+            date_time_str = re.findall(date[2:] + ".?[0-9]{6}", filename)[0]
+            to_return = parser.parse("20" + date_time_str, fuzzy=True)
+        except IndexError:
+            to_return = None
 
     return to_return  # Type: str
 
