@@ -1,3 +1,4 @@
+import gzip
 import pickle
 
 def save_data(out_file, data):
@@ -48,7 +49,7 @@ def save_data(out_file, data):
             to_save[k] = {'data': data[k], 'long_name': None, 'units':None}
 
     # Opening file and dumping data in it.
-    with open(out_file + ".pkl", 'wb') as fid:
+    with gzip.GzipFile(out_file + ".pkl.gz", 'w') as fid:
         pickle.dump(to_save, fid)
 
     return None

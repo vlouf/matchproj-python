@@ -169,9 +169,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     iscan, iray = np.where((d >= rmin) & (d <= rmax) & (pflag == 2))
     nprof = len(iscan)
     if nprof < minprof:
-        print_red(
-            'Insufficient precipitating satellite rays in domain %i.' %
-            (nprof))
+        print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
         return None
 
     # Extract data for these rays
@@ -201,8 +199,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     for idx in range(0, nprof):
         the_range[idx, :] = the_range_1d[:]
 
-    xp, yp, zp, ds, the_alpha = correct_parallax(
-        xc, yc, xp, yp, alpha, the_range)
+    xp, yp, zp, ds, the_alpha = correct_parallax(xc, yc, xp, yp, alpha, the_range)
     alpha = the_alpha
 
     if len(ds) == 0:
@@ -217,8 +214,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     # Compute the ground-radar coordinates of the PR pixels
     sp = sqrt(xp**2 + yp**2)
     gamma = sp / earth_gaussian_radius
-    ep = 180 / pi * np.arctan((cos(gamma) - (earth_gaussian_radius + z0) /
-                               (earth_gaussian_radius + zp)) / sin(gamma))
+    ep = 180 / pi * np.arctan((cos(gamma) - (earth_gaussian_radius + z0) / (earth_gaussian_radius + zp)) / sin(gamma))
     # rp = (earth_gaussian_radius + zp)*sin(gamma)/cos(pi/180*ep)  # Not used
     # ap = 90-180/pi*np.arctan2(yp, xp)  # Shape (nprof x nbin)  # Not used
 
@@ -281,21 +277,15 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
 
     # Looking at the time difference between satellite and radar
     if time_difference.seconds > maxdt:
-        print_red(
-            'Time difference is of %i s.' %
-            (time_difference.seconds),
-            bold=True)
-        print_red('This time difference is bigger' +
-                  ' than the acceptable value of %i s.' % (maxdt))
+        print_red('Time difference is of %i s.' % (time_difference.seconds), bold=True)
+        print_red('This time difference is bigger than the acceptable value of %i s.' % (maxdt))
         return None  # To the next satellite file
 
     if l_intermediary:
-        ofname = os.path.join(os.path.expanduser('~'), 'kt_woorking_dates.txt')
+        ofname = os.path.join(os.path.expanduser('~'), 'MSGR_matching_dates.txt')
         to_write = julday.strftime("%Y%m%d") + "\n"
         with open(ofname, 'a') as fid:
             fid.write(to_write)
-
-        return None
 
     # Radar file corresponding to the nearest scan time
     radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
@@ -305,6 +295,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     radar = read_radar(radfile, l_atten, gr_reflectivity_offset)
 
     if radar is None:
+        print("RADAR is NONE")
         return None  # Bad dimensions message already printed
 
     ngate = radar['ngate']

@@ -196,7 +196,7 @@ gpm = False
 cband = True
 write = True
 correct_gr_attenuation = True
-intermediary = True
+intermediary = False
 '''
 
     with open(output_fname, 'w') as fid:

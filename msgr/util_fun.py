@@ -60,41 +60,40 @@ def get_files(inpath, date=None):
     '''
 
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5',
-                           '.H5', '.lassen', '.PPI', '.UF', '.gz', '.GZ']
+                           '.H5', '.lassen', '.PPI', '.UF']
     flist = []
-    
+
     # Check date type
     if type(date) == datetime.datetime:
         date = date.strftime("%Y%m%d")
 
     for dirpath, dirnames, filenames in os.walk(inpath):
-        for one_file in filenames:
+        for filenames_slice in filenames:
 
             # If no date provided, nothing new under the sun
             if date is None:
                 pass  # pretends there was no if statement
-            elif date in one_file:
+            elif date in filenames_slice:
                 pass  # pretends there was no if statement
             else:
                 continue
 
-            file_extension = os.path.splitext(str(one_file))[1]
+            file_extension = os.path.splitext(str(filenames_slice))[1]
             # Get extension
 
             if np.any(np.in1d(supported_extension, file_extension)):
                 # Check if file extension is in the list of supported ones
-                input_file = os.path.join(dirpath, one_file)
+                the_path = os.path.join(dirpath, filenames_slice)
             else:  # If not test next file.
                 continue
 
-            # File does have the supported extension, check if gzip file size
-            # is above 1M
-            if os.path.getsize(input_file) < 1e6 and ".gz" in input_file:
-                continue
+            # File does have the supported extension, we keep it for returning
+            # list
+            flist.append(the_path)
 
-            flist.append(input_file)
+    to_return = flist
 
-    return sorted(flist)  # Type: List[str, ...]
+    return sorted(to_return)  # Type: List[str, ...]
 
 
 def get_time_from_filename(filename, date):
@@ -110,12 +109,7 @@ def get_time_from_filename(filename, date):
         date_time_str = re.findall(date + ".?[0-9]{6}", filename)[0]
         to_return = parser.parse(date_time_str, fuzzy=True)
     except IndexError:
-        # For cases where the date is YYMMDD
-        try:
-            date_time_str = re.findall(date[2:] + ".?[0-9]{6}", filename)[0]
-            to_return = parser.parse("20" + date_time_str, fuzzy=True)
-        except IndexError:
-            to_return = None
+        to_return = None
 
     return to_return  # Type: str
 
@@ -156,15 +150,6 @@ def get_filename_from_date(file_list, the_date):
     return to_return  # Type: str
 
 
-def chunks(l, n):
-    """
-    Yield successive n-sized chunks from l.
-    Use it to cut a big list into smaller chunks. => memory efficient
-    """
-    for i in range(0, len(l), n):
-        yield l[i:i + n] # type: Generator[list of strings]
-
-
 def print_with_time(txt):
     '''
     PRINT_WITH_TIME
@@ -197,43 +182,4 @@ def print_blue(txt, bold=False):
 
 def print_magenta(txt, bold=False):
     print(crayons.magenta(txt, bold))
-    return None
-
-
-def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
-                    ncpu, start_date, end_date):
-    '''
-    WELCOME_MESSAGE
-    Print a welcome message with a recap on the main global variables status
-    '''
-
-    msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
-
-    print("#"*80)
-    print_magenta("\n" + msg + "\n", bold=True)
-    print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
-    if l_gpm:
-        print("The spaceborne instrument used is GPM.")
-    else:
-        print("The spaceborne instrument used is TRMM.")
-    print("The volume matching will be executed between " +
-          start_date.strftime('%d %b %Y') + ' and ' + end_date.strftime('%d %b %Y'))
-    if l_atten:
-        print("Ground radar attenuation will be corrected.")
-    else:
-        print("Ground radar attenuation will NOT be corrected. I suppose it has already been done.")
-    if l_dbz:
-        print("The statistics will be done in dBZ.")
-    else:
-        print("The statistics will be done in natural units.")
-    if l_write:
-        print("The results will be saved in " + outdir)
-    else:
-        print("The results won't be saved.")
-    print("This program will look for satellite data in " + satdir)
-    print("This program will look for ground radar data in " + raddir)
-    print("This program will run on %i cpu(s)." % (ncpu))
-    print("#"*80)
-    print("\n\n")
-
     return None
