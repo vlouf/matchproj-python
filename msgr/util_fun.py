@@ -100,18 +100,32 @@ def get_time_from_filename(filename, date):
     '''
     GET_TIME_FROM_FILENAME
     Capture the time string inside the filename and returns it.
+
+    Parameters:
+    ===========
+        filename: str
+            String to parse for date.
+        date: str
+            Date (format YYYYMMDD) to look for in files.
+
+    Returns:
+    ========
+        date_time: datetime
+            Datetime corresponding to given filename.
     '''
+    # Looking for date followed by underscore (or not) and 6 (or 4) consecutives
+    # number (i.e. the time)
+    # There is maybe an optionnal character (like _) between date and time
+    strlist = re.findall(date + ".?[0-9]{6}", filename)
+    if len(strlist) == 0:
+        strlist = re.findall(date + ".?[0-9]{4}", filename)
 
-    # Looking for date followed by underscore and 6 consecutives number (i.e.
-    # the time)
     try:
-        # There is maybe an optionnal character (like _) between date and time
-        date_time_str = re.findall(date + ".?[0-9]{6}", filename)[0]
-        to_return = parser.parse(date_time_str, fuzzy=True)
+        date_time = parser.parse(strlist[0], fuzzy=True)
     except IndexError:
-        to_return = None
+        date_time = None
 
-    return to_return  # Type: str
+    return date_time  # Type: str
 
 
 def get_closest_date(list_date, base_time):
@@ -138,7 +152,7 @@ def get_filename_from_date(file_list, the_date):
     '''
 
     # There is maybe an optionnal character(underscore) between date and time
-    rt_str = the_date.strftime("%Y%m%d.?%H%M%S")
+    rt_str = the_date.strftime("%Y%m%d.?%H%M")
     for the_file in file_list:
         try:
             re.findall(rt_str, the_file)[0]  # If does not exist it raises an error

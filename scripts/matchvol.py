@@ -92,14 +92,15 @@ def production_line_manager(the_date, parameters_dict):
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
-        print_red("\nNo satellite swaths for {}.".format(julday.strftime("%d %b %Y")))
+        print_red("No satellite swaths for {}.".format(julday.strftime("%d %b %Y")))
         return None
 
     # Looping over satellite file
     for one_sat_file in satfiles:
         # Get orbit number
         orbit = get_orbit_number(one_sat_file)
-        print_with_time("\nOrbit {} -- {}.".format(orbit, julday.strftime("%d %B %Y")))
+        print("")
+        print_with_time("Orbit {} -- {}.".format(orbit, julday.strftime("%d %B %Y")))
 
         # Start chrono
         st_time = time.time()

@@ -20,7 +20,7 @@ def configuration(parent_package='', top_path=None):
                        delegate_options_to_subpackages=True,
                        quiet=True)
 
-    config.add_subpackage('msgr')    
+    config.add_subpackage('msgr')
     config.add_subpackage('msgr.instruments')
     config.add_subpackage('msgr.io')
 
@@ -37,5 +37,5 @@ setup(
     license=license,
     packages=find_packages(exclude=('config', 'docs')),
     configuration=configuration,
-    scripts=['scripts/matchvol', 'scripts/generate_config_matchvol']
+    scripts=['scripts/matchvol.py', 'scripts/generate_config_matchvol.py']
 )

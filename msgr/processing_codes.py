@@ -157,9 +157,10 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     minute = minutep[iclose]
     second = secondp[iclose]
 
-    date = "%i%02i%02i" % (year, month, day)
+    # date = "%i%02i%02i" % (year, month, day)
     timep = "%02i%02i%02i" % (hour, minute, second)
     dtime_sat = datetime.datetime(year, month, day, hour, minute, second)
+    date = dtime_sat.strftime("%Y%m%d")
     # dtime_sat corresponds to the julp/tp stuff in the IDL code
 
     # Compute the distance of every ray to the radar
@@ -247,9 +248,7 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     # Get the ground radar file lists (next 20 lines can be a function)
     radar_file_list = get_files(raddir + '/', julday)
     if len(radar_file_list) == 0:
-        print_red(
-            'No radar file found for this date ' +
-            julday.strftime("%d %b %Y"))
+        print_red('No radar file found for {}.'.format(date))
         return None
 
     print_yellow("%i radar files found." % (len(radar_file_list)))
@@ -262,12 +261,11 @@ def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
     dtime_radar = list(filter(None, dtime_radar))  # Removing None values
 
     if len(dtime_radar) == 0:
-        print_red(
-            "No corresponding ground radar files for this date " +
-            julday.strftime("%d %b %Y"))
+        print(dtime_radar)
+        print_red("No corresponding ground radar files for {}.".format(date))
         return None
 
-    # Find the nearest scan time    )
+    # Find the nearest scan time
     closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
 
     if dtime_sat >= closest_dtime_rad:
