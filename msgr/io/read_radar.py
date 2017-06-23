@@ -11,10 +11,14 @@ def correct_attenuation(radar, method='pyart', refl_field_name='DBZ_F',
                         rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F',
                         kdp_field_name='KDP_F'):
     """
-    CORRECT_ATTENUATION
-    Use of pyart correction capabilities to estimate the attenuation and
-    correct it
-    Returns a pyart radar structure.
+    Use of pyart correction capabilities to estimate and correct the attenuation.
+
+    Parameters:
+    ===========
+        radar: struct
+            Py-ART radar structure
+        method: str
+            Can be 'pyart' or 'bringi'
     """
 
     the_radar = copy.deepcopy(radar)
@@ -31,8 +35,8 @@ def correct_attenuation(radar, method='pyart', refl_field_name='DBZ_F',
             the_radar.add_field_like(refl_field_name, 'NCP', ncp)
 
         spec_at, cor_z = pyart.correct.calculate_attenuation(the_radar, 0,
-                         refl_field=refl_field_name, ncp_field='NCP',
-                         rhv_field=rhv_field_name, phidp_field=phidp_field_name)
+                                                             refl_field=refl_field_name, ncp_field='NCP',
+                                                             rhv_field=rhv_field_name, phidp_field=phidp_field_name)
 
     elif method == 'bringi':
         kdp = radar.fields[kdp_field_name]['data']
@@ -80,7 +84,7 @@ def get_reflectivity_field_name(radar):
     of different reflectvity name and return the first one that works
     '''
 
-    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'Refl', 'corrected_reflectivity']
+    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'total_power', 'Refl', 'corrected_reflectivity']
     for pn in potential_name:
         try:
             rd = radar.fields[pn]
@@ -116,7 +120,7 @@ def get_kdp_field_name(radar):
     of different reflectvity name and return the first one that works
     '''
 
-    potential_name = ['KDP_F', 'KDP', 'differential_phase']
+    potential_name = ['KDP_F', 'KDP', 'specific_differential_phase']
     for pn in potential_name:
         try:
             rd = radar.fields[pn]
@@ -147,7 +151,7 @@ def get_rhohv_field_name(radar):
 
 def get_azimuth_resolution(azimuth):
     ra = np.diff(azimuth)
-    ra[(ra<0) | (ra>10)] = np.NaN
+    ra[(ra < 0) | (ra > 10)] = np.NaN
     rslt = np.round(np.nanmean(ra), 1)
     return rslt
 
@@ -178,12 +182,9 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
             attenuation_correction = False
             print_red("Attenuation correction impossible, missing dualpol field.")
         else:
-            radar = correct_attenuation(radar,
-                                       method='pyart',
-                                       refl_field_name=refl_field_name,
-                                       rhv_field_name=rhohv_name,
-                                       phidp_field_name=phidp_name,
-                                       kdp_field_name=kdp_name)
+            radar = correct_attenuation(radar, method='pyart', refl_field_name=refl_field_name,
+                                        rhv_field_name=rhohv_name,  phidp_field_name=phidp_name,
+                                        kdp_field_name=kdp_name)
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates
@@ -215,7 +216,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
 
         raw_azi = radar.azimuth['data'][sweep_slice]
-        raw_azi[raw_azi==360] = 0
+        raw_azi[raw_azi == 360] = 0
         raw_elev = radar.elevation['data'][sweep_slice]
 
         elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
@@ -276,7 +277,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
                  'azang': az3d,         # Azimuth
                  'elev_3d': el3d,       # Elevation angle
                  'range': rg3d,         # Radar's range
-                 'elang' : elevation,
+                 'elang': elevation,
                  'dr': rg[2]-rg[1],     # Gate spacing
                  'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
 
