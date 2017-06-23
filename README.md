@@ -14,6 +14,9 @@ You will need:
 >- [NumPy][2]
 >- Python Data Analysis Library [(pandas)][3]
 >- [Pyproj][4]
+>- h5py
+>- pyhdf
+>- netCDF4
 
 This code has been tested and conceived on Python 3.5 and Python 3.6. It will *NOT* work with python 2.X versions.
 
