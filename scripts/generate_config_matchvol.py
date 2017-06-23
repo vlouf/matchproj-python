@@ -37,7 +37,7 @@ def get_gnrl_path(season):
                 "1516": {'path': custom_path, 'subdir': False}
                 }
 
-    return the_path[season] # type: Dict[str, bool]
+    return the_path[season]  # type: Dict[str, bool]
 
 
 def get_date(season_str):
@@ -137,6 +137,8 @@ correct_gr_attenuation = False
         fid.write(ex)
 
     print("Example configuration file written in: matchvol_configuration.ini")
+    print("Once you have modified the configuration file, type: ")
+    print("matchvol.py -c matchvol_configuration.ini")
     return None
 
 
@@ -207,49 +209,17 @@ intermediary = False
 
 
 if __name__ == '__main__':
-    '''GLOBAL --- global variables are:'''
-    '''npcu: number of process''' # type: int
-    '''season: string of the type "0203" (for season 2002/2003)''' # type: str
-
-    welcome_msg =  "Automatic creation of the configuration file for MSGR for" +\
-                   " CPOL data on RAIJIN (only)."
+    welcome_msg = "Automatic creation of the configuration file for MSGR for CPOL data on NCI RAIJIN (only)."
 
     parser = argparse.ArgumentParser(description=welcome_msg)
-    parser.add_argument('-j',
-                        '--cpu',
-                        dest='ncpu',
-                        default=16,
-                        type=int,
-                        help='Number of process')
-
-    parser.add_argument('-o',
-                        '--output',
-                        dest='output',
-                        default=None,
-                        type=str,
-                        help='Name of the output file.')
-
-    parser.add_argument('-s',
-                        '--season',
-                        dest='season',
-                        default=None,
-                        type=str,
-                        help='Season to parse.')
+    parser.add_argument('-j', '--cpu', dest='ncpu', default=16, type=int, help='Number of process')
+    parser.add_argument('-o', '--output', dest='output', default=None, type=str, help='Name of the output file.')
+    parser.add_argument('-s', '--season', dest='season', default=None, type=str, help='Season to parse.')
 
     feature_parser = parser.add_mutually_exclusive_group(required=False)
-
-    feature_parser.add_argument('--example',
-                        dest='example',
-                        action='store_true',
-                        help='Create example file.')
-
-    feature_parser.add_argument('--no-example',
-                        dest='example',
-                        action='store_false',
-                        help="Don't create example file.")
-
+    feature_parser.add_argument('--example', dest='example', action='store_true', help='Create example file.')
+    feature_parser.add_argument('--no-example', dest='example', action='store_false', help="Don't create example file.")
     parser.set_defaults(example=False)
-
 
     args = parser.parse_args()
     ncpu = args.ncpu
@@ -263,9 +233,11 @@ if __name__ == '__main__':
     if ".ini" not in output_fname:
         output_fname += ".ini"
 
-    if season is None and example == False:
-        print("You need to provide an argument, type `generate_config_matchvol -h` for help.")
-        sys.exit()
+    # No season provided and this is not an example.
+    if season is None:
+        if not example:
+            print("You need to provide an argument, type `generate_config_matchvol -h` for help.")
+            sys.exit()
 
     if example:
         write_example()

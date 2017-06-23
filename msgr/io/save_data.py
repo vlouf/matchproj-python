@@ -1,11 +1,22 @@
 import gzip
 import pickle
+import pandas as pd
 
-def save_data(out_file, data):
+
+def save_data(out_file, data, do_hdf=False):
     '''
     SAVE_DATA
     Dumps data in a python's pickle file
     Will try to populate the metadata based on the key name.
+
+    Parameters:
+    ===========
+        out_file: str
+            Output file name.
+        data: dict
+            Dictionnary of data to save.
+        do_hdf: bool
+            Save as a HDF file.
     '''
 
     metadat = dict()
@@ -26,7 +37,7 @@ def save_data(out_file, data):
     metadat['nrej2'] = {'long_name': 'Number of rejected GR points in averaging volume', 'units': None}
     metadat['sfc'] = {'long_name': 'Surface type (1=Ocean, 2=Land, 3=Coast, 4=Lake, 5=Unknown)', 'units': None}
     metadat['ptype'] = {'long_name': 'Precipitation type (1=Strat, 2=Conv, 3=Other)', 'units': None}
-    metadat['ref1'] = {'long_name': 'PR reflectivity', 'units': 'dBZ' }
+    metadat['ref1'] = {'long_name': 'PR reflectivity', 'units': 'dBZ'}
     metadat['ref2'] = {'long_name': 'GR reflectivity', 'units': 'dBZ'}
     metadat['ref3'] = {'long_name': 'PR reflectivity (S-band, Snow)', 'units': 'dBZ'}
     metadat['ref4'] = {'long_name': 'PR reflectivity (S-band, Hail)', 'units': 'dBZ'}
@@ -44,12 +55,16 @@ def save_data(out_file, data):
     to_save = dict()
     for k in data.keys():
         try:
-            to_save[k] = {'data': data[k], 'long_name': metadat[k]['long_name'], 'units':metadat[k]['units']}
+            to_save[k] = {'data': data[k], 'long_name': metadat[k]['long_name'], 'units': metadat[k]['units']}
         except KeyError:
-            to_save[k] = {'data': data[k], 'long_name': None, 'units':None}
+            to_save[k] = {'data': data[k], 'long_name': None, 'units': None}
 
-    # Opening file and dumping data in it.
-    with gzip.GzipFile(out_file + ".pkl.gz", 'w') as fid:
-        pickle.dump(to_save, fid)
+    if do_hdf:
+        df = pd.DataFrame(to_save)
+        df.to_hdf(out_file + ".h5", "data")
+    else:
+        # Opening file and dumping data in it.
+        with gzip.GzipFile(out_file + ".pkl.gz", 'w') as fid:
+            pickle.dump(to_save, fid)
 
     return None
