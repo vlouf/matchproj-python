@@ -47,7 +47,7 @@ def chunks(l, n):
     Use it to cut a big list into smaller chunks. => memory efficient
     """
     for i in range(0, len(l), n):
-        yield l[i:i + n] # type: Generator[list of strings]
+        yield l[i:i + n]
 
 
 def production_line_manager(the_date, parameters_dict):
@@ -121,8 +121,14 @@ def production_line_manager(the_date, parameters_dict):
 
             # Calling processing function for TRMM
             match_vol = processing_codes.matchproj_fun(PATH_params,
-                PROJ_params, RADAR_params, SAT_params, SWITCH_params,
-                THRESHOLDS_params, one_sat_file, fd_25, dtime=julday)
+                                                       PROJ_params,
+                                                       RADAR_params,
+                                                       SAT_params,
+                                                       SWITCH_params,
+                                                       THRESHOLDS_params,
+                                                       one_sat_file,
+                                                       fd_25,
+                                                       dtime=julday)
 
         if match_vol is None:
             continue
@@ -134,37 +140,31 @@ def production_line_manager(the_date, parameters_dict):
             continue
 
         # Output file name.
-        outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB".format(rid,
-            orbit, julday.strftime("%Y%m%d"), gr_reflectivity_offset)
+        outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB".format(rid, orbit, julday.strftime("%Y%m%d"), gr_reflectivity_offset)
         outfilename = os.path.join(outdir, outfilename)
 
-        print_green("Saving data to {}, for orbit {} on {}.".format(outfilename,
-            orbit, julday.strftime("%d %B %Y")), bold=True)
+        print_green("Saving data to {}, for orbit {} on {}.".format(outfilename, orbit, julday.strftime("%d %B %Y")), bold=True)
         save_data(outfilename, match_vol)
 
     return None
 
 
-def main(configuration_file):
+def main():
     """
     MAIN
     Multiprocessing control room
     """
 
     # Reading the configuration file.
-    start_date, end_date, ncpu, parameters_dict = config_codes.read_configuration_file(configuration_file)
+    start_date, end_date, ncpu, parameters_dict = config_codes.read_configuration_file(CONFIG_FILE)
 
     # Generating the date range.
     date_range = pd.date_range(start_date, end_date)
 
-    # Cutting the file list into smaller chunks. (The multiprocessing.Pool instance
-    # is freed from memory, at each iteration of the main for loop).
-    date_range_chunk = chunks(date_range, ncpu*2)
+    # Cutting the file list into smaller chunks.
+    date_range_chunk = chunks(date_range, ncpu * 2)
     for date_list in date_range_chunk:
-        # Because we use multiprocessing, we need to send a list of tuple as argument of Pool.starmap.
-        args_list = [None]*len(date_list)  # yes, I like declaring empty array.
-        for cnt, onedate in enumerate(date_list):
-            args_list[cnt] = (onedate, parameters_dict)
+        args_list = [(onedate, parameters_dict) for onedate in date_list]
 
         # Start multiprocessing.
         with Pool(ncpu) as pool:
@@ -177,14 +177,13 @@ if __name__ == '__main__':
     parser_description = "Start MSGR - volume Matching Satellite and Ground Radar."
     parser = argparse.ArgumentParser(description=parser_description)
 
-    parser.add_argument('-c', '--config', type=str, dest='config_file',
-        help='Path to configuration file.', default=None)
+    parser.add_argument('-c', '--config', type=str, dest='config_file', help='Path to configuration file.', default=None)
 
     args = parser.parse_args()
-    config_file = args.config_file
+    CONFIG_FILE = args.config_file
 
-    if config_file is None:
+    if CONFIG_FILE is None:
         parser.error("Configuration file required.")
         sys.exit()
 
-    main(config_file)
+    main()

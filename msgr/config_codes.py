@@ -1,19 +1,37 @@
 # PSL
-import os
-import sys
 import time
-import glob
-import argparse
 import datetime
 import configparser
 
 # Other libraries.
 import pyproj
 
+from numpy import sqrt, cos, sin, tan, pi
+
 # Custom
 from .util_fun import *
-from .instruments.ground_radar import radar_gaussian_curve
 from .instruments.satellite import satellite_params
+
+
+def radar_gaussian_curve(lat0):
+    '''
+    RADAR_GAUSSIAN_CURVE
+    Determine the Earth's Gaussian radius of curvature at the radar
+    https://en.wikipedia.org/wiki/Earth_radius#Radii_of_curvature
+    '''
+
+    # Major and minor radii of the Ellipsoid
+    a = 6378137.0  # Earth radius in meters
+    e2 = 0.0066943800
+    b = a * sqrt(1 - e2)
+
+    tmp = (a * cos(pi / 180 * lat0))**2 + (b * sin(pi / 180 * lat0))**2   # Denominateur
+    an = (a**2) / sqrt(tmp)  # Radius of curvature in the prime vertical (east–west direction)
+    am = (a * b)**2 / tmp**1.5  # Radius of curvature in the north–south meridian
+    ag = sqrt(an * am)  # Earth's Gaussian radius of curvature
+    ae = (4 / 3.) * ag
+
+    return ae
 
 
 def read_configuration_file(config_file):
@@ -158,7 +176,6 @@ def read_configuration_file(config_file):
     return start_date, end_date, ncpu, PARAMETERS_dict
 
 
-
 def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
                     ncpu, start_date, end_date):
     '''
@@ -166,9 +183,9 @@ def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
     Print a welcome message with a recap on the main global variables status
     '''
 
-    msg = " "*38 + "MSGR\n" + " "*22 + "Matching Satellite and Ground Radar"
+    msg = " " * 38 + "MSGR\n" + " " * 22 + "Matching Satellite and Ground Radar"
 
-    print("#"*80)
+    print("#" * 80)
     print_magenta("\n" + msg + "\n", bold=True)
     print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
     if l_gpm:
@@ -192,7 +209,7 @@ def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
     print("This program will look for satellite data in " + satdir)
     print("This program will look for ground radar data in " + raddir)
     print("This program will run on %i cpu(s)." % (ncpu))
-    print("#"*80)
+    print("#" * 80)
     print("\n\n")
 
     return None
