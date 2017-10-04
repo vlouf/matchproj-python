@@ -5,11 +5,9 @@ import configparser
 
 # Other libraries.
 import pyproj
+import crayons
 
 from numpy import sqrt, cos, sin, tan, pi
-
-# Custom
-from .instruments.satellite import satellite_params
 
 
 def _radar_gaussian_curve(lat0):
@@ -31,6 +29,27 @@ def _radar_gaussian_curve(lat0):
     ae = (4 / 3.) * ag
 
     return ae
+
+
+def _satellite_params(sname='GPM'):
+    """
+    SATELLITE_PARAMS
+    return the gate spacing and the orbital height of the satellite
+    """
+
+    sname = sname.upper()
+    # Orbit parameters
+    if sname == 'GPM':
+        zt = 407000.   # orbital height of GPM
+        drt = 125.     # gate spacing of GPM
+    elif sname == 'TRMM':
+        zt = 402500.   # orbital height of TRMM (post boost)
+        drt = 250.     # gate spacing of TRMM
+    else:
+        raise ValueError("The available satellites are GPM or TRMM.")
+    bwt = 0.71
+
+    return {'zt': zt, 'drt': drt, 'bwt': bwt}
 
 
 def read_configuration_file(config_file):
@@ -122,9 +141,9 @@ def read_configuration_file(config_file):
 
     # Stocking parameters in dictionnaries
     if l_gpm:
-        SAT_params = satellite_params('gpm')
+        SAT_params = _satellite_params('gpm')
     else:
-        SAT_params = satellite_params('trmm')
+        SAT_params = _satellite_params('trmm')
 
     PATH_params = dict()
     PROJ_params = dict()
@@ -185,7 +204,7 @@ def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
     msg = " " * 38 + "MSGR\n" + " " * 22 + "Matching Satellite and Ground Radar"
 
     print("#" * 80)
-    print("\n" + msg + "\n", bold=True)
+    print(crayons.blue("\n" + msg + "\n", bold=True))
     print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
     if l_gpm:
         print("The spaceborne instrument used is GPM.")

@@ -1,11 +1,3 @@
-#! /usr/bin/env python
-
-__title__ = 'generate_config_matchvol'
-__version__ = '0.5'
-__author__ = 'Valentin Louf'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2017 Valentin Louf'
-
 import sys
 import argparse
 

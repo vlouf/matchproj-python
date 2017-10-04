@@ -32,10 +32,11 @@ import pandas as pd
 
 # Custom lib.
 # from msgr import config_codes
+from msgr.io.read_config import read_configuration_file
 from msgr import cross_validation
 from msgr.utils.misc import *  # bunch of useful functions
 from msgr.io.save_data import save_data
-from msgr.instruments.satellite import get_orbit_number, satellite_params
+from msgr.instruments.satellite import get_orbit_number
 
 
 def chunks(l, n):
@@ -153,7 +154,7 @@ def main():
     """
 
     # Reading the configuration file.
-    start_date, end_date, ncpu, parameters_dict = config_codes.read_configuration_file(CONFIG_FILE)
+    start_date, end_date, ncpu, parameters_dict = read_configuration_file(CONFIG_FILE)
 
     # Generating the date range.
     date_range = pd.date_range(start_date, end_date)

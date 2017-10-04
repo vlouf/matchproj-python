@@ -43,27 +43,6 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
     return xp, yp, zp, ds, alpha
 
 
-def satellite_params(sname='GPM'):
-    """
-    SATELLITE_PARAMS
-    return the gate spacing and the orbital height of the satellite
-    """
-
-    sname = sname.upper()
-    # Orbit parameters
-    if sname == 'GPM':
-        zt = 407000.   # orbital height of GPM
-        drt = 125.     # gate spacing of GPM
-    elif sname == 'TRMM':
-        zt = 402500.   # orbital height of TRMM (post boost)
-        drt = 250.     # gate spacing of TRMM
-    else:
-        raise ValueError("The available satellites are GPM or TRMM.")
-    bwt=0.71
-
-    return {'zt':zt, 'drt':drt, 'bwt':bwt}
-
-
 def get_orbit_number(the_file):
     """
     GET_ORBIT_NUMBER
