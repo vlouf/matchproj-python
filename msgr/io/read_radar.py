@@ -1,15 +1,15 @@
+# Python Standard Library
 import copy
-import pyart
 import warnings
+
+# Other libraries.
+import pyart
 import numpy as np
 
 from scipy.integrate import cumtrapz
-from ..util_fun import print_red, print_yellow
 
 
-def correct_attenuation(radar, method='pyart', refl_field_name='DBZ_F',
-                        rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F',
-                        kdp_field_name='KDP_F'):
+def correct_attenuation(radar, refl_field_name='DBZ_F', rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'):
     """
     Use of pyart correction capabilities to estimate and correct the attenuation.
 
@@ -21,40 +21,24 @@ def correct_attenuation(radar, method='pyart', refl_field_name='DBZ_F',
             Can be 'pyart' or 'bringi'
     """
 
-    the_radar = copy.deepcopy(radar)
-    print_yellow("Correcting ground radar attenuation.")
+    print("Correcting ground radar attenuation.")
 
-    if method == 'pyart':
-        try:
-            # Tries if normalised coherent poiwer field exist
-            ncp = radar.fields['NCP']
-        except KeyError:
-            # Creates a dummy NCP field.
-            reflec = the_radar.fields[refl_field_name]['data']
-            ncp = np.zeros_like(reflec) + 1
-            the_radar.add_field_like(refl_field_name, 'NCP', ncp)
+    try:
+        # Tries if normalised coherent poiwer field exist
+        ncp = radar.fields['NCP']
+    except KeyError:
+        # Creates a dummy NCP field.
+        reflec = radar.fields[refl_field_name]['data']
+        ncp = np.zeros_like(reflec) + 1
+        radar.add_field_like(refl_field_name, 'NCP', ncp)
 
-        spec_at, cor_z = pyart.correct.calculate_attenuation(the_radar, 0,
-                                                             refl_field=refl_field_name, ncp_field='NCP',
-                                                             rhv_field=rhv_field_name, phidp_field=phidp_field_name)
+        spec_at, cor_z = pyart.correct.calculate_attenuation(radar, 0,
+                                                             refl_field=refl_field_name,
+                                                             ncp_field='NCP',
+                                                             rhv_field=rhv_field_name,
+                                                             phidp_field=phidp_field_name)
 
-    elif method == 'bringi':
-        kdp = radar.fields[kdp_field_name]['data']
-        alpha = 0.08
-        spec_at = alpha*kdp
-        atten = np.zeros(kdp.shape, dtype='float32')
-
-        for i in range(0, atten.shape[0]):
-            atten[i, :-1] = cumtrapz(spec_at[i, :]) * dr * 2.0
-            atten[i, -1] = atten[i, -2]
-
-        zh = radar.fields[refl_field_name]['data']
-        cor_z = zh + atten
-
-    the_radar.add_field('specific_attenuation', spec_at)
-    the_radar.add_field('corrected_reflectivity_horizontal', cor_z)
-
-    return the_radar
+    return cor_z
 
 
 def populate_missing_azimuth(azi, refl_slice, ngate):
@@ -113,24 +97,6 @@ def get_phidb_field_name(radar):
     return None
 
 
-def get_kdp_field_name(radar):
-    '''
-    GET_KDP_FIELD_NAME
-    Because of different conventions for naming fields, it will try a variety
-    of different reflectvity name and return the first one that works
-    '''
-
-    potential_name = ['KDP_F', 'KDP', 'specific_differential_phase']
-    for pn in potential_name:
-        try:
-            rd = radar.fields[pn]
-            return pn
-        except KeyError:
-            continue
-
-    return None
-
-
 def get_rhohv_field_name(radar):
     '''
     GET_RHOHV_FIELD_NAME
@@ -170,21 +136,22 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
 
     refl_field_name = get_reflectivity_field_name(radar)
     if refl_field_name is None:
-        print_red('Reflectivity field not found.')
+        print('Reflectivity field not found.')
         return None
 
     if attenuation_correction:
         phidp_name = get_phidb_field_name(radar)
         rhohv_name = get_rhohv_field_name(radar)
-        kdp_name = get_kdp_field_name(radar)
 
         if phidp_name is None or rhohv_name is None or kdp_name is None:
             attenuation_correction = False
-            print_red("Attenuation correction impossible, missing dualpol field.")
+            print("Attenuation correction impossible, missing dualpol field.")
         else:
-            radar = correct_attenuation(radar, method='pyart', refl_field_name=refl_field_name,
-                                        rhv_field_name=rhohv_name,  phidp_field_name=phidp_name,
-                                        kdp_field_name=kdp_name)
+            radar = correct_attenuation(radar, refl_field_name=refl_field_name,
+                                        rhv_field_name=rhohv_name, phidp_field_name=phidp_name)
+
+            radar.add_field('corrected_reflectivity_horizontal', cor_z)
+            refl_field_name = "corrected_reflectivity_horizontal"
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates
@@ -193,15 +160,15 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
 
     sweep_number = radar.sweep_number['data']  # Extract number of tilt
 
-    if (nrays/ntilt).is_integer():
+    if (nrays / ntilt).is_integer():
         # Checking that the number of rays does not change with azimuth.
         # If it does we will have to create (or remove) the missing
         # (or the extra) dimension.
-        nbeam = int(nrays/ntilt)
+        nbeam = int(nrays / ntilt)
     else:
         azi = radar.azimuth['data'][radar.get_slice(0)]
         res_azi = get_azimuth_resolution(azi)
-        nbeam = int(360/res_azi)
+        nbeam = int(360 / res_azi)
 
     el = np.zeros((nbeam, ntilt))
     az = np.zeros((nbeam, ntilt))
@@ -210,7 +177,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     elevation = np.zeros((ntilt, ))
 
     if sweep_number[0] == 1:  # New pyart version causing problems ?
-        sweep_number = sweep_number-1
+        sweep_number = sweep_number - 1
 
     for cnt, sw in enumerate(sweep_number):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
@@ -222,10 +189,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         elevation[cnt] = np.mean(radar.elevation['data'][sweep_slice])
 
         # Extracting reflectivity
-        if attenuation_correction:
-            refl_slice = radar.fields['corrected_reflectivity_horizontal']['data'][sweep_slice]
-        else:
-            refl_slice = radar.fields[refl_field_name]['data'][sweep_slice]
+        refl_slice = radar.fields[refl_field_name]['data'][sweep_slice]
 
         _, uniq_index = np.unique(raw_azi, return_index=True)
 
@@ -270,15 +234,15 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     az3d = np.repeat(az[np.newaxis, :, :], ngate, axis=0)
     el3d = np.repeat(el[np.newaxis, :, :], ngate, axis=0)
 
-    to_return = dict()
-    to_return = {'ngate': ngate,        # Number of gates
+    data_dict = dict()
+    data_dict = {'ngate': ngate,        # Number of gates
                  'nbeam': nbeam,        # Number of azimuth by elevation
                  'ntilt': ntilt,        # Number of sweeps
                  'azang': az3d,         # Azimuth
                  'elev_3d': el3d,       # Elevation angle
                  'range': rg3d,         # Radar's range
-                 'elang': elevation,
-                 'dr': rg[2]-rg[1],     # Gate spacing
+                 'elang': elevation,    # Radar's elevation
+                 'dr': rg[2] - rg[1],     # Gate spacing
                  'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
 
-    return to_return  # Type: Dict
+    return data_dict  # Type: Dict

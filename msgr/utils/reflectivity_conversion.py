@@ -45,12 +45,13 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
 
     refp_ss = np.zeros(refp.shape) + np.NaN  # snow
     refp_sh = np.zeros(refp.shape) + np.NaN  # hail
-    zmlt = zbb + bbwidth/2.    # APPROXIMATION!
-    zmlb = zbb - bbwidth/2.    # APPROXIMATION!
-    ratio = (zp-zmlb)/(zmlt-zmlb)
+    zmlt = zbb + bbwidth / 2.    # APPROXIMATION!
+    zmlb = zbb - bbwidth / 2.    # APPROXIMATION!
+    ratio = (zp - zmlb) / (zmlt - zmlb)
 
     iax, iay = np.where(ratio >= 1)
-    if len(iax) > 0: # above melting layer
+    # above melting layer
+    if len(iax) > 0:
         dfrs = as0[10] + as1[10]*refp[iax, iay] + as2[10]*refp[iax, iay]**2 \
                + as3[10]*refp[iax, iay]**3 + as4[10]*refp[iax, iay]**4
         dfrh = ah0[10] + ah1[10]*refp[iax, iay] + ah2[10]*refp[iax, iay]**2 \
@@ -174,18 +175,16 @@ def convert_to_Ku(refg, zg, zbb, l_cband=1):
 
     #  Above bright band
     if len(iax) > 0:
-        refg_ku[iax, iay, iaz] = 0.185074 + 1.01378*refg[iax, iay, iaz] - \
-                                 0.00189212*refg[iax, iay, iaz]**2
+        refg_ku[iax, iay, iaz] = 0.185074 + 1.01378 * refg[iax, iay, iaz] - 0.00189212 * refg[iax, iay, iaz]**2
 
     # Below bright band
     ibx, iby, ibz = np.where(zg < zbb)
     if len(ibx) > 0:
-        refg_ku[ibx, iby, ibz] = -1.50393 + 1.07274*refg[ibx, iby, ibz] + \
-                                 0.000165393*refg[ibx, iby, ibz]**2
+        refg_ku[ibx, iby, ibz] = -1.50393 + 1.07274 * refg[ibx, iby, ibz] + 0.000165393 * refg[ibx, iby, ibz]**2
 
     #  Jackson Tan's fix for C-band
     if l_cband:
-        delta = (refg_ku-refg)*5.3/10.0
-        refg_ku = refg+delta
+        delta = (refg_ku - refg) * 5.3 / 10.0
+        refg_ku = refg + delta
 
     return refg_ku

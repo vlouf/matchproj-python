@@ -31,14 +31,11 @@ import numpy as np
 import pandas as pd
 
 # Custom lib.
-import msgr
-
-from msgr import config_codes
-from msgr import processing_codes
-from msgr.util_fun import *  # bunch of useful functions
+# from msgr import config_codes
+from msgr import cross_validation
+from msgr.utils.misc import *  # bunch of useful functions
 from msgr.io.save_data import save_data
 from msgr.instruments.satellite import get_orbit_number, satellite_params
-from msgr.instruments.ground_radar import radar_gaussian_curve
 
 
 def chunks(l, n):
@@ -53,8 +50,8 @@ def chunks(l, n):
 def production_line_manager(the_date, parameters_dict):
     """
     Here we locate the satellite files, call the comparison function
-    matchproj_fun, and send the results for saving. The real deal is the
-    matchproj_fun from msgr.core.msgr module.
+    match_volumes, and send the results for saving. The real deal is the
+    match_volumes from msgr.core.msgr module.
 
     Parameters
     ==========
@@ -107,7 +104,7 @@ def production_line_manager(the_date, parameters_dict):
 
         if l_gpm:
             # Calling processing function for GPM
-            match_vol = processing_codes.matchproj_fun(
+            match_vol = cross_validation.match_volumes(
                 PATH_params, PROJ_params, RADAR_params, SAT_params,
                 SWITCH_params, THRESHOLDS_params, one_sat_file, dtime=julday)
         else:
@@ -120,7 +117,7 @@ def production_line_manager(the_date, parameters_dict):
                 continue
 
             # Calling processing function for TRMM
-            match_vol = processing_codes.matchproj_fun(PATH_params,
+            match_vol = cross_validation.match_volumes(PATH_params,
                                                        PROJ_params,
                                                        RADAR_params,
                                                        SAT_params,

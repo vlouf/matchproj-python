@@ -24,7 +24,7 @@ def read_gpm(infile):
     Returns a dictionnary containing the data.
     """
 
-    with h5py.File(infile   , 'r') as file_id:
+    with h5py.File(infile, 'r') as file_id:
         obj_id = file_id['NS']
 
         lat = obj_id['Latitude'].value
@@ -46,7 +46,7 @@ def read_gpm(infile):
 
         # Read in the brightband and precipitation type data
         mem_id = obj_id['CSF']
-        zbb= mem_id['heightBB'].value
+        zbb = mem_id['heightBB'].value
         qbb = mem_id['qualityBB'].value
         qtype = mem_id['qualityTypePrecip'].value
         ptype = mem_id['typePrecip'].value
@@ -74,12 +74,12 @@ def read_gpm(infile):
     pflag[pflag == 1] = 2
 
     # Simplify the precipitation types
-    ptype = ptype/10000000.0
+    ptype = ptype / 10000000.0
 
     # Simplify the surface types
     imissx, imissy = np.where(sfc == -9999)
     nmiss = len(imissx)
-    sfc = sfc/100+1
+    sfc = sfc / 100 + 1
     if nmiss > 0:
         sfc[imissx, imissy] = 0
 
@@ -89,10 +89,10 @@ def read_gpm(infile):
     quality[(qbb > 1) | (qtype > 1)] = 2
 
     # Store data in a dict
-    to_return = dict()
-    to_return = {'nscan':nscan, 'nray':nray, 'nbin':nbin, 'year':year, 'month':month,
-                 'day':day,  'hour':hour, 'minute':minute, 'second':second, 'lon':lon,
-                 'lat':lat, 'pflag':pflag, 'ptype':ptype, 'zbb':zbb, 'bbwidth':bbwidth,
-                 'sfc':sfc, 'quality':quality, 'refl':refl}
+    data_dict = dict()
+    data_dict = {'nscan': nscan, 'nray': nray, 'nbin': nbin, 'year': year, 'month': month,
+                 'day': day, 'hour': hour, 'minute': minute, 'second': second, 'lon': lon,
+                 'lat': lat, 'pflag': pflag, 'ptype': ptype, 'zbb': zbb, 'bbwidth': bbwidth,
+                 'sfc': sfc, 'quality': quality, 'refl': refl}
 
-    return to_return
+    return data_dict

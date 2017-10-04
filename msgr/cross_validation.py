@@ -9,15 +9,15 @@ from numpy import sqrt, cos, sin, pi, exp
 # Custom modules
 from . import reflectivity_conversion
 
-from .util_fun import *  # bunch of useful functions
-from .io.read_gpm import read_gpm
-from .io.read_trmm import read_trmm
-from .io.read_radar import read_radar
+from .utils.misc import *  # bunch of useful functions
+from io.read_gpm import read_gpm
+from io.read_trmm import read_trmm
+from io.read_radar import read_radar
 # functions related to the satellite data
-from .instruments.satellite import correct_parallax
+from instruments.satellite import correct_parallax
 
 
-def matchproj_fun(PATH_params, PROJ_params, RADAR_params, SAT_params,
+def match_volumes(PATH_params, PROJ_params, RADAR_params, SAT_params,
                   SWITCH_params, THRESHOLDS_params, sat_file_1,
                   sat_file_2A25_trmm=None, dtime=None):
     '''

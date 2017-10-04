@@ -9,11 +9,10 @@ import pyproj
 from numpy import sqrt, cos, sin, tan, pi
 
 # Custom
-from .util_fun import *
 from .instruments.satellite import satellite_params
 
 
-def radar_gaussian_curve(lat0):
+def _radar_gaussian_curve(lat0):
     '''
     RADAR_GAUSSIAN_CURVE
     Determine the Earth's Gaussian radius of curvature at the radar
@@ -119,7 +118,7 @@ def read_configuration_file(config_file):
     smap = pyproj.Proj(pyproj_config)
 
     # Gaussian radius of curvatur for the radar's position
-    earth_gaussian_radius = radar_gaussian_curve(lat0)
+    earth_gaussian_radius = _radar_gaussian_curve(lat0)
 
     # Stocking parameters in dictionnaries
     if l_gpm:
@@ -186,7 +185,7 @@ def welcome_message(l_gpm, l_atten, l_dbz, l_write, outdir, satdir, raddir,
     msg = " " * 38 + "MSGR\n" + " " * 22 + "Matching Satellite and Ground Radar"
 
     print("#" * 80)
-    print_magenta("\n" + msg + "\n", bold=True)
+    print("\n" + msg + "\n", bold=True)
     print("Volume matching program between GPM/TRMM spaceborne radar and ground radars.")
     if l_gpm:
         print("The spaceborne instrument used is GPM.")
