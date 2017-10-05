@@ -1,4 +1,3 @@
-import re
 import numpy as np
 from numba import jit  # It improves speed, as somebody told me, not yet convinced
 from numpy import sqrt, cos, sin, tan, pi
@@ -41,14 +40,3 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
     yp = yp0+dy
 
     return xp, yp, zp, ds, alpha
-
-
-def get_orbit_number(the_file):
-    """
-    GET_ORBIT_NUMBER
-    Returns the orbit number from filename (last serie of 6 consecutives number
-    in filename
-    """
-
-    to_return = re.findall("[0-9]{6}", the_file)[-1] #Get orbit number
-    return to_return
