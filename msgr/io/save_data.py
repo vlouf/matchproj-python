@@ -1,24 +1,7 @@
-import gzip
-import pickle
-import pandas as pd
+import netCDF4
 
 
-def save_data(out_file, data, do_hdf=False):
-    '''
-    SAVE_DATA
-    Dumps data in a python's pickle file
-    Will try to populate the metadata based on the key name.
-
-    Parameters:
-    ===========
-        out_file: str
-            Output file name.
-        data: dict
-            Dictionnary of data to save.
-        do_hdf: bool
-            Save as a HDF file.
-    '''
-
+def _get_metadata():
     metadat = dict()
     metadat['iscan'] = {'long_name': 'PR scan index', 'units': None}
     metadat['iray'] = {'long_name': 'PR ray index', 'units': None}
@@ -52,19 +35,65 @@ def save_data(out_file, data, do_hdf=False):
     metadat['vol1'] = {'long_name': 'PR averaging volume', 'units': 'km^3'}
     metadat['vol2'] = {'long_name': 'GR averaging volume', 'units': 'km^3'}
 
-    to_save = dict()
-    for k in data.keys():
-        try:
-            to_save[k] = {'data': data[k], 'long_name': metadat[k]['long_name'], 'units': metadat[k]['units']}
-        except KeyError:
-            to_save[k] = {'data': data[k], 'long_name': None, 'units': None}
+    return metadat
 
-    if do_hdf:
-        df = pd.DataFrame(to_save)
-        df.to_hdf(out_file + ".h5", "data")
-    else:
-        # Opening file and dumping data in it.
-        with gzip.GzipFile(out_file + ".pkl.gz", 'w') as fid:
-            pickle.dump(to_save, fid)
+
+def save_data(out_file, data):
+    """
+    SAVE_DATA
+    Dumps data in a python's pickle file
+    Will try to populate the metadata based on the key name.
+
+    Parameters:
+    ===========
+        out_file: str
+            Output file name.
+        data: dict
+            Dictionnary of data to save.
+        do_hdf: bool
+            Save as a HDF file.
+    """
+    metadat = _get_metadata()
+    outfilename = out_file + ".nc"
+
+    xdim = len(data['ref1'])
+    tiltdim = len(data['el'])
+    profdim = len(data['sfc'])
+
+    with netCDF4.Dataset(outfilename, "w", format="NETCDF4") as rootgrp:
+        # Create dimension
+        rootgrp.createDimension("x", xdim)
+        rootgrp.createDimension('tilt', tiltdim)
+        rootgrp.createDimension('profile', profdim)
+
+        for k, v in data.items():
+            if k in ['zbb', 'date', 'bbwidth', 'dt']:
+                # rootgrp.setncattr(k, v)
+                continue
+
+            if k == "el":
+                ncelev = rootgrp.createVariable('elevation', 'f8', ("tilt"), zlib=True)
+                ncelev[:] = v
+                ncelev.setncattr_string("long_name", metadat[k]['long_name'])
+                if metadat[k]['units'] is not None:
+                    ncelev.units = metadat[k]['units']
+                continue
+
+            if k in ['sfc','ptype','iray','iscan']:
+                ncprof = rootgrp.createVariable(k, 'f8', ("profile"), zlib=True)
+                ncprof[:] = v
+                ncprof.setncattr_string("long_name", metadat[k]['long_name'])
+                if metadat[k]['units'] is not None:
+                    ncprof.units = metadat[k]['units']
+                continue
+
+            ncmoment = rootgrp.createVariable(k, 'f8', ("x",), zlib=True)
+            ncmoment[:] = v
+            try:
+                if metadat[k]['units'] is not None:
+                    ncmoment.units = metadat[k]['units']
+                ncmoment.setncattr_string("long_name", metadat[k]['long_name'])
+            except KeyError:
+                pass
 
     return None
