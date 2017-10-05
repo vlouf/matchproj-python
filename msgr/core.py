@@ -39,7 +39,7 @@ class Radar:
         self.altitude =  GR_param.getfloat('altitude')
         self.beamwidth = GR_param.getfloat('beamwidth')
         self.min_refl_thrld = config['thresholds'].getfloat('min_gr_reflec')
-        
+
         try:
             self.offset = GR_param.getfloat('offset')
         except KeyError:
@@ -96,8 +96,7 @@ class Satellite:
         self.max_time_delta = thresholds.getfloat('max_time_delta')  # maxdt
         self.min_refl_thrld = thresholds.getfloat('min_sat_reflec')  # minrefp
         self.min_pair_nb = thresholds.getint('min_pair')  # minpair
-
-        sname = sname.upper()
+        
         # Orbit parameters
         if self.l_gpm:
             self.altitude = 407000.   # orbital height of GPM (zt)

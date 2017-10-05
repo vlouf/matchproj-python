@@ -21,7 +21,10 @@ import glob
 import time
 import argparse
 import datetime
+import warnings
+import traceback
 import configparser
+
 from multiprocessing import Pool
 
 # Others lib.
@@ -69,7 +72,7 @@ def get_satfile_list(satdir, date, l_gpm):
     return satfiles, satfiles2
 
 
-def production_line_manager(configuration_file, the_date, outdir, raddir, satdir, rid,
+def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid,
                             gr_offset, l_cband=True, l_dbz=True, l_gpm=True,
                             l_atten=True, l_write=True):
     """
@@ -84,7 +87,12 @@ def production_line_manager(configuration_file, the_date, outdir, raddir, satdir
         parameters_dict: dict
             Dictionnary containing all parameters from the configuration file.
     """
+    print("")
     date = the_date.strftime("%Y%m%d")
+
+    if len(radar_file_list) == 0:
+        print_red("No radar file for this date %s." % (date))
+        return None
 
     # Looking for satellites.
     satfiles, satfiles2 = get_satfile_list(satdir, date, l_gpm)
@@ -112,9 +120,13 @@ def production_line_manager(configuration_file, the_date, outdir, raddir, satdir
             fd_25 = None
 
         # Calling processing function for TRMM
-        match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
-                                                   sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
-                                                   l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten)
+        try:
+            match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
+                                                       sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
+                                                       l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten)
+        except Exception:
+            traceback.print_exc()
+            return None
 
         print_with_time("Comparison done in %.2fs." % (time.time() - tick))
         if match_vol is None:
@@ -137,6 +149,7 @@ def main():
     end_date, all the switches. Loop over dates, spawn multiprocessing, and call the
     production_line_manager.
     """
+    print_with_time("Loading configuration file.")
     #  Reading configuration file
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
@@ -152,6 +165,17 @@ def main():
     raddir = path.get('ground_radar')
     satdir = path.get('satellite')
     outdir = path.get('output')
+
+    # Check if dirs exist.
+    if not os.path.isdir(raddir):
+        print_red("Wrong radar directory in configuration file.")
+        return None
+    if not os.path.isdir(satdir):
+        print_red("Wrong satellite directory in configuration file.")
+        return None
+    if not os.path.isdir(outdir):
+        print_red("Wrong output directory in configuration file.")
+        return None
 
     # Switch for writing out volume-matched data
     switch = config['switch']
@@ -172,12 +196,18 @@ def main():
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
-    # Generating the date range.
-    date_range = pd.date_range(start_date, end_date)
+    total_radar_file_list = get_files(raddir)
+    print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
 
-    # Argument list for multiprocessing.
-    args_list = [(configuration_file, onedate, outdir, raddir, satdir, rid, gr_offset,
-                  l_cband, l_dbz, l_gpm, l_atten, l_write) for onedate in date_range]
+    date_list = pd.date_range(start_date, end_date)
+    args_list = [None]*len(date_list)
+    for cnt, onedate in enumerate(date_list):
+        mydate = onedate.strftime("%Y%m%d")
+        radar_file_list = [f for f in total_radar_file_list if mydate in f]
+
+        # Argument list for multiprocessing.
+        args_list[cnt] = (CONFIG_FILE, onedate, outdir, radar_file_list, satdir, rid, gr_offset,
+                          l_cband, l_dbz, l_gpm, l_atten, l_write)
 
     # Start multiprocessing.
     with Pool(ncpu) as pool:
@@ -203,4 +233,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     CONFIG_FILE = args.config_file
 
+    warnings.simplefilter("ignore")
     main()

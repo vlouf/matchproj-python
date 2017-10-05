@@ -49,18 +49,15 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
         match_vol: dict
             A dictionnary structure containing the comparable reflectivities.
     '''
-
+    # Spawning Radar and Satellite
     cpol = Radar(configuration_file)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
 
+    # Projecting on a WGS84 grid.
     pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (cpol.longitude, cpol.latitude)
     smap = pyproj.Proj(pyproj_config)
 
     day_of_treatment = dtime
-
-    # Extracting lat/lon just to make a check
-    lonp = sat['lon']
-    latp = sat['lat']
 
     # Convert to Cartesian coordinates
     satellite_proj_cart = smap(satellite.lon, satellite.lat)
@@ -76,7 +73,6 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     # Note the first and last scan indices
     i1x, i1y = np.min(ioverx), np.min(iovery)
     i2x, i2y = np.max(ioverx), np.max(iovery)
-
 
     # Determine the datetime of the closest approach of TRMM to the GR
     xclose_sat = xproj_sat[:, 24]  # Grid center
@@ -180,6 +176,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
     time = closest_dtime_rad  # Keeping the IDL program notation
 
+    print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, l_atten, cpol.offset)
 
     ngate = radar['ngate']
@@ -207,9 +204,9 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     z = np.zeros((nprof, ntilt))
 
     # The Call.
-    rslt = volume_matching.process(nprof, ntilt, dbz_sat, reflectivity_ground_radar,
-                                   refp_ss, refp_sh, refg_ku, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr, satellite.altitude, rt, elev_pr_grref, satellite.beamwidth, rg, xg, yg, elang, cpol.beamwidth,
-                                   dr, satellite.dr, alpha_pxcorr, cpol.gaussian_radius, cpol.rmax, l_dbz)
+    rslt = volume_matching.process(satellite, cpol, nprof, ntilt, dbz_sat, reflectivity_ground_radar,
+                                   refp_ss, refp_sh, refg_ku, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr,
+                                   rt, elev_pr_grref, rg, xg, yg, elang, dr, alpha_pxcorr, l_dbz)
     x, y, z, dz, ds, r, ref1, ref2, ref3, ref4, ref5, iref1, iref2, stdv1, stdv2, ntot1, nrej1, ntot2, nrej2, vol1, vol2 = rslt
 
     # Correct std

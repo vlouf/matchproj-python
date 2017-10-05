@@ -7,9 +7,19 @@ import numpy as np
 from numpy import sin, cos, tan, sqrt, exp, pi
 
 
-def process(nprof, ntilt, reflectivity_satellite, reflectivity_ground_radar,
-            refp_ss, refp_sh, refg_ku, xp, yp, zp, zt, rt, ep, bwt, rg, xg, yg, elang, bwr,
-            dr, drt, alpha, earth_gaussian_radius, rmax, l_dbz):
+def process(satellite, cpol, nprof, ntilt, reflectivity_satellite, reflectivity_ground_radar,
+            refp_ss, refp_sh, refg_ku, xp, yp, zp, rt, ep, rg, xg, yg, elang, dr, alpha, l_dbz=True):
+
+    zt = satellite.altitude
+    bwt = satellite.beamwidth
+    drt = satellite.dr
+
+    bwr = cpol.beamwidth
+    earth_gaussian_radius = cpol.gaussian_radius
+    rmax = cpol.rmax
+
+    reflectivity_satellite = reflectivity_satellite.filled(np.NaN)
+    reflectivity_ground_radar = reflectivity_ground_radar.filled(np.NaN)
 
     # Create arrays to store comparison variables
     '''Coordinates'''
