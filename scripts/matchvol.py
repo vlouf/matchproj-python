@@ -79,7 +79,7 @@ def get_satfile_list(satdir, date, l_gpm):
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
-        return None
+        satfiles, satfiles2 = None, None
 
     return satfiles, satfiles2
 
@@ -132,25 +132,36 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
             fd_25 = None
 
         # Calling processing function for TRMM
-        try:
-            match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
-                                                       sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
-                                                       l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten)
-        except Exception:
-            traceback.print_exc()
-            return None
+        match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
+                                                   sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
+                                                   l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten)
 
-        print_with_time("Comparison done in %.2fs." % (time.time() - tick))
         if match_vol is None:
             continue
+
+        print_with_time("Comparison done in %.2fs." % (time.time() - tick))
 
         # Saving data
         if l_write:
             # Output file name.
             outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB".format(rid, orbit, date, gr_offset)
             outfilename = os.path.join(outdir, outfilename)
-            print_green("Saving data to {}, for orbit {} on {}.".format(outfilename, orbit, date), bold=True)
+            print_green("Saving data to {}.".format(outfilename), bold=True)
             save_data(outfilename, match_vol)
+
+    return None
+
+
+def multiproc_manager(kwargs):
+    """
+    Buffer function that handles Exceptions while running the multiprocessing.
+    All the arguments are identical to the
+    """
+    try:
+        production_line_manager(*kwargs)
+    except Exception:
+        traceback.print_exc()
+        pass
 
     return None
 
@@ -208,6 +219,7 @@ def main():
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
 
+    print_yellow("Generating ground radar file list.")
     total_radar_file_list = get_files(raddir)
     print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
 
@@ -223,7 +235,7 @@ def main():
 
     # Start multiprocessing.
     with Pool(ncpu) as pool:
-        pool.starmap(production_line_manager, args_list)
+        pool.map(multiproc_manager, args_list)
 
     return None
 

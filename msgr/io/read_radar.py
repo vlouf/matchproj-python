@@ -41,24 +41,43 @@ def correct_attenuation(radar, refl_field_name='DBZ_F', rhv_field_name='RHOHV_F'
     return cor_z
 
 
-def populate_missing_azimuth(azi, refl_slice, ngate):
-    '''
-    POPULATE_MISSING_AZIMUTH
-    If the number of azimuth of one sweep is lower than 360, create empty
-    columns corresponding to the missing azimuth.
+def do_gatefilter(radar, dbz_name, zdr_name, rhohv_name):
+    gf = pyart.filters.GateFilter(radar)
 
-    Returns the new azimuth and the reflectvity field
-    '''
+    gf.exclude_outside(dbz_name, 0, 80)
+    gf.exclude_outside(zdr_name, -3.0, 8.0)
+    gf.exclude_below(rhohv_name, 0.5)
+    gf.include_above(rhohv_name, 0.8)
 
-    a = azi.tolist()
-    tmp_refl = refl_slice
-    for e in range(0, 360):
-        if a.count(e) == 0:
-            azi = np.append(azi, e)
-            empty_arr = np.zeros((ngate, ))
-            tmp_refl = np.vstack((tmp_refl, empty_arr))
+    gf_despeckeld = pyart.correct.despeckle_field(radar, dbz_name, gatefilter=gf)
 
-    return azi, tmp_refl
+    return gf_despeckeld
+
+
+def filter_hardcoding(my_array, nuke_filter, bad=-9999):
+    """
+    Harcoding GateFilter into an array.
+
+    Parameters:
+    ===========
+        my_array: array
+            Array we want to clean out.
+        nuke_filter: gatefilter
+            Filter we want to apply to the data.
+        bad: float
+            Fill value.
+
+    Returns:
+    ========
+        to_return: masked array
+            Same as my_array but with all data corresponding to a gate filter
+            excluded.
+    """
+    filt_array = np.ma.masked_where(nuke_filter.gate_excluded, my_array)
+    filt_array.set_fill_value(bad)
+    filt_array = filt_array.filled(fill_value=bad)
+    to_return = np.ma.masked_where(filt_array == bad, filt_array)
+    return to_return
 
 
 def get_reflectivity_field_name(radar):
@@ -115,11 +134,49 @@ def get_rhohv_field_name(radar):
     return None
 
 
+def get_zdr_field_name(radar):
+    '''
+    GET_RHOHV_FIELD_NAME
+    Because of different conventions for naming fields, it will try a variety
+    of different reflectvity name and return the first one that works
+    '''
+
+    potential_name = ['ZDR', 'ZDR_F', 'differential_reflectivity']
+    for pn in potential_name:
+        try:
+            rd = radar.fields[pn]
+            return pn
+        except KeyError:
+            continue
+
+    return None
+
+
 def get_azimuth_resolution(azimuth):
     ra = np.diff(azimuth)
     ra[(ra < 0) | (ra > 10)] = np.NaN
     rslt = np.round(np.nanmean(ra), 1)
     return rslt
+
+
+def populate_missing_azimuth(azi, refl_slice, ngate):
+    '''
+    POPULATE_MISSING_AZIMUTH
+    If the number of azimuth of one sweep is lower than 360, create empty
+    columns corresponding to the missing azimuth.
+
+    Returns the new azimuth and the reflectvity field
+    '''
+
+    a = azi.tolist()
+    tmp_refl = refl_slice
+    for e in range(0, 360):
+        if a.count(e) == 0:
+            azi = np.append(azi, e)
+            empty_arr = np.zeros((ngate, ))
+            tmp_refl = np.vstack((tmp_refl, empty_arr))
+
+    return azi, tmp_refl
 
 
 def read_radar(infile, attenuation_correction=True, reflec_offset=0):
@@ -135,14 +192,19 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         radar = pyart.io.read(infile)
 
     refl_field_name = get_reflectivity_field_name(radar)
+    zdr_name = get_zdr_field_name(radar)
+    phidp_name = get_phidb_field_name(radar)
+    rhohv_name = get_rhohv_field_name(radar)
     if refl_field_name is None:
         print('Reflectivity field not found.')
         return None
 
-    if attenuation_correction:
-        phidp_name = get_phidb_field_name(radar)
-        rhohv_name = get_rhohv_field_name(radar)
+    gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
+    dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
+    radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
+    refl_field_name = "NEW_DBZ"
 
+    if attenuation_correction:
         if phidp_name is None or rhohv_name is None or kdp_name is None:
             attenuation_correction = False
             print("Attenuation correction impossible, missing dualpol field.")
@@ -179,6 +241,7 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     if sweep_number[0] == 1:  # New pyart version causing problems ?
         sweep_number = sweep_number - 1
 
+    # Radar fields have [range, time] dimensions, we want [range, azimuth, elevation]
     for cnt, sw in enumerate(sweep_number):
         sweep_slice = radar.get_slice(sw)  # Get indices of given slice
 

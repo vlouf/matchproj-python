@@ -35,7 +35,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     l_cband, l_dbz, l_gpm, l_atten: bool
         Switches for C-band, use of natural reflectivity, is this GPM, and
         attenuation correction
-        
+
     Returns
     =======
     match_vol: dict
@@ -160,8 +160,8 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
     time_difference = np.abs(dtime_sat - closest_dtime_rad)
     if time_difference.seconds > satellite.max_time_delta:
-        print_red('Time difference is of %i s.' % (time_difference.seconds), bold=True)
-        print_red('This time difference is bigger than the acceptable value of %i s.' % (satellite.max_time_delta))
+        print_red('Time difference is %is while the maximum accpetable value is %is.' % \
+                  (time_difference.seconds, satellite.max_time_delta), bold=True)
         return None
 
     # Radar file corresponding to the nearest scan time
@@ -171,15 +171,17 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, l_atten, cpol.offset)
 
-    ngate = radar['ngate']
-    nbeam = radar['nbeam']
-    ntilt = radar['ntilt']
-    rg = radar['range']
-    ag = radar['azang']
-    eg = radar['elev_3d']
-    elang = radar['elang']
-    dr = radar['dr']
-    reflectivity_ground_radar = np.ma.masked_where(radar['reflec'] < 10, radar['reflec'])
+    cpol.set_fields(radar)
+
+    ngate = cpol.fields['ngate']
+    nbeam = cpol.fields['nbeam']
+    ntilt = cpol.fields['ntilt']
+    rg = cpol.fields['range']
+    ag = cpol.fields['azang']
+    eg = cpol.fields['elev_3d']
+    elang = cpol.fields['elang']
+    dr = cpol.fields['dr']
+    reflectivity_ground_radar = cpol.fields['reflec']
 
     # Determine the Cartesian coordinates of the ground radar's pixels
     zg = sqrt(rg**2 + (cpol.gaussian_radius + cpol.altitude)**2 + 2 * rg * (cpol.gaussian_radius + cpol.altitude) * sin(pi / 180 * eg)) - cpol.gaussian_radius
@@ -215,9 +217,6 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
             day_of_treatment.strftime("%d %b %Y"))
         return None
 
-    iprof = ipairx
-    itilt = ipairy
-
     # Save structure
     match_vol = dict()
 
@@ -232,7 +231,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol['dz'] = dz[ipairx, ipairy]
     match_vol['ds'] = ds[ipairx, ipairy]
     match_vol['r'] = r[ipairx, ipairy]
-    match_vol['el'] = elang[itilt]
+    match_vol['el'] = elang[ipairy]
 
     match_vol['ref1'] = ref1[ipairx, ipairy]
     match_vol['ref2'] = ref2[ipairx, ipairy]
@@ -246,10 +245,10 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol['ntot2'] = ntot2[ipairx, ipairy]
     match_vol['nrej2'] = nrej2[ipairx, ipairy]
 
-    match_vol['sfc'] = sfc[iprof]
-    match_vol['ptype'] = ptype[iprof]
-    match_vol['iray'] = iray[iprof]
-    match_vol['iscan'] = iscan[iprof]
+    match_vol['sfc'] = sfc[ipairx]
+    match_vol['ptype'] = ptype[ipairx]
+    match_vol['iray'] = iray[ipairx]
+    match_vol['iscan'] = iscan[ipairx]
 
     match_vol['stdv1'] = stdv1[ipairx, ipairy]
     match_vol['stdv2'] = stdv2[ipairx, ipairy]

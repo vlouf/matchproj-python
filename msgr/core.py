@@ -48,6 +48,8 @@ class Radar:
         # Compute Earth gaussian radius.
         self.gaussian_radius = self._radar_gaussian_curvature()
 
+        self.fields = dict()
+
     def _read_configfile(self, config_file):
         config = configparser.ConfigParser()
         config.read(config_file)
@@ -82,6 +84,13 @@ class Radar:
 
         return ae
 
+    def set_fields(self, mydict):
+        """
+        Populate field dictionnary
+        """
+        for k, v in mydict.items():
+            self.fields[k] = v
+
 
 class Satellite:
     def __init__(self, config_file, sat_file_1, sat_file_2A25_trmm=None):
@@ -96,7 +105,7 @@ class Satellite:
         self.max_time_delta = thresholds.getfloat('max_time_delta')  # maxdt
         self.min_refl_thrld = thresholds.getfloat('min_sat_reflec')  # minrefp
         self.min_pair_nb = thresholds.getint('min_pair')  # minpair
-        
+
         # Orbit parameters
         if self.l_gpm:
             self.altitude = 407000.   # orbital height of GPM (zt)

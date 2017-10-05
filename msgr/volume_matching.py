@@ -18,8 +18,14 @@ def process(satellite, cpol, nprof, ntilt, reflectivity_satellite, reflectivity_
     earth_gaussian_radius = cpol.gaussian_radius
     rmax = cpol.rmax
 
-    reflectivity_satellite = reflectivity_satellite.filled(np.NaN)
-    reflectivity_ground_radar = reflectivity_ground_radar.filled(np.NaN)
+    try:
+        reflectivity_satellite = reflectivity_satellite.filled(np.NaN)
+    except AttributeError:
+        pass
+    try:
+        reflectivity_ground_radar = reflectivity_ground_radar.filled(np.NaN)
+    except AttributeError:
+        pass
 
     # Create arrays to store comparison variables
     '''Coordinates'''
