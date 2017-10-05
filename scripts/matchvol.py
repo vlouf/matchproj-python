@@ -1,19 +1,13 @@
 #! /usr/bin/env python
 """
 MSGR Matching Satellite and Ground Radar
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+========================================
 
-@date: 2016-12-06 (creation) 2017-3-21 (current version)
+@author: Valentin Louf
+@date: 2016-12-06 (creation) 2017-10-05 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 """
-
-__title__ = 'matchvol'
-__version__ = '0.6'
-__author__ = 'Valentin Louf'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2017 Valentin Louf'
-
 # Standard library import
 import os
 import re
@@ -32,7 +26,6 @@ import numpy as np
 import pandas as pd
 
 # Custom lib.
-# from msgr import config_codes
 from msgr import cross_validation
 from msgr.utils.misc import *  # bunch of useful functions
 from msgr.io.save_data import save_data
@@ -57,6 +50,25 @@ def get_orbit_number(infile):
 
 
 def get_satfile_list(satdir, date, l_gpm):
+    """
+    Get a list of satellite files.
+
+    Parameters:
+    ===========
+    satdir: str
+        Path to satellite data directory.
+    date: str
+        Date, format YYYYMMDD
+    l_gpm: bool
+        Is this GPM or TRMM?
+
+    Returns:
+    ========
+    satfiles: str
+        List of GPM files or TRMM 2A23 files.
+    satfiles2: str
+        List of TRMM 2A23 files (None for GPM).
+    """
     # Looking for satellite data files.
     if l_gpm:
         satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')

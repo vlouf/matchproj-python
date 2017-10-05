@@ -22,32 +22,24 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
 
     Parameters
     ==========
-        PATH_params: dict
-            Dictionnary containing paths information.
-        PROJ_params: dict
-            Dictionnary containing map projection information.
-        RADAR_params: dict
-            Dictionnary containing the ground radar parameters.
-        SAT_params: dict
-            Dictionnary containing the satellite radar parameters.
-        SWITCH_params: dict
-            Dictionnary containing the information about different switches,
-            i.e. DBZ statistics or natural units, attenuation correction,
-            ground radar is C-Band, or satellite is GPM.
-        THRESHOLDS_params: dict
-            Dictionnary containing
-
-        sat_file_1:
-            Satellite data filename (just one file for GPM, or 2A23 for TRMM).
-        sat_file_2A25_trmm:
-            Second satellite file (TRMM only).
-        dtime: dateime
-            Date of the day of comparison.
-
+    configuration_file: str
+        Configuration file.
+    radar_file_list: List
+        List of radar files for the current date.
+    sat_file_1: str.
+        GPM file or TRMM 2A23 file.
+    sat_file_2A25_trmm: str
+        TRMM 2A25 files (None for GPM).
+    dtime: str
+        Date of current processing.
+    l_cband, l_dbz, l_gpm, l_atten: bool
+        Switches for C-band, use of natural reflectivity, is this GPM, and
+        attenuation correction
+        
     Returns
     =======
-        match_vol: dict
-            A dictionnary structure containing the comparable reflectivities.
+    match_vol: dict
+        A dictionnary structure containing the comparable reflectivities.
     '''
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file)
