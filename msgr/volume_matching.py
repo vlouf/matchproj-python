@@ -7,12 +7,20 @@ import numpy as np
 from numpy import sin, cos, tan, sqrt, exp, pi
 
 
-def process(satellite, cpol, nprof, ntilt, reflectivity_satellite, reflectivity_ground_radar,
-            refp_ss, refp_sh, refg_ku, xp, yp, zp, rt, ep, rg, xg, yg, elang, dr, alpha, l_dbz=True):
+def process(satellite, cpol, nprof, reflectivity_satellite,
+            refp_ss, refp_sh, xp, yp, zp, rt, ep, alpha, zbb, l_dbz=True):
 
     zt = satellite.altitude
     bwt = satellite.beamwidth
     drt = satellite.dr
+
+    xg, yg, zg = cpol.get_cartesian_coordinates()
+    rg = cpol.fields['range']
+    reflectivity_ground_radar = cpol.fields['reflec']
+    elang = cpol.fields['elang']
+    ntilt = cpol.fields['ntilt']
+    dr = cpol.fields['dr']
+    refg_ku = cpol.convert_refl_ku(zbb):
 
     bwr = cpol.beamwidth
     earth_gaussian_radius = cpol.gaussian_radius

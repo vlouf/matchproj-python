@@ -170,37 +170,13 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
 
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, l_atten, cpol.offset)
-
     cpol.set_fields(radar)
-
-    ngate = cpol.fields['ngate']
-    nbeam = cpol.fields['nbeam']
-    ntilt = cpol.fields['ntilt']
-    rg = cpol.fields['range']
-    ag = cpol.fields['azang']
-    eg = cpol.fields['elev_3d']
-    elang = cpol.fields['elang']
-    dr = cpol.fields['dr']
-    reflectivity_ground_radar = cpol.fields['reflec']
-
-    # Determine the Cartesian coordinates of the ground radar's pixels
-    zg = sqrt(rg**2 + (cpol.gaussian_radius + cpol.altitude)**2 + 2 * rg * (cpol.gaussian_radius + cpol.altitude) * sin(pi / 180 * eg)) - cpol.gaussian_radius
-    sg = cpol.gaussian_radius * np.arcsin(rg * cos(pi / 180 * eg) / (cpol.gaussian_radius + zg))
-    xg = sg * cos(pi / 180 * (90 - ag))
-    yg = sg * sin(pi / 180 * (90 - ag))
-
-    # Convert S-band GR reflectivities to Ku-band
-    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, l_cband)
-
-    # Initialize empty coordinates.
-    x = np.zeros((nprof, ntilt))
-    y = np.zeros((nprof, ntilt))
-    z = np.zeros((nprof, ntilt))
+    print_yellow("Ground radar data loaded.")
 
     # The Call.
-    rslt = volume_matching.process(satellite, cpol, nprof, ntilt, dbz_sat, reflectivity_ground_radar,
-                                   refp_ss, refp_sh, refg_ku, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr,
-                                   rt, elev_pr_grref, rg, xg, yg, elang, dr, alpha_pxcorr, l_dbz)
+    rslt = volume_matching.process(satellite, cpol, nprof, dbz_sat,
+                                   refp_ss, refp_sh, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr,
+                                   rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
     x, y, z, dz, ds, r, ref1, ref2, ref3, ref4, ref5, iref1, iref2, stdv1, stdv2, ntot1, nrej1, ntot2, nrej2, vol1, vol2 = rslt
 
     # Correct std
@@ -231,7 +207,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol['dz'] = dz[ipairx, ipairy]
     match_vol['ds'] = ds[ipairx, ipairy]
     match_vol['r'] = r[ipairx, ipairy]
-    match_vol['el'] = elang[ipairy]
+    match_vol['el'] = cpol.fields['elang'][ipairy]
 
     match_vol['ref1'] = ref1[ipairx, ipairy]
     match_vol['ref2'] = ref2[ipairx, ipairy]

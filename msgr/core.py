@@ -7,6 +7,7 @@ from numpy import sqrt, cos, sin, tan, pi
 
 from .io.read_gpm import read_gpm
 from .io.read_trmm import read_trmm
+from .utils import reflectivity_conversion
 
 
 class Radar:
@@ -39,6 +40,7 @@ class Radar:
         self.altitude =  GR_param.getfloat('altitude')
         self.beamwidth = GR_param.getfloat('beamwidth')
         self.min_refl_thrld = config['thresholds'].getfloat('min_gr_reflec')
+        self.l_cband = config['switch'].getboolean('cband')
 
         try:
             self.offset = GR_param.getfloat('offset')
@@ -90,6 +92,24 @@ class Radar:
         """
         for k, v in mydict.items():
             self.fields[k] = v
+
+    def get_cartesian_coordinates(self):
+        rg = self.fields['range']
+        ag = self.fields['azang']
+        eg = self.fields['elev_3d']
+        # Determine the Cartesian coordinates of the ground radar's pixels
+        zg = sqrt(rg**2 + (self.gaussian_radius + self.altitude)**2 +
+                  2 * rg * (self.gaussian_radius + self.altitude) * sin(pi / 180 * eg)) - self.gaussian_radius
+        sg = self.gaussian_radius * np.arcsin(rg * cos(pi / 180 * eg) / (self.gaussian_radius + zg))
+        xg = sg * cos(pi / 180 * (90 - ag))
+        yg = sg * sin(pi / 180 * (90 - ag))
+
+        return xg, yg, zg
+
+    def convert_refl_ku(self, zbb, l_cband):
+        xg, yg, zg = self.get_cartesian_coordinates()
+        refg_ku = reflectivity_conversion.convert_to_Ku(self.fields['refl'], zbb, self.l_cband)
+        return refg_ku
 
 
 class Satellite:
