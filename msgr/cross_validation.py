@@ -123,8 +123,8 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     # Compute the ground-radar coordinates of the PR pixels
     gamma = sqrt(xproj_sat_pxcorr**2 + yproj_sat_pxcorr**2) / cpol.gaussian_radius
     elev_pr_grref = 180 / pi * np.arctan((cos(gamma) - (cpol.gaussian_radius + cpol.altitude) / (cpol.gaussian_radius + z_sat_pxcorr)) / sin(gamma))
-    range_pr_grref = (cpol.gaussian_radius + z_sat_pxcorr)*sin(gamma)/cos(pi/180*elev_pr_grref)  # Not used
-    azi_pr_grref = 90-180/pi*np.arctan2(yproj_sat_pxcorr, xproj_sat_pxcorr)  # Not used
+    range_pr_grref = (cpol.gaussian_radius + z_sat_pxcorr) * sin(gamma) / cos(pi / 180 * elev_pr_grref)  # Not used
+    azi_pr_grref = 90 - 180 / pi * np.arctan2(yproj_sat_pxcorr, xproj_sat_pxcorr)  # Not used
 
     # Determine the median brightband height
     ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0]

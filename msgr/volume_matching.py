@@ -20,7 +20,7 @@ def process(satellite, cpol, nprof, reflectivity_satellite,
     elang = cpol.fields['elang']
     ntilt = cpol.fields['ntilt']
     dr = cpol.fields['dr']
-    refg_ku = cpol.convert_refl_ku(zbb):
+    refg_ku = cpol.convert_refl_ku(zbb)
 
     bwr = cpol.beamwidth
     earth_gaussian_radius = cpol.gaussian_radius
