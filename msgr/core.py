@@ -108,7 +108,7 @@ class Radar:
 
     def convert_refl_ku(self, zbb):
         xg, yg, zg = self.get_cartesian_coordinates()
-        refg_ku = reflectivity_conversion.convert_to_Ku(self.fields['refl'], zbb, self.l_cband)
+        refg_ku = reflectivity_conversion.convert_to_Ku(self.fields['reflec'], zg, zbb, self.l_cband)
         return refg_ku
 
 

@@ -3,7 +3,6 @@ import copy
 
 # Other libraries.
 import numpy as np
-from pyhdf.SD import SD, SDC
 
 
 def read_trmm(hdf_file1, hdf_file2):
@@ -22,6 +21,7 @@ def read_trmm(hdf_file1, hdf_file2):
     data_dict: dict
         Dictionnary containing all the needed data from the 2A23 and 2A25 files.
     '''
+    from pyhdf.SD import SD, SDC
 
     hdf = SD(hdf_file1, SDC.READ)
     year = hdf.select('Year').get()

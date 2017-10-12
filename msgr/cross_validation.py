@@ -160,7 +160,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
     time_difference = np.abs(dtime_sat - closest_dtime_rad)
     if time_difference.seconds > satellite.max_time_delta:
-        print_red('Time difference is %is while the maximum accpetable value is %is.' % \
+        print_red('Time difference is %is while the maximum accpetable value is %is.' %
                   (time_difference.seconds, satellite.max_time_delta), bold=True)
         return None
 
@@ -174,10 +174,12 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     print_yellow("Ground radar data loaded.")
 
     # The Call.
+    print_magenta("Starting volume matching.")
     rslt = volume_matching.process(satellite, cpol, nprof, dbz_sat,
                                    refp_ss, refp_sh, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr,
                                    rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
     x, y, z, dz, ds, r, ref1, ref2, ref3, ref4, ref5, iref1, iref2, stdv1, stdv2, ntot1, nrej1, ntot2, nrej2, vol1, vol2 = rslt
+    print_magenta("Volume matching done.")
 
     # Correct std
     stdv1[np.isnan(stdv1)] = 0

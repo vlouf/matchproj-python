@@ -20,7 +20,7 @@ AUTHOR = 'Valentin Louf'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "arm_pyart", "pandas", "numpy", "crayons", "netCDF4", "h5py", "pyhdf"
+    "arm_pyart", "pandas", "numpy", "crayons", "netCDF4", "h5py", "pyproj", "numba"
 ]
 
 # The rest you shouldn't have to touch too much :)
