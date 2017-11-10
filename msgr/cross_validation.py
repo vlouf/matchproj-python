@@ -136,6 +136,10 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
         print_red('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
         return None
 
+    if radar_file_list is None:
+        print_green("Satellite side OK for this date. You can fetch the data for it.")
+        return None
+
     print_green("Satellite side OK. Looking at the ground radar data now.")
 
     # Set all values less than satellite.min_refl_thrld as missing
