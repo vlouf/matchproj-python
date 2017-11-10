@@ -45,7 +45,7 @@ def get_orbit_number(infile):
     orbit: str
         Supposed orbit number
     """
-    orbit = re.findall("[0-9]{6}", infile)[-1] #Get orbit number
+    orbit = re.findall("[0-9]{6}", infile)[-1]  # Get orbit number
     return orbit
 
 
@@ -110,6 +110,10 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
     satfiles, satfiles2 = get_satfile_list(satdir, date, l_gpm)
     if satfiles is None:
         print_red("No satellite swaths for %s." % (date))
+        return None
+
+    if len(satfiles) > 5:
+        print_red("There are more than 5 files for {}. Something probably wrong in the files name. Skipping this date.".format(date))
         return None
 
     # Looping over satellite file

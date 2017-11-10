@@ -199,10 +199,13 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
         print('Reflectivity field not found.')
         return None
 
-    gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
-    dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
-    radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
-    refl_field_name = "NEW_DBZ"
+    try:
+        gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
+        dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
+        radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
+        refl_field_name = "NEW_DBZ"
+    except Exception:
+        pass
 
     if attenuation_correction:
         if phidp_name is None or rhohv_name is None or kdp_name is None:
