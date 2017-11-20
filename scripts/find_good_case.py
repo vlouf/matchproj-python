@@ -211,7 +211,7 @@ def main():
     print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
 
     date_list = pd.date_range(start_date, end_date)
-    args_list = [None]*len(date_list)
+    args_list = [None] * len(date_list)
     for cnt, onedate in enumerate(date_list):
         mydate = onedate.strftime("%Y%m%d")
         # radar_file_list = [f for f in total_radar_file_list if mydate in f]

@@ -1,6 +1,7 @@
 # Python Standard Library
 import copy
 import warnings
+import traceback
 
 # Other libraries.
 import pyart
@@ -187,37 +188,42 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     '''
 
     if ".h5" in infile or ".H5" in infile:
-        radar = pyart.aux_io.read_odim_h5(infile)
+        try:
+            radar = pyart.aux_io.read_odim_h5(infile)
+        except TypeError:
+            print("This file is corrupted. It has not been properly created and cannot be read {}.".format(infile))
+            traceback.print_exc()
+            return None
     else:
         radar = pyart.io.read(infile)
 
     refl_field_name = get_reflectivity_field_name(radar)
-    zdr_name = get_zdr_field_name(radar)
-    phidp_name = get_phidb_field_name(radar)
-    rhohv_name = get_rhohv_field_name(radar)
+    # zdr_name = get_zdr_field_name(radar)
+    # phidp_name = get_phidb_field_name(radar)
+    # rhohv_name = get_rhohv_field_name(radar)
     if refl_field_name is None:
         print('Reflectivity field not found.')
         return None
 
-    if zdr_name is not None:
-        try:
-            gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
-            dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
-            radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
-            refl_field_name = "NEW_DBZ"
-        except Exception:
-            pass
+    # if zdr_name is not None:
+    #     try:
+    #         gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
+    #         dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
+    #         radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
+    #         refl_field_name = "NEW_DBZ"
+    #     except Exception:
+    #         pass
 
-    if attenuation_correction:
-        if phidp_name is None or rhohv_name is None or kdp_name is None:
-            attenuation_correction = False
-            print("Attenuation correction impossible, missing dualpol field.")
-        else:
-            radar = correct_attenuation(radar, refl_field_name=refl_field_name,
-                                        rhv_field_name=rhohv_name, phidp_field_name=phidp_name)
-
-            radar.add_field('corrected_reflectivity_horizontal', cor_z)
-            refl_field_name = "corrected_reflectivity_horizontal"
+    # if attenuation_correction:
+    #     if phidp_name is None or rhohv_name is None or kdp_name is None:
+    #         attenuation_correction = False
+    #         print("Attenuation correction impossible, missing dualpol field.")
+    #     else:
+    #         radar = correct_attenuation(radar, refl_field_name=refl_field_name,
+    #                                     rhv_field_name=rhohv_name, phidp_field_name=phidp_name)
+    #
+    #         radar.add_field('corrected_reflectivity_horizontal', cor_z)
+    #         refl_field_name = "corrected_reflectivity_horizontal"
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates

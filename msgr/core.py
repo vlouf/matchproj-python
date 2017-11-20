@@ -37,7 +37,7 @@ class Radar:
         self.ymax = self.rmax
 
         # others infos.
-        self.altitude =  GR_param.getfloat('altitude')
+        self.altitude = GR_param.getfloat('altitude')
         self.beamwidth = GR_param.getfloat('beamwidth')
         self.min_refl_thrld = config['thresholds'].getfloat('min_gr_reflec')
         self.l_cband = config['switch'].getboolean('cband')

@@ -174,6 +174,10 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
 
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, l_atten, cpol.offset)
+    if radar is None:
+        print("Could not read the ground radar file. Doing nothing.")
+        return None
+
     cpol.set_fields(radar)
     print_yellow("Ground radar data loaded.")
 
