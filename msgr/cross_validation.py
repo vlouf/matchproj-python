@@ -137,7 +137,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
         return None
 
     if radar_file_list is None:
-        print_green("Satellite side OK for this date. You can fetch the data for it.")
+        print_green("Satellite side OK for this date {}. You can fetch the data for it.".format(dtime_sat.strftime("%Y%m%d_%H%M")))
         return None
 
     print_green("Satellite side OK. Looking at the ground radar data now.")
