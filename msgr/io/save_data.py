@@ -38,7 +38,7 @@ def _get_metadata():
     return metadat
 
 
-def save_data(out_file, data):
+def save_data(out_file, data, date):
     """
     SAVE_DATA
     Dumps data in a python's pickle file
@@ -65,6 +65,10 @@ def save_data(out_file, data):
         rootgrp.createDimension("x", xdim)
         rootgrp.createDimension('tilt', tiltdim)
         rootgrp.createDimension('profile', profdim)
+        rootgrp.createDimension('time', 1)
+        time = rootgrp.createVariable("time", "f8", ('time'))
+        time.units = "seconds since 1970-01-01T00:00:00Z"
+        time[:] = netCDF4.date2num(date, "seconds since 1970-01-01T00:00:00Z")
 
         for k, v in data.items():
             if k in ['zbb', 'date', 'bbwidth', 'dt']:
@@ -79,7 +83,7 @@ def save_data(out_file, data):
                     ncelev.units = metadat[k]['units']
                 continue
 
-            if k in ['sfc','ptype','iray','iscan']:
+            if k in ['sfc', 'ptype', 'iray', 'iscan']:
                 ncprof = rootgrp.createVariable(k, 'f8', ("profile"), zlib=True)
                 ncprof[:] = v
                 ncprof.setncattr_string("long_name", metadat[k]['long_name'])

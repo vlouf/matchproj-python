@@ -151,7 +151,7 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
             outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB".format(rid, orbit, date, gr_offset)
             outfilename = os.path.join(outdir, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
-            save_data(outfilename, match_vol)
+            save_data(outfilename, match_vol, the_date)
 
     return None
 
@@ -228,7 +228,7 @@ def main():
     print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
 
     date_list = pd.date_range(start_date, end_date)
-    args_list = [None]*len(date_list)
+    args_list = [None] * anylen(date_list)
     for cnt, onedate in enumerate(date_list):
         mydate = onedate.strftime("%Y%m%d")
         radar_file_list = [f for f in total_radar_file_list if mydate in f]
