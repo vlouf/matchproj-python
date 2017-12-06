@@ -58,7 +58,8 @@ def read_gpm(infile):
 
         # Read in the reflectivity data
         mem_id = obj_id['SLV']
-        refl = mem_id['zFactorCorrected'].value
+        # Removing the 1.3 dB offset from GPM.
+        refl = mem_id['zFactorCorrected'].value - 1.3
 
     # Determine the dimensions
     if refl.ndim != 3:
