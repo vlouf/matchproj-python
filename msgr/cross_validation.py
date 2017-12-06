@@ -1,4 +1,5 @@
 # Serious business is done here.
+import logging
 import datetime
 import warnings
 
@@ -41,6 +42,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
+    logging.basicConfig(filename="log_matchvol_{}.log".format(day_of_treatment.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
@@ -60,6 +62,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     ioverx, iovery = np.where((xproj_sat >= cpol.xmin) & (xproj_sat <= cpol.xmax) & (yproj_sat >= cpol.ymin) & (yproj_sat <= cpol.ymax))
     if len(ioverx) == 0:
         print_red("Insufficient satellite rays in domain for " + day_of_treatment.strftime("%d %b %Y"))
+        logging.error("Insufficient satellite rays in domain for " + day_of_treatment.strftime("%d %b %Y"))
         return None
 
     # Note the first and last scan indices
@@ -84,6 +87,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     nprof = len(iscan)
     if nprof < satellite.min_prof_nb:
         print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
+        logging.error('Insufficient precipitating satellite rays in domain %i.' % (nprof))
         return None
 
     # Extract data for these rays
@@ -134,10 +138,12 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
         bbwidth = np.median(bbwidth[ibb])
     else:
         print_red('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
+        logging.error('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
         return None
 
     if radar_file_list is None:
         print_green("Satellite side OK for this date {}. You can fetch the data for it.".format(dtime_sat.strftime("%Y%m%d_%H%M")))
+        logging.debug("Satellite side OK for this date {}.".format(dtime_sat.strftime("%Y%m%d_%H%M")))
         return None
 
     print_green("Satellite side OK. Looking at the ground radar data now.")
@@ -157,6 +163,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
 
     if len(dtime_radar) == 0:
         print_red("No corresponding ground radar files for {}.".format(date))
+        logging.error("No corresponding ground radar files for {}.".format(date))
         return None
 
     # Find the nearest scan time
@@ -165,6 +172,8 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     time_difference = np.abs(dtime_sat - closest_dtime_rad)
     if time_difference.seconds > satellite.max_time_delta:
         print_red('Time difference is %is while the maximum accpetable value is %is.' %
+                  (time_difference.seconds, satellite.max_time_delta), bold=True)
+        logging.error('Time difference is %is while the maximum accpetable value is %is.' %
                   (time_difference.seconds, satellite.max_time_delta), bold=True)
         return None
 
