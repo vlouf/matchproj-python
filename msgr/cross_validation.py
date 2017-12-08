@@ -42,7 +42,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
-    logging.basicConfig(filename="log_matchvol_{}.log".format(day_of_treatment.strftime("%Y%m%d")), level=logging.DEBUG)
+    logging.basicConfig(filename="log_matchvol_{}.log".format(dtime.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
@@ -61,8 +61,8 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     # Identify profiles withing the domnain
     ioverx, iovery = np.where((xproj_sat >= cpol.xmin) & (xproj_sat <= cpol.xmax) & (yproj_sat >= cpol.ymin) & (yproj_sat <= cpol.ymax))
     if len(ioverx) == 0:
-        print_red("Insufficient satellite rays in domain for " + day_of_treatment.strftime("%d %b %Y"))
-        logging.error("Insufficient satellite rays in domain for " + day_of_treatment.strftime("%d %b %Y"))
+        print_red("Insufficient satellite rays in domain for " + dtime.strftime("%d %b %Y"))
+        logging.error("Insufficient satellite rays in domain for " + dtime.strftime("%d %b %Y"))
         return None
 
     # Note the first and last scan indices
