@@ -16,6 +16,9 @@ import datetime
 import numpy as np
 from dateutil import parser
 
+import netCDF4
+import pyart
+
 
 def find_file_with_string(flist, orb):
     """
@@ -119,18 +122,16 @@ def get_time_from_filename(filename, date):
 
     if filename[-2:] == "gz":
         # SIGMET file date convention.
-        strlist = re.findall(date[2:] + "[0-9]{6}", filename)
+        radar = pyart.io.read(filename)
+        dtime = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
+        return dtime
     else:
         strlist = re.findall(date + ".?[0-9]{6}", filename)
         if len(strlist) == 0:
             strlist = re.findall(date + ".?[0-9]{4}", filename)
 
     try:
-        if filename[-2:] == "gz":
-            # SIGMET file date convention.
-            date_time = parser.parse("20" + strlist[0], fuzzy=True)
-        else:
-            date_time = parser.parse(strlist[0], fuzzy=True)
+        date_time = parser.parse(strlist[0], fuzzy=True)
     except IndexError:
         date_time = None
 
