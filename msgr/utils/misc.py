@@ -116,12 +116,21 @@ def get_time_from_filename(filename, date):
     # Looking for date followed by underscore (or not) and 6 (or 4) consecutives
     # number (i.e. the time)
     # There is maybe an optionnal character (like _) between date and time
-    strlist = re.findall(date + ".?[0-9]{6}", filename)
-    if len(strlist) == 0:
-        strlist = re.findall(date + ".?[0-9]{4}", filename)
+
+    if filename[-2:] == "gz":
+        # SIGMET file date convention.
+        strlist = re.findall(date[2:] + "[0-9]{6}", filename)
+    else:
+        strlist = re.findall(date + ".?[0-9]{6}", filename)
+        if len(strlist) == 0:
+            strlist = re.findall(date + ".?[0-9]{4}", filename)
 
     try:
-        date_time = parser.parse(strlist[0], fuzzy=True)
+        if filename[-2:] == "gz":
+            # SIGMET file date convention.
+            date_time = parser.parse("20" + strlist[0], fuzzy=True)
+        else:
+            date_time = parser.parse(strlist[0], fuzzy=True)
     except IndexError:
         date_time = None
 
