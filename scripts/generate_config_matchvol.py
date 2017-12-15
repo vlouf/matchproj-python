@@ -167,6 +167,10 @@ altitude = 42
 beamwidth = 1.0
 offset = 0
 
+[satellite]
+# Satellite reflectivity offset.
+sat_offset = 0
+
 [thresholds]
 # Threshold on satellite reflectivity
 # Minimum number of pair

@@ -117,7 +117,7 @@ class Satellite:
         config = self._read_configfile(config_file)
         thresholds = config['thresholds']
         try:
-            sat_offset = config['radar'].getfloat("sat_offset")
+            sat_offset = config['satellite'].getfloat("sat_offset")
         except KeyError:
             sat_offset = None
             pass
