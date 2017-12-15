@@ -98,6 +98,7 @@ latitude = 48.0
 altitude = 42
 beamwidth = 1.0
 offset = 0
+sat_offset = 0
 
 [thresholds]
 # Threshold on satellite reflectivity

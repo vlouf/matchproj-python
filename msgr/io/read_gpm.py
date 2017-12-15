@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 
 
-def read_gpm(infile):
+def read_gpm(infile, sat_offset=None):
     """
     READ_GPM
     Read HDF5 GPM file with these parameters:
@@ -59,7 +59,11 @@ def read_gpm(infile):
         # Read in the reflectivity data
         mem_id = obj_id['SLV']
         # Removing the 1.3 dB offset from GPM.
-        refl = mem_id['zFactorCorrected'].value - 1.3
+        if sat_offset is not None:
+            print(f"{sat_offset}dB offset applied to GPM reflectivity.")
+            refl = mem_id['zFactorCorrected'].value + sat_offset
+        else:
+            refl = mem_id['zFactorCorrected'].value
 
     # Determine the dimensions
     if refl.ndim != 3:

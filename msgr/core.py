@@ -116,6 +116,11 @@ class Satellite:
     def __init__(self, config_file, sat_file_1, sat_file_2A25_trmm=None):
         config = self._read_configfile(config_file)
         thresholds = config['thresholds']
+        try:
+            sat_offset = config['radar'].getfloat("sat_offset")
+        except KeyError:
+            sat_offset = None
+            pass
 
         self.l_gpm = config['switch'].getboolean('gpm')
         if not self.l_gpm and sat_file_2A25_trmm is None:
@@ -130,11 +135,11 @@ class Satellite:
         if self.l_gpm:
             self.altitude = 407000.   # orbital height of GPM (zt)
             self.dr = 125.            # gate spacing of GPM (drt)
-            satdata = read_gpm(sat_file_1)
+            satdata = read_gpm(sat_file_1, sat_offset)
         else:
             self.altitude = 402500.   # orbital height of TRMM (post boost)
             self.dr = 250.            # gate spacing of TRMM
-            satdata = read_trmm(sat_file_1, sat_file_2A25_trmm)
+            satdata = read_trmm(sat_file_1, sat_file_2A25_trmm, sat_offset)
         self.beamwidth = 0.71
 
         if satdata is None:

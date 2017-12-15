@@ -5,7 +5,7 @@ import copy
 import numpy as np
 
 
-def read_trmm(hdf_file1, hdf_file2):
+def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
     '''
     Reads TRMM 2A23 and 2A25 data files.
 
@@ -57,7 +57,11 @@ def read_trmm(hdf_file1, hdf_file2):
     reflectivity = correctZFactor / 100.0
 
     #  Reverse direction along the beam
-    reflectivity = reflectivity[:, :, ::-1]
+    if sat_offset is not None:
+        print(f"{sat_offset}dB offset applied to TRMM reflectivity.")
+        reflectivity = reflectivity[:, :, ::-1] + sat_offset
+    else:
+        reflectivity = reflectivity[:, :, ::-1]
 
     rainFlag[(rainFlag >= 10) & (rainFlag < 20)] = 1
     rainFlag[rainFlag >= 20] = 2
