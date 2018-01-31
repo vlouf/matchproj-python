@@ -138,7 +138,7 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
         # Calling processing function for TRMM
         match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
                                                    sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
-                                                   l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten)
+                                                   l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten, gr_offset=gr_offset)
 
         if match_vol is None:
             continue
@@ -152,17 +152,21 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
             outfilename = os.path.join(outdir, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
             save_data(outfilename, match_vol, the_date)
+        else:
+            outfilename = None
 
-    return None
+    return outfilename
 
 
-def multiproc_manager(kwargs):
+def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset,
+                  l_cband, l_dbz, l_gpm, l_atten, l_write):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
     All the arguments are identical to the
     """
     try:
-        production_line_manager(*kwargs)
+        myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list,
+                                               satdir, rid, gr_offset, l_cband, l_dbz, l_gpm, l_atten, l_write)
     except Exception:
         traceback.print_exc()
         pass

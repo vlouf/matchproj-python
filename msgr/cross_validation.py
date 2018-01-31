@@ -17,7 +17,7 @@ from .instruments.satellite import correct_parallax
 
 
 def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25_trmm=None, dtime=None,
-                  l_cband=True, l_dbz=True, l_gpm=True, l_atten=True):
+                  l_cband=True, l_dbz=True, l_gpm=True, l_atten=True, gr_offset=0):
     '''
     MATCHPROJ_FUN
 
@@ -44,7 +44,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     '''
     logging.basicConfig(filename="log_matchvol_{}.log".format(dtime.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
-    cpol = Radar(configuration_file)
+    cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
 
     # Projecting on a WGS84 grid.
@@ -172,8 +172,6 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     time_difference = np.abs(dtime_sat - closest_dtime_rad)
     if time_difference.seconds > satellite.max_time_delta:
         print_red('Time difference is %is while the maximum accpetable value is %is.' %
-                  (time_difference.seconds, satellite.max_time_delta), bold=True)
-        logging.error('Time difference is %is while the maximum accpetable value is %is.' %
                   (time_difference.seconds, satellite.max_time_delta), bold=True)
         return None
 

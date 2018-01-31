@@ -11,7 +11,9 @@ from .utils import reflectivity_conversion
 
 
 class Radar:
-    def __init__(self, config_file):
+    def __init__(self, config_file, gr_offset=0):
+        self.offset = gr_offset
+
         # Read radar config file.
         config = self._read_configfile(config_file)
         GR_param = config['radar']
@@ -41,11 +43,6 @@ class Radar:
         self.beamwidth = GR_param.getfloat('beamwidth')
         self.min_refl_thrld = config['thresholds'].getfloat('min_gr_reflec')
         self.l_cband = config['switch'].getboolean('cband')
-
-        try:
-            self.offset = GR_param.getfloat('offset')
-        except KeyError:
-            self.offset = 0
 
         # Compute Earth gaussian radius.
         self.gaussian_radius = self._radar_gaussian_curvature()
