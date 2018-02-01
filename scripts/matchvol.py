@@ -108,6 +108,8 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
     l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
     l_atten = switch.getboolean('correct_gr_attenuation')
 
+    outfilename = None
+
     print("")
     date = the_date.strftime("%Y%m%d")
 
@@ -161,8 +163,6 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
             outfilename = os.path.join(outdir, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
             save_data(outfilename, match_vol, the_date)
-        else:
-            outfilename = None
 
     return outfilename
 
