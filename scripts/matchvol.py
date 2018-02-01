@@ -251,7 +251,7 @@ def main():
 
     # Start multiprocessing.
     with Pool(ncpu) as pool:
-        pool.map(multiproc_manager, args_list)
+        pool.starmap(multiproc_manager, args_list)
 
     return None
 
