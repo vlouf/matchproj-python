@@ -84,9 +84,7 @@ def get_satfile_list(satdir, date, l_gpm):
     return satfiles, satfiles2
 
 
-def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid,
-                            gr_offset, l_cband=True, l_dbz=True, l_gpm=True,
-                            l_atten=True, l_write=True):
+def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid, gr_offset):
     """
     Here we locate the satellite files, call the comparison function
     match_volumes, and send the results for saving. The real deal is the
@@ -99,6 +97,17 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
         parameters_dict: dict
             Dictionnary containing all parameters from the configuration file.
     """
+    #  Reading configuration file
+    config = configparser.ConfigParser()
+    config.read(configuration_file)
+    # Switch for writing out volume-matched data
+    switch = config['switch']
+    l_write = switch.getboolean('write')
+    l_cband = switch.getboolean('cband')   # Switch for C-band GR
+    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
+    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
+    l_atten = switch.getboolean('correct_gr_attenuation')
+
     print("")
     date = the_date.strftime("%Y%m%d")
 
@@ -158,15 +167,13 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
     return outfilename
 
 
-def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset,
-                  l_cband, l_dbz, l_gpm, l_atten, l_write):
+def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
     All the arguments are identical to the
     """
     try:
-        myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list,
-                                               satdir, rid, gr_offset, l_cband, l_dbz, l_gpm, l_atten, l_write)
+        myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
     except Exception:
         traceback.print_exc()
         pass
@@ -204,17 +211,11 @@ def main():
     if not os.path.isdir(satdir):
         print_red("Wrong satellite directory in configuration file.")
         return None
-    if not os.path.isdir(outdir):
-        print_red("Wrong output directory in configuration file.")
-        return None
 
-    # Switch for writing out volume-matched data
-    switch = config['switch']
-    l_write = switch.getboolean('write')
-    l_cband = switch.getboolean('cband')   # Switch for C-band GR
-    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
-    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
-    l_atten = switch.getboolean('correct_gr_attenuation')
+    try:
+        os.mkdir(outdir)
+    except FileExistsError:
+        pass
 
     # General info about the ground radar (ID and OFFSET to apply.)
     GR_param = config['radar']
@@ -232,14 +233,21 @@ def main():
     print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
 
     date_list = pd.date_range(start_date, end_date)
-    args_list = [None] * len(date_list)
-    for cnt, onedate in enumerate(date_list):
+    args_list = []
+    for onedate in date_list:
         mydate = onedate.strftime("%Y%m%d")
         radar_file_list = [f for f in total_radar_file_list if mydate in f]
 
+        if len(radar_file_list) == 0:
+            print_yellow(f"No radar file found for this date {mydate}")
+            continue
+
         # Argument list for multiprocessing.
-        args_list[cnt] = (CONFIG_FILE, onedate, outdir, radar_file_list, satdir, rid, gr_offset,
-                          l_cband, l_dbz, l_gpm, l_atten, l_write)
+        args_list.append((CONFIG_FILE, onedate, outdir, radar_file_list, satdir, rid, gr_offset))
+
+    if len(args_list) == 0:
+        print_red("Nothing to do. Is configuration file correct?")
+        return None
 
     # Start multiprocessing.
     with Pool(ncpu) as pool:
