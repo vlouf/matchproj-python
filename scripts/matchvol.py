@@ -29,6 +29,7 @@ import pandas as pd
 from msgr import cross_validation
 from msgr.utils.misc import *  # bunch of useful functions
 from msgr.io.save_data import save_data
+from msgr.util.calc import compute_offset
 
 
 def get_orbit_number(infile):
@@ -172,11 +173,21 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
     Buffer function that handles Exceptions while running the multiprocessing.
     All the arguments are identical to the
     """
-    try:
-        myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
-    except Exception:
-        traceback.print_exc()
-        pass
+    for c in range(2):
+        try:
+            myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
+        except Exception:
+            traceback.print_exc()
+            pass
+
+        gr_offset = compute_offset(myoutputfile)
+        if np.abs(gr_offset) < 1:
+            print_green(f"No significant difference between ground radar and satellite found for {onedate}.")
+            break
+        elif c == 0:
+            print_magenta(f"The difference between the ground radar data and the satellite data " + \
+                           "for {onedate} is of {gr_offset} dB. Running the comparison code one " + \
+                           "more time with this {gr_offset} dB offset.")
 
     return None
 
@@ -239,7 +250,7 @@ def main():
         radar_file_list = [f for f in total_radar_file_list if mydate in f]
 
         if len(radar_file_list) == 0:
-            print_yellow(f"No radar file found for this date {mydate}")
+            print_yellow(f"No ground radar file found for this date {mydate}")
             continue
 
         # Argument list for multiprocessing.
