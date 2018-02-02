@@ -182,8 +182,7 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             traceback.print_exc()
             return None
 
-        if outdata_file is None:
-            print_yellow(f"No data file created for {onedate}")
+        if outdata_file is None:            
             return None
 
         if not os.path.exists(outdata_file):

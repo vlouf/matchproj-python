@@ -15,7 +15,7 @@ def rem_outliers(x):
 
 
 def compute_offset(infile):
-    with netCDF4.Dataset(infile) as ncid:        
+    with netCDF4.Dataset(infile) as ncid:
         ref1 = ncid['ref1'][:]
         ref2 = ncid['ref2'][:]
         ref5 = ncid['ref5'][:]
@@ -30,6 +30,6 @@ def compute_offset(infile):
     dref_ku = dref_ku[~np.isnan(dref_ku)]
     dref_ku = rem_outliers(dref_ku)
 
-    offset = np.median(dref_ku)
+    offset = - np.median(dref_ku)  # !!! Note the MINUS sign !!!
 
     return offset
