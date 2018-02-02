@@ -29,7 +29,7 @@ import pandas as pd
 from msgr import cross_validation
 from msgr.utils.misc import *  # bunch of useful functions
 from msgr.io.save_data import save_data
-from msgr.util.calc import compute_offset
+from msgr.utils.calc import compute_offset
 
 
 def get_orbit_number(infile):
@@ -160,7 +160,7 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
         # Saving data
         if l_write:
             # Output file name.
-            outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB".format(rid, orbit, date, gr_offset)
+            outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB.nc".format(rid, orbit, date, gr_offset)
             outfilename = os.path.join(outdir, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
             save_data(outfilename, match_vol, the_date)
@@ -171,16 +171,25 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
 def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
-    All the arguments are identical to the
+    Automatically runs the comparison 2 times. First with the raw radar data,
+    then it computes the offset between ground radars and satellites and runs
+    a second time with that offset.
     """
     for c in range(2):
         try:
-            myoutputfile = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
+            outdata_file = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
         except Exception:
             traceback.print_exc()
-            pass
+            return None
+        
+        if outdata_file is None:
+            print_yellow(f"No data file created for {onedate}")
+            return None        
 
-        gr_offset = compute_offset(myoutputfile)
+        if not os.path.exists(outdata_file):
+            return None
+
+        gr_offset = compute_offset(outdata_file)
         if np.abs(gr_offset) < 1:
             print_green(f"No significant difference between ground radar and satellite found for {onedate}.")
             break

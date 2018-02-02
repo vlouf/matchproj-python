@@ -38,7 +38,7 @@ def _get_metadata():
     return metadat
 
 
-def save_data(out_file, data, date):
+def save_data(outfilename, data, date):
     """
     SAVE_DATA
     Dumps data in a python's pickle file
@@ -46,15 +46,14 @@ def save_data(out_file, data, date):
 
     Parameters:
     ===========
-        out_file: str
+        outfilename: str
             Output file name.
         data: dict
             Dictionnary of data to save.
         do_hdf: bool
             Save as a HDF file.
     """
-    metadat = _get_metadata()
-    outfilename = out_file + ".nc"
+    metadat = _get_metadata()    
 
     xdim = len(data['ref1'])
     tiltdim = len(data['el'])

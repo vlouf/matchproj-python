@@ -15,8 +15,7 @@ def rem_outliers(x):
 
 
 def compute_offset(infile):
-    with netCDF4.Dataset(infile) as ncid:
-        date = ncid['date'][:]
+    with netCDF4.Dataset(infile) as ncid:        
         ref1 = ncid['ref1'][:]
         ref2 = ncid['ref2'][:]
         ref5 = ncid['ref5'][:]
