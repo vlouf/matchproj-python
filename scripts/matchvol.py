@@ -181,10 +181,10 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
         except Exception:
             traceback.print_exc()
             return None
-        
+
         if outdata_file is None:
             print_yellow(f"No data file created for {onedate}")
-            return None        
+            return None
 
         if not os.path.exists(outdata_file):
             return None
@@ -195,8 +195,8 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             break
         elif c == 0:
             print_magenta(f"The difference between the ground radar data and the satellite data " + \
-                           "for {onedate} is of {gr_offset} dB. Running the comparison code one " + \
-                           "more time with this {gr_offset} dB offset.")
+                          f"for {onedate} is of {gr_offset} dB. Running the comparison code one " + \
+                          f"more time with this {gr_offset} dB offset.")
 
     return None
 
