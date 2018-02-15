@@ -194,6 +194,7 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             break
         elif np.isnan(gr_offset):
             print_red(f"Invalid offset found. Stopping comparison for this {onedate}.")
+            return None
         elif c == 0:
             print_magenta(f"The difference between the ground radar data and the satellite data " + \
                           f"for {onedate} is of {gr_offset} dB. Running the comparison code one " + \
