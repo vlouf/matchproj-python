@@ -182,7 +182,7 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             traceback.print_exc()
             return None
 
-        if outdata_file is None:            
+        if outdata_file is None:
             return None
 
         if not os.path.exists(outdata_file):
@@ -192,6 +192,8 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
         if np.abs(gr_offset) < 1:
             print_green(f"No significant difference between ground radar and satellite found for {onedate}.")
             break
+        elif np.isnan(gr_offset):
+            print_red(f"Invalid offset found. Stopping comparison for this {onedate}.")
         elif c == 0:
             print_magenta(f"The difference between the ground radar data and the satellite data " + \
                           f"for {onedate} is of {gr_offset} dB. Running the comparison code one " + \

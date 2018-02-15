@@ -28,7 +28,7 @@ def compute_offset(infile):
 
     dref_ku = (ref5 - ref1)
     dref_ku = dref_ku[~np.isnan(dref_ku)]
-    dref_ku = rem_outliers(dref_ku)
+    # dref_ku = rem_outliers(dref_ku)
 
     offset = - np.median(dref_ku)  # !!! Note the MINUS sign !!!
 
