@@ -136,15 +136,30 @@ def process(satellite, cpol, nprof, reflectivity_satellite,
         # Average over those bins that exceed the reflectivity
         # threshold (linear average)
 
-        ref1[ii, jj] = np.nanmean(refp1)
-        ref3[ii, jj] = np.nanmean(refp2)
-        ref4[ii, jj] = np.nanmean(refp3)
-        iref1[ii, jj] = np.nanmean(irefp1)
+        try:
+            ref1[ii, jj] = np.nanmean(refp1)
+        except ValueError:
+            pass
+        try:
+            ref3[ii, jj] = np.nanmean(refp2)
+        except ValueError:
+            pass
+        try:
+            ref4[ii, jj] = np.nanmean(refp3)
+        except ValueError:
+            pass
+        try:
+            iref1[ii, jj] = np.nanmean(irefp1)
+        except ValueError:
+            pass
 
-        if not l_dbz:
-            stdv1[ii, jj] = np.nanstd(10 * np.log10(refp1))
-        else:
-            stdv1[ii, jj] = np.nanstd(refp1)
+        try:
+            if not l_dbz:
+                stdv1[ii, jj] = np.nanstd(10 * np.log10(refp1))
+            else:
+                stdv1[ii, jj] = np.nanstd(refp1)
+        except ValueError:
+            pass
 
         # Note the number of rejected bins
         nrej1[ii, jj] = int(np.sum(np.isnan(refp1)))

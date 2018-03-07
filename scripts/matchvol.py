@@ -197,8 +197,7 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             return None
         elif c == 0:
             print_magenta(f"The difference between the ground radar data and the satellite data " +
-                          f"for {onedate} is of {gr_offset} dB. Running the comparison code one " +
-                          f"more time with this {gr_offset} dB offset.")
+                          f"for {onedate} is of {gr_offset:0.2} dB.")
 
     return None
 
