@@ -85,7 +85,7 @@ def get_satfile_list(satdir, date, l_gpm):
     return satfiles, satfiles2
 
 
-def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid, gr_offset):
+def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid, gr_offset, pass_number=0):
     """
     Here we locate the satellite files, call the comparison function
     match_volumes, and send the results for saving. The real deal is the
@@ -160,10 +160,10 @@ def production_line_manager(configuration_file, the_date, outdir, radar_file_lis
         # Saving data
         if l_write:
             # Output file name.
-            outfilename = "RID_{}_ORBIT_{}_DATE_{}_OFFSET_{:0.2f}dB.nc".format(rid, orbit, date, gr_offset)
+            outfilename = "RID_{}_ORBIT_{}_DATE_{}_PASS_{}.nc".format(rid, orbit, date, pass_number + 1)
             outfilename = os.path.join(outdir, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
-            save_data(outfilename, match_vol, the_date)
+            save_data(outfilename, match_vol, the_date, offset=gr_offset, nb_pass=pass_number)
 
     return outfilename
 
@@ -177,7 +177,7 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
     """
     for c in range(2):
         try:
-            outdata_file = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset)
+            outdata_file = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset, pass_number=c)
         except Exception:
             traceback.print_exc()
             return None
@@ -196,8 +196,8 @@ def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satd
             print_red(f"Invalid offset found. Stopping comparison for this {onedate}.")
             return None
         elif c == 0:
-            print_magenta(f"The difference between the ground radar data and the satellite data " + \
-                          f"for {onedate} is of {gr_offset} dB. Running the comparison code one " + \
+            print_magenta(f"The difference between the ground radar data and the satellite data " +
+                          f"for {onedate} is of {gr_offset} dB. Running the comparison code one " +
                           f"more time with this {gr_offset} dB offset.")
 
     return None

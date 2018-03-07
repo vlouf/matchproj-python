@@ -1,5 +1,7 @@
 import netCDF4
 
+from ..utils.calc import compute_offset_nofile
+
 
 def _get_metadata():
     metadat = dict()
@@ -38,7 +40,7 @@ def _get_metadata():
     return metadat
 
 
-def save_data(outfilename, data, date):
+def save_data(outfilename, data, date, offset=None, nb_pass=0):
     """
     SAVE_DATA
     Dumps data in a python's pickle file
@@ -53,11 +55,13 @@ def save_data(outfilename, data, date):
         do_hdf: bool
             Save as a HDF file.
     """
-    metadat = _get_metadata()    
+    metadat = _get_metadata()
 
     xdim = len(data['ref1'])
     tiltdim = len(data['el'])
     profdim = len(data['sfc'])
+
+    myoffset = compute_offset_nofile(data['ref1'], data['ref5'], data['stdv1'], data['stdv2'])
 
     with netCDF4.Dataset(outfilename, "w", format="NETCDF4") as rootgrp:
         # Create dimension
@@ -68,6 +72,23 @@ def save_data(outfilename, data, date):
         time = rootgrp.createVariable("time", "f8", ('time'))
         time.units = "seconds since 1970-01-01T00:00:00Z"
         time[:] = netCDF4.date2num(date, "seconds since 1970-01-01T00:00:00Z")
+
+        if nb_pass == 0:
+            ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
+            ncoff[:] = myoffset
+            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
+        else:
+            ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
+            ncoff[:] = offset
+            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
+
+            ncoff = rootgrp.createVariable("offset2", "f8", ("time"))
+            ncoff[:] = myoffset
+            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 2")
+
+            ncoff = rootgrp.createVariable("offset_total", "f8", ("time"))
+            ncoff[:] = myoffset + offset
+            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. TOTAL")
 
         for k, v in data.items():
             if k in ['zbb', 'date', 'bbwidth', 'dt']:
