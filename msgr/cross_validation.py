@@ -5,7 +5,7 @@ import warnings
 
 import pyproj
 import numpy as np
-from numpy import sqrt, cos, sin, pi, exp
+from numpy import sqrt, cos, sin, tan, pi, exp
 
 # Custom modules
 from . import volume_matching
@@ -13,10 +13,42 @@ from .core import Radar, Satellite
 from .io.read_radar import read_radar
 from .utils import reflectivity_conversion
 from .utils.misc import *  # bunch of useful functions
-from .instruments.satellite import correct_parallax
 
 
-def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25_trmm=None, dtime=None,
+def correct_parallax(xc, yc, xp, yp, alpha, the_range):
+    """
+    Correct for parallax to get x, y, z coordinates.
+
+    alpha dim is nprof x 1 and now we want nprof x nbin
+    xc, yc, xp, yp dimensions are nprof x 1
+    """
+
+    nprof, nbin = the_range.shape
+    alpha_corr = np.zeros((nprof, nbin))
+    xc0 = np.zeros((nprof, nbin))
+    yc0 = np.zeros((nprof, nbin))
+    xp0 = np.zeros((nprof, nbin))
+    yp0 = np.zeros((nprof, nbin))
+    for idx in range(0, nbin):
+        alpha_corr[:, idx] = alpha[:]
+        xc0[:, idx] = xc[:]
+        yc0[:, idx] = yc[:]
+        xp0[:, idx] = xp[:]
+        yp0[:, idx] = yp[:]
+
+    alpha = alpha_corr
+    zp = the_range * cos(pi / 180. * alpha_corr)
+    ds = the_range * sin(pi / 180. * alpha_corr)
+    ang = np.arctan2(yp0 - yc0, xp0 - xc0)
+    dx = ds * cos(ang)
+    dy = ds * sin(ang)
+    xp = xp0 + dx
+    yp = yp0 + dy
+
+    return xp, yp, zp, ds, alpha
+
+
+def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=None, dtime_sat=None,
                   l_cband=True, l_dbz=True, l_gpm=True, l_atten=True, gr_offset=0):
     '''
     MATCHPROJ_FUN
@@ -25,13 +57,13 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     ==========
     configuration_file: str
         Configuration file.
-    radar_file_list: List
-        List of radar files for the current date.
+    radfile: st
+        Ground radar file corresponding to satellite pass.
     sat_file_1: str.
         GPM file or TRMM 2A23 file.
     sat_file_2A25_trmm: str
         TRMM 2A25 files (None for GPM).
-    dtime: str
+    dtime_sat: str
         Date of current processing.
     l_cband, l_dbz, l_gpm, l_atten: bool
         Switches for C-band, use of natural reflectivity, is this GPM, and
@@ -42,16 +74,18 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
-    logging.basicConfig(filename="log_matchvol_{}.log".format(dtime.strftime("%Y%m%d")), level=logging.DEBUG)
+    logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
+
+    date = dtime_sat.strftime("%Y%m%d")
 
     # Projecting on a WGS84 grid.
     pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (cpol.longitude, cpol.latitude)
     smap = pyproj.Proj(pyproj_config)
 
-    day_of_treatment = dtime
+    day_of_treatment = dtime_sat
 
     # Convert to Cartesian coordinates
     satellite_proj_cart = smap(satellite.lon, satellite.lat)
@@ -61,8 +95,8 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     # Identify profiles withing the domnain
     ioverx, iovery = np.where((xproj_sat >= cpol.xmin) & (xproj_sat <= cpol.xmax) & (yproj_sat >= cpol.ymin) & (yproj_sat <= cpol.ymax))
     if len(ioverx) == 0:
-        print_red("Insufficient satellite rays in domain for " + dtime.strftime("%d %b %Y"))
-        logging.error("Insufficient satellite rays in domain for " + dtime.strftime("%d %b %Y"))
+        print_red("Insufficient satellite rays in domain for " + dtime_sat.strftime("%d %b %Y"))
+        logging.error("Insufficient satellite rays in domain for " + dtime_sat.strftime("%d %b %Y"))
         return None
 
     # Note the first and last scan indices
@@ -74,16 +108,11 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     yclose_sat = yproj_sat[:, 24]
     iclose = np.argmin(sqrt(xclose_sat**2 + yclose_sat**2))
 
-    dtime_sat = satellite.datetime_for_bin(iclose)
-    date = dtime_sat.strftime("%Y%m%d")
-
     # Compute the distance of every ray to the radar
     dist_to_gr_rays = sqrt(xproj_sat**2 + yproj_sat**2)
 
     # Identify precipitating profiles within the radaar range limits
-    iscan, iray = np.where((dist_to_gr_rays >= cpol.rmin) &
-                           (dist_to_gr_rays <= cpol.rmax) &
-                           (satellite.pflag == 2))
+    iscan, iray = np.where((dist_to_gr_rays >= cpol.rmin) & (dist_to_gr_rays <= cpol.rmax) & (satellite.pflag == 2))
     nprof = len(iscan)
     if nprof < satellite.min_prof_nb:
         print_red('Insufficient precipitating satellite rays in domain %i.' % (nprof))
@@ -141,12 +170,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
         logging.error('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
         return None
 
-    if radar_file_list is None:
-        print_green("Satellite side OK for this date {}. You can fetch the data for it.".format(dtime_sat.strftime("%Y%m%d_%H%M")))
-        logging.debug("Satellite side OK for this date {}.".format(dtime_sat.strftime("%Y%m%d_%H%M")))
-        return None
-
-    print_green("Satellite side OK. Looking at the ground radar data now.")
+    print_green("Satellite side OK.")
 
     # Set all values less than satellite.min_refl_thrld as missing
     dbz_sat = np.ma.masked_where(dbz_sat < satellite.min_refl_thrld, dbz_sat)
@@ -157,33 +181,13 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     else:
         refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
 
-    # Get the datetime for each radar files
-    dtime_radar = [get_time_from_filename(radfile, date) for radfile in radar_file_list]
-    dtime_radar = list(filter(None, dtime_radar))  # Removing None values
-
-    if len(dtime_radar) == 0:
-        print_red("No corresponding ground radar files for {}.".format(date))
-        logging.error("No corresponding ground radar files for {}.".format(date))
-        return None
-
-    # Find the nearest scan time
-    # Looking at the time difference between satellite and radar
-    closest_dtime_rad = get_closest_date(dtime_radar, dtime_sat)
-    time_difference = np.abs(dtime_sat - closest_dtime_rad)
-    if time_difference.seconds > satellite.max_time_delta:
-        print_red('Time difference is %is while the maximum accpetable value is %is.' %
-                  (time_difference.seconds, satellite.max_time_delta), bold=True)
-        return None
-
-    # Radar file corresponding to the nearest scan time
-    radfile = get_filename_from_date(radar_file_list, closest_dtime_rad)
-    time = closest_dtime_rad  # Keeping the IDL program notation
-
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, l_atten, cpol.offset)
     if radar is None:
-        print("Could not read the ground radar file. Doing nothing.")
+        print_red("Could not read the ground radar file. Doing nothing.")
         return None
+    dtime_radar = radar['time']
+    time_difference = np.abs(dtime_sat - dtime_radar)
 
     cpol.set_fields(radar)
     print_yellow("Ground radar data loaded.")
@@ -193,6 +197,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     rslt = volume_matching.process(satellite, cpol, nprof, dbz_sat,
                                    refp_ss, refp_sh, xproj_sat_pxcorr, yproj_sat_pxcorr, z_sat_pxcorr,
                                    rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
+
     x, y, z, dz, ds, r, ref1, ref2, ref3, ref4, ref5, iref1, iref2, stdv1, stdv2, ntot1, nrej1, ntot2, nrej2, vol1, vol2 = rslt
     print_magenta("Volume matching done.")
 
@@ -205,9 +210,7 @@ def match_volumes(configuration_file, radar_file_list, sat_file_1, sat_file_2A25
     # Extract comparison pairs
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
     if len(ipairx) < satellite.min_pair_nb:
-        print_red(
-            'Insufficient comparison pairs for ' +
-            day_of_treatment.strftime("%d %b %Y"))
+        print_red('Insufficient comparison pairs for ' + day_of_treatment.strftime("%d %b %Y"))
         return None
 
     # Save structure

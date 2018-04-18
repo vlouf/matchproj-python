@@ -1,8 +1,26 @@
 # Python Standard Library
-import copy
+import datetime
 
 # Other libraries.
+import netCDF4
 import numpy as np
+
+
+def read_date_from_TRMM(hdf_file1):
+    """
+    Extract datetime from TRMM HDF files.
+    """
+    with netCDF4.Dataset(hdf_file1, 'r') as ncid:
+        pos_center = len(ncid['Year']) // 2
+        year = ncid['Year'][pos_center]
+        month = ncid['Month'][pos_center]
+        day = ncid['DayOfMonth'][pos_center]
+        hour = ncid['Hour'][pos_center]
+        minute = ncid['Minute'][pos_center]
+        second = ncid['Second'][pos_center]
+
+    trmm_date = datetime.datetime(year, month, day, hour, minute, second)
+    return trmm_date
 
 
 def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
@@ -21,38 +39,30 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
     data_dict: dict
         Dictionnary containing all the needed data from the 2A23 and 2A25 files.
     '''
-    from pyhdf.SD import SD, SDC
-
-    hdf = SD(hdf_file1, SDC.READ)
-    year = hdf.select('Year').get()
-    month = hdf.select('Month').get()
-    day = hdf.select('DayOfMonth').get()
-    hour = hdf.select('Hour').get()
-    minute = hdf.select('Minute').get()
-    second = hdf.select('Second').get()
-    Latitude = hdf.select('Latitude').get()
-    Longitude = hdf.select('Longitude').get()
-    bbwidth = hdf.select('BBwidth').get()
-    HBB = hdf.select('HBB').get()
-    dataQuality = hdf.select('dataQuality').get()
-    rainFlag = hdf.select('rainFlag').get()
-    rainType = hdf.select('rainType').get()
-    status = hdf.select('status').get()
-    hdf.end()
+    with netCDF4.Dataset(hdf_file1, 'r') as ncid:
+        year = ncid['Year'][:]
+        month = ncid['Month'][:]
+        day = ncid['DayOfMonth'][:]
+        hour = ncid['Hour'][:]
+        minute = ncid['Minute'][:]
+        second = ncid['Second'][:]
+        Latitude = ncid['Latitude'][:]
+        Longitude = ncid['Longitude'][:]
+        bbwidth = ncid['BBwidth'][:]
+        HBB = ncid['HBB'][:]
+        dataQuality = ncid['dataQuality'][:]
+        rainFlag = ncid['rainFlag'][:]
+        rainType = ncid['rainType'][:]
+        status = ncid['status'][:]
 
     if dataQuality.max() != 0:
         return None
 
-    hdf_25 = SD(hdf_file2, SDC.READ)
-    Latitude25 = hdf_25.select('Latitude').get()
-    Longitude25 = hdf_25.select('Longitude').get()
-    correctZFactor = hdf_25.select('correctZFactor').get()
-    # dataQuality = hdf_25.select('dataQuality').get()
-
-    nscan = hdf_25.select('correctZFactor').dimensions()['nscan']
-    nray = hdf_25.select('correctZFactor').dimensions()['nray']
-    nbin = hdf_25.select('correctZFactor').dimensions()['ncell1']
-    hdf_25.end()
+    with netCDF4.Dataset(hdf_file2, 'r') as ncid:
+        Latitude25 = ncid['Latitude'][:]
+        Longitude25 = ncid['Longitude'][:]
+        correctZFactor = ncid['correctZFactor'][:]
+        nscan, nray, nbin = correctZFactor.shape
 
     reflectivity = correctZFactor / 100.0
 
@@ -66,7 +76,7 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
     rainFlag[(rainFlag >= 10) & (rainFlag < 20)] = 1
     rainFlag[rainFlag >= 20] = 2
 
-    ptype = copy.deepcopy(rainType)
+    ptype = rainType.copy()
     ptype[rainType >= 300] = 3
     ptype[(rainType >= 200) & (rainType < 300)] = 2
     ptype[(rainType >= 100) & (rainType < 200)] = 1
@@ -97,5 +107,3 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
                  'sfc': sfc, 'quality': quality, 'refl': reflectivity}
 
     return data_dict
-
-# Pfiou!

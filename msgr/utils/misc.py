@@ -53,6 +53,7 @@ def nancumsum(a, ax=0):
 
     return rslt
 
+
 def get_files(inpath, date=None):
     '''
     GET_FILES

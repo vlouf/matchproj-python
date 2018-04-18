@@ -5,80 +5,8 @@ import traceback
 
 # Other libraries.
 import pyart
+import netCDF4
 import numpy as np
-
-from scipy.integrate import cumtrapz
-
-
-def correct_attenuation(radar, refl_field_name='DBZ_F', rhv_field_name='RHOHV_F', phidp_field_name='PHIDP_F'):
-    """
-    Use of pyart correction capabilities to estimate and correct the attenuation.
-
-    Parameters:
-    ===========
-        radar: struct
-            Py-ART radar structure
-        method: str
-            Can be 'pyart' or 'bringi'
-    """
-
-    print("Correcting ground radar attenuation.")
-
-    try:
-        # Tries if normalised coherent poiwer field exist
-        ncp = radar.fields['NCP']
-    except KeyError:
-        # Creates a dummy NCP field.
-        reflec = radar.fields[refl_field_name]['data']
-        ncp = np.zeros_like(reflec) + 1
-        radar.add_field_like(refl_field_name, 'NCP', ncp)
-
-        spec_at, cor_z = pyart.correct.calculate_attenuation(radar, 0,
-                                                             refl_field=refl_field_name,
-                                                             ncp_field='NCP',
-                                                             rhv_field=rhv_field_name,
-                                                             phidp_field=phidp_field_name)
-
-    return cor_z
-
-
-def do_gatefilter(radar, dbz_name, zdr_name, rhohv_name):
-    gf = pyart.filters.GateFilter(radar)
-
-    gf.exclude_outside(dbz_name, 0, 80)
-    gf.exclude_outside(zdr_name, -3.0, 8.0)
-    gf.exclude_below(rhohv_name, 0.5)
-    gf.include_above(rhohv_name, 0.8)
-
-    gf_despeckeld = pyart.correct.despeckle_field(radar, dbz_name, gatefilter=gf)
-
-    return gf_despeckeld
-
-
-def filter_hardcoding(my_array, nuke_filter, bad=-9999):
-    """
-    Harcoding GateFilter into an array.
-
-    Parameters:
-    ===========
-        my_array: array
-            Array we want to clean out.
-        nuke_filter: gatefilter
-            Filter we want to apply to the data.
-        bad: float
-            Fill value.
-
-    Returns:
-    ========
-        to_return: masked array
-            Same as my_array but with all data corresponding to a gate filter
-            excluded.
-    """
-    filt_array = np.ma.masked_where(nuke_filter.gate_excluded, my_array)
-    filt_array.set_fill_value(bad)
-    filt_array = filt_array.filled(fill_value=bad)
-    to_return = np.ma.masked_where(filt_array == bad, filt_array)
-    return to_return
 
 
 def get_reflectivity_field_name(radar):
@@ -88,65 +16,11 @@ def get_reflectivity_field_name(radar):
     of different reflectvity name and return the first one that works
     '''
 
-    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'total_power', 'Refl', 'corrected_reflectivity']
-    for pn in potential_name:
+    potential_name = ['DBZ_F', 'DBZ', 'reflectivity', 'total_power', 'Refl', 'corrected_reflectivity', 'DBZH']
+    for key in potential_name:
         try:
-            rd = radar.fields[pn]
-            return pn
-        except KeyError:
-            continue
-
-    return None
-
-
-def get_phidb_field_name(radar):
-    '''
-    GET_PHIDB_FIELD_NAME
-    Because of different conventions for naming fields, it will try a variety
-    of different reflectvity name and return the first one that works
-    '''
-
-    potential_name = ['PHIDP_F', 'PHIDP', 'differential_phase']
-    for pn in potential_name:
-        try:
-            rd = radar.fields[pn]
-            return pn
-        except KeyError:
-            continue
-
-    return None
-
-
-def get_rhohv_field_name(radar):
-    '''
-    GET_RHOHV_FIELD_NAME
-    Because of different conventions for naming fields, it will try a variety
-    of different reflectvity name and return the first one that works
-    '''
-
-    potential_name = ['RHOHV_F', 'RHOHV', 'cross_correlation_ratio']
-    for pn in potential_name:
-        try:
-            rd = radar.fields[pn]
-            return pn
-        except KeyError:
-            continue
-
-    return None
-
-
-def get_zdr_field_name(radar):
-    '''
-    GET_RHOHV_FIELD_NAME
-    Because of different conventions for naming fields, it will try a variety
-    of different reflectvity name and return the first one that works
-    '''
-
-    potential_name = ['ZDR', 'ZDR_F', 'differential_reflectivity']
-    for pn in potential_name:
-        try:
-            rd = radar.fields[pn]
-            return pn
+            rd = radar.fields[key]
+            return key
         except KeyError:
             continue
 
@@ -158,26 +32,6 @@ def get_azimuth_resolution(azimuth):
     ra[(ra < 0) | (ra > 10)] = np.NaN
     rslt = np.round(np.nanmean(ra), 1)
     return rslt
-
-
-def populate_missing_azimuth(azi, refl_slice, ngate):
-    '''
-    POPULATE_MISSING_AZIMUTH
-    If the number of azimuth of one sweep is lower than 360, create empty
-    columns corresponding to the missing azimuth.
-
-    Returns the new azimuth and the reflectvity field
-    '''
-
-    a = azi.tolist()
-    tmp_refl = refl_slice
-    for e in range(0, 360):
-        if a.count(e) == 0:
-            azi = np.append(azi, e)
-            empty_arr = np.zeros((ngate, ))
-            tmp_refl = np.vstack((tmp_refl, empty_arr))
-
-    return azi, tmp_refl
 
 
 def read_radar(infile, attenuation_correction=True, reflec_offset=0):
@@ -197,33 +51,13 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     else:
         radar = pyart.io.read(infile)
 
+    dtime_radar = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
+
     refl_field_name = get_reflectivity_field_name(radar)
-    # zdr_name = get_zdr_field_name(radar)
-    # phidp_name = get_phidb_field_name(radar)
-    # rhohv_name = get_rhohv_field_name(radar)
+
     if refl_field_name is None:
         print('Reflectivity field not found.')
         return None
-
-    # if zdr_name is not None:
-    #     try:
-    #         gf = do_gatefilter(radar, refl_field_name, zdr_name, rhohv_name)
-    #         dbz = filter_hardcoding(radar.fields[refl_field_name]['data'], gf)
-    #         radar.add_field_like(refl_field_name, "NEW_DBZ", dbz, replace_existing=True)
-    #         refl_field_name = "NEW_DBZ"
-    #     except Exception:
-    #         pass
-
-    # if attenuation_correction:
-    #     if phidp_name is None or rhohv_name is None or kdp_name is None:
-    #         attenuation_correction = False
-    #         print("Attenuation correction impossible, missing dualpol field.")
-    #     else:
-    #         radar = correct_attenuation(radar, refl_field_name=refl_field_name,
-    #                                     rhv_field_name=rhohv_name, phidp_field_name=phidp_name)
-    #
-    #         radar.add_field('corrected_reflectivity_horizontal', cor_z)
-    #         refl_field_name = "corrected_reflectivity_horizontal"
 
     rg = radar.range['data']  # Extract range
     ngate = radar.ngates
@@ -308,14 +142,8 @@ def read_radar(infile, attenuation_correction=True, reflec_offset=0):
     el3d = np.repeat(el[np.newaxis, :, :], ngate, axis=0)
 
     data_dict = dict()
-    data_dict = {'ngate': ngate,        # Number of gates
-                 'nbeam': nbeam,        # Number of azimuth by elevation
-                 'ntilt': ntilt,        # Number of sweeps
-                 'azang': az3d,         # Azimuth
-                 'elev_3d': el3d,       # Elevation angle
-                 'range': rg3d,         # Radar's range
-                 'elang': elevation,    # Radar's elevation
-                 'dr': rg[2] - rg[1],     # Gate spacing
-                 'reflec': reflec}      # Reflectivity as shape of (r, azi, ele)
+    data_dict = {'ngate': ngate, 'nbeam': nbeam, 'ntilt': ntilt, 'azang': az3d,
+                 'elev_3d': el3d, 'range': rg3d, 'elang': elevation,
+                 'dr': rg[2] - rg[1], 'reflec': reflec, 'time': dtime_radar}
 
     return data_dict  # Type: Dict

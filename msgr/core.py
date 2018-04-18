@@ -150,9 +150,3 @@ class Satellite:
         config = configparser.ConfigParser()
         config.read(config_file)
         return config
-
-    def datetime_for_bin(self, position):
-        dtime_sat = datetime.datetime(self.year[position], self.month[position],
-                                      self.day[position], self.hour[position],
-                                      self.minute[position], self.second[position])
-        return dtime_sat

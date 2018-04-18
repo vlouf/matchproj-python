@@ -95,8 +95,7 @@ def process(satellite, cpol, nprof, reflectivity_satellite,
     # Loop over the TRMM/GPM profiles and Loop over the GR elevation scan
     for ii, jj in itertools.product(range(nprof), range(ntilt)):
         # Identify those PR bins which fall within the GR sweep
-        ip = np.where((ep[ii, :] >= elang[jj] - bwr / 2) &
-                      (ep[ii, :] <= elang[jj] + bwr / 2))
+        ip = np.where((ep[ii, :] >= elang[jj] - bwr / 2) & (ep[ii, :] <= elang[jj] + bwr / 2))
 
         # Store the number of bins
         ntot1[ii, jj] = len(ip)
@@ -167,8 +166,7 @@ def process(satellite, cpol, nprof, reflectivity_satellite,
             continue
 
         # Compute the horizontal distance to all the GR bins
-        d = sqrt((xg[:, :, jj] - x[ii, jj])**2 +
-                 (yg[:, :, jj] - y[ii, jj])**2)
+        d = sqrt((xg[:, :, jj] - x[ii, jj])**2 + (yg[:, :, jj] - y[ii, jj])**2)
 
         # Find all GR bins within the SR beam
         igx, igy = np.where(d <= ds[ii, jj] / 2)

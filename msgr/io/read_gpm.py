@@ -1,5 +1,26 @@
+import datetime
+
 import h5py
 import numpy as np
+
+
+def read_date_from_GPM(infile):
+    with h5py.File(infile, 'r') as file_id:
+        obj_id = file_id['NS']
+
+        # Read time data
+        mem_id = obj_id['ScanTime']
+        year = mem_id['Year'].value
+        month = mem_id['Month'].value
+        day = mem_id['DayOfMonth'].value
+        hour = mem_id['Hour'].value
+        minute = mem_id['Minute'].value
+        second = mem_id['Second'].value
+
+    pos_center = len(year) // 2
+    gpm_date = datetime.datetime(year[pos_center], month[pos_center], day[pos_center],
+                                 hour[pos_center], minute[pos_center], second[pos_center])
+    return gpm_date
 
 
 def read_gpm(infile, sat_offset=None):

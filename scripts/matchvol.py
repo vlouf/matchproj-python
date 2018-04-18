@@ -1,16 +1,14 @@
-#! /usr/bin/env python
 """
 MSGR Matching Satellite and Ground Radar
 ========================================
 
 @author: Valentin Louf
-@date: 2016-12-06 (creation) 2017-10-05 (current version)
+@date: 2016-12-06 (creation) 2018-04-18 (current version)
 @email: valentin.louf@bom.gov.au
 @company: Monash University/Bureau of Meteorology
 """
 # Standard library import
 import os
-import re
 import glob
 import time
 import argparse
@@ -23,13 +21,33 @@ from multiprocessing import Pool
 
 # Others lib.
 import numpy as np
-import pandas as pd
 
-# Custom lib.
+# Custom lib
 from msgr import cross_validation
-from msgr.utils.misc import *  # bunch of useful functions
+from msgr.io.read_gpm import read_date_from_GPM
+from msgr.io.read_trmm import read_date_from_TRMM
 from msgr.io.save_data import save_data
-from msgr.utils.calc import compute_offset
+from msgr.utils.misc import *
+
+
+def compute_offset(matchvol_data):
+    z = matchvol_data['z']
+    ref1 = matchvol_data['ref1']
+    ref5 = matchvol_data['ref5']
+    stdv1 = matchvol_data['stdv1']
+    stdv2 = matchvol_data['stdv2']
+
+    pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
+    ref1[pos] = np.NaN
+
+    dref_ku = (ref5 - ref1)
+    dref_ku = dref_ku[~np.isnan(dref_ku)]
+
+    if len(dref_ku) <= 1:
+        return np.Nan
+    else:
+        offset = - np.median(dref_ku)  # !!! Note the MINUS sign !!!
+        return offset
 
 
 def get_orbit_number(infile):
@@ -72,11 +90,11 @@ def get_satfile_list(satdir, date, l_gpm):
     """
     # Looking for satellite data files.
     if l_gpm:
-        satfiles = glob.glob(satdir + '/*' + date + '*.HDF5')
+        satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
         satfiles2 = None
     else:
-        satfiles = glob.glob(satdir + '/*2A23*' + date + '*.HDF')
-        satfiles2 = glob.glob(satdir + '/*2A25*' + date + '*.HDF')
+        satfiles = glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF'))
+        satfiles2 = glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF'))
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
@@ -85,129 +103,75 @@ def get_satfile_list(satdir, date, l_gpm):
     return satfiles, satfiles2
 
 
-def production_line_manager(configuration_file, the_date, outdir, radar_file_list, satdir, rid, gr_offset, pass_number=0):
-    """
-    Here we locate the satellite files, call the comparison function
-    match_volumes, and send the results for saving. The real deal is the
-    match_volumes from msgr.core.msgr module.
+def check_directory(radar_dir, satellite_dir, output_dir):
+    # Check if dirs exist.
+    if not os.path.isdir(radar_dir):
+        raise FileNotFoundError('Ground radar data directory not found.')
+    if not os.path.isdir(satellite_dir):
+        raise FileNotFoundError('Satellite data directory not found.')
 
-    Parameters
-    ==========
-        the_date: datetime
-            The day for comparison.
-        parameters_dict: dict
-            Dictionnary containing all parameters from the configuration file.
-    """
-    #  Reading configuration file
-    config = configparser.ConfigParser()
-    config.read(configuration_file)
-    # Switch for writing out volume-matched data
-    switch = config['switch']
-    l_write = switch.getboolean('write')
-    l_cband = switch.getboolean('cband')   # Switch for C-band GR
-    l_dbz = switch.getboolean('dbz')       # Switch for averaging in dBZ
-    l_gpm = switch.getboolean('gpm')       # Switch for GPM PR data
-    l_atten = switch.getboolean('correct_gr_attenuation')
+    try:
+        os.mkdir(output_dir)
+    except FileExistsError:
+        pass
 
-    outfilename = None
-
-    print("")
-    date = the_date.strftime("%Y%m%d")
-
-    if len(radar_file_list) == 0:
-        print_red("No radar file for this date %s." % (date))
-        return None
-
-    # Looking for satellites.
-    satfiles, satfiles2 = get_satfile_list(satdir, date, l_gpm)
-    if satfiles is None:
-        print_red("No satellite swaths for %s." % (date))
-        return None
-
-    if len(satfiles) > 5:
-        print_red("There are more than 5 files for {}. Something probably wrong in the files name. Skipping this date.".format(date))
-        return None
-
-    # Looping over satellite file
-    for one_sat_file in satfiles:
-        # Start chrono
-        tick = time.time()
-
-        # Get orbit number
-        orbit = get_orbit_number(one_sat_file)
-        print_with_time("Orbit #{} -- {}.".format(orbit, date))
-
-        if not l_gpm:
-            try:
-                # Trying to find corresponding 2A25 TRMM file based on the orbit
-                fd_25 = find_file_with_string(satfiles2, orbit)
-            except IndexError:
-                print_red("Found no matching 2A25 file for TRMM.")
-                continue
-        else:
-            fd_25 = None
-
-        # Calling processing function for TRMM
-        match_vol = cross_validation.match_volumes(configuration_file, radar_file_list, one_sat_file,
-                                                   sat_file_2A25_trmm=fd_25, dtime=the_date, l_cband=l_cband,
-                                                   l_dbz=l_dbz, l_gpm=l_gpm, l_atten=l_atten, gr_offset=gr_offset)
-
-        if match_vol is None:
-            continue
-
-        print_with_time("Comparison done in %.2fs." % (time.time() - tick))
-
-        # Saving data
-        if l_write:
-            # Output file name.
-            outfilename = "RID_{}_ORBIT_{}_DATE_{}_PASS_{}.nc".format(rid, orbit, date, pass_number + 1)
-            outfilename = os.path.join(outdir, outfilename)
-            print_green("Saving data to {}.".format(outfilename), bold=True)
-            save_data(outfilename, match_vol, the_date, offset=gr_offset, nb_pass=pass_number)
-
-    return outfilename
+    return None
 
 
-def multiproc_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset):
+def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
+                           satellite_dtime, l_cband, l_dbz, l_gpm, l_atten, gr_offset,
+                           l_write, rid, orbit, outdir):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
     Automatically runs the comparison 2 times. First with the raw radar data,
     then it computes the offset between ground radars and satellites and runs
     a second time with that offset.
     """
-    for c in range(2):
+    datestr = satellite_dtime.strftime('%Y%m%d')
+
+    for pass_number in range(2):
         try:
-            outdata_file = production_line_manager(configuration_file, onedate, outdir, radar_file_list, satdir, rid, gr_offset, pass_number=c)
+            # Calling processing function for TRMM
+            tick = time.time()
+            match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file,
+                                                       sat_file_2A25_trmm, satellite_dtime, l_cband,
+                                                       l_dbz, l_gpm, l_atten, gr_offset)
         except Exception:
             traceback.print_exc()
             return None
 
-        if outdata_file is None:
+        print_with_time("Comparison done in %.2fs." % (time.time() - tick))
+        if match_vol is None:
+            print_red('The comparison returned nothing.')
             return None
 
-        if not os.path.exists(outdata_file):
-            return None
+        delta_zh = compute_offset(match_vol)
+        # Saving data
+        if l_write:
+            # Output file name.
+            outfilename = "RID_{}_ORBIT_{}_DATE_{}_PASS_{}.nc".format(rid, orbit, datestr, pass_number + 1)
+            outfilename = os.path.join(outdir, outfilename)
+            print_green("Saving data to {}.".format(outfilename), bold=True)
+            if pass_number == 0:
+                save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, nb_pass=pass_number)
+            else:
+                save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, offset2=delta_zh, nb_pass=pass_number)
 
-        gr_offset = compute_offset(outdata_file)
+        gr_offset = delta_zh
+
         if np.abs(gr_offset) < 1:
-            print_green(f"No significant difference between ground radar and satellite found for {onedate}.")
+            print_green(f"No significant difference between ground radar and satellite found for {datestr}. Not doing anymore pass.")
             break
         elif np.isnan(gr_offset):
-            print_red(f"Invalid offset found. Stopping comparison for this {onedate}.")
+            print_red(f"Invalid offset found. Stopping comparison for {datestr}.")
             return None
-        elif c == 0:
-            print_magenta(f"The difference between the ground radar data and the satellite data " +
-                          f"for {onedate} is of {gr_offset:0.2} dB.")
+        elif pass_number == 0:
+            print_magenta(f"The difference between the ground radar data and the satellite data for {datestr} is of {gr_offset:0.2} dB.")
 
     return None
 
 
 def main():
-    """
-    Reading general informations from configuration file like ncpu, start_date,
-    end_date, all the switches. Loop over dates, spawn multiprocessing, and call the
-    production_line_manager.
-    """
     print_with_time("Loading configuration file.")
     #  Reading configuration file
     config = configparser.ConfigParser()
@@ -221,22 +185,13 @@ def main():
 
     # Data path
     path = config['path']
-    raddir = path.get('ground_radar')
-    satdir = path.get('satellite')
+    radar_dir = path.get('ground_radar')
+    satellite_dir = path.get('satellite')
     outdir = path.get('output')
 
-    # Check if dirs exist.
-    if not os.path.isdir(raddir):
-        print_red("Wrong radar directory in configuration file.")
-        return None
-    if not os.path.isdir(satdir):
-        print_red("Wrong satellite directory in configuration file.")
-        return None
-
-    try:
-        os.mkdir(outdir)
-    except FileExistsError:
-        pass
+    # Thresholds
+    thresholds = config['thresholds']
+    max_time_delta = thresholds.getfloat('max_time_delta')  # in second
 
     # General info about the ground radar (ID and OFFSET to apply.)
     GR_param = config['radar']
@@ -246,33 +201,80 @@ def main():
     except KeyError:
         gr_offset = 0
 
+    switch = config['switch']
+    l_write = switch.getboolean('write')  # switch to save data.
+    l_cband = switch.getboolean('cband')  # Switch for C-band GR
+    l_dbz = switch.getboolean('dbz')  # Switch for averaging in dBZ
+    l_gpm = switch.getboolean('gpm')  # Switch for GPM PR data
+    l_atten = switch.getboolean('correct_gr_attenuation')
+    # Finish reading configuration file.
+
+    check_directory(radar_dir, satellite_dir, outdir)
+
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
+    nbdays = (end_date - start_date).days
+    date_list = [start_date + datetime.timedelta(days=d) for d in range(nbdays)]
 
     print_yellow("Generating ground radar file list.")
-    total_radar_file_list = get_files(raddir)
-    print_yellow("Found {} supported radar files in {}.".format(len(total_radar_file_list), raddir))
+    total_radar_file_list = get_files(radar_dir)
+    print_yellow(f"Found {len(total_radar_file_list)} supported radar files in {radar_dir}.")
 
-    date_list = pd.date_range(start_date, end_date)
     args_list = []
-    for onedate in date_list:
-        mydate = onedate.strftime("%Y%m%d")
-        radar_file_list = [f for f in total_radar_file_list if mydate in f]
+    for date in date_list:
+        datestr = date.strftime('%Y%m%d')
 
+        # Extracting radar file list for this date from the total radar file list.
+        radar_file_list = [f for f in total_radar_file_list if datestr in f]
         if len(radar_file_list) == 0:
-            print_yellow(f"No ground radar file found for this date {mydate}")
+            print_yellow(f"No ground radar file found for this date {datestr}")
             continue
 
+        # Looking for satellite data corresponding to this date.
+        satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
+        if satfiles is None:
+            print_red(f"No satellite data for {datestr}.")
+            continue
+
+        if len(satfiles) > 5:
+            print_red(f"There are more than 5 files for {datestr}. Something probably wrong in the files name. Skipping this date.")
+            continue
+
+        # Obtaining the satellite file(s) and reading its exact date and time.
+        one_sat_file = satfiles[0]
+        if not l_gpm:
+            sat_file_2A25_trmm = satfiles2[0]
+            satellite_dtime = read_date_from_TRMM(one_sat_file)
+        else:
+            sat_file_2A25_trmm = None
+            satellite_dtime = read_date_from_GPM(one_sat_file)
+
+        orbit = get_orbit_number(one_sat_file)
+
+        # Get the datetime for each radar files
+        radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
+        radar_dtime = list(filter(None, radar_dtime))  # Removing None values
+
+        closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
+        time_difference = np.abs(satellite_dtime - closest_dtime_rad)
+        if time_difference.seconds > max_time_delta:
+            print_red(f'Time difference is {time_difference.seconds}s while the maximum time difference allowed is {max_time_delta}s.', bold=True)
+
+        # Radar file corresponding to the nearest scan time
+        ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
+
         # Argument list for multiprocessing.
-        args_list.append((CONFIG_FILE, onedate, outdir, radar_file_list, satdir, rid, gr_offset))
+        args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
+                          sat_file_2A25_trmm, satellite_dtime, l_cband,
+                          l_dbz, l_gpm, l_atten, gr_offset, l_write, rid, orbit, outdir))
 
     if len(args_list) == 0:
-        print_red("Nothing to do. Is configuration file correct?")
+        print_red("Nothing to do. Is the configuration file correct?")
         return None
 
     # Start multiprocessing.
     with Pool(ncpu) as pool:
-        pool.starmap(multiproc_manager, args_list)
+        pool.starmap(multiprocessing_driver, args_list)
 
     return None
 
@@ -289,7 +291,7 @@ if __name__ == '__main__':
     parser_description = "Start MSGR - volume Matching Satellite and Ground Radar."
     parser = argparse.ArgumentParser(description=parser_description)
 
-    parser.add_argument('-c', '--config', type=str, dest='config_file', help='Path to configuration file.', default=None, required=True)
+    parser.add_argument('-c', '--config', type=str, dest='config_file', help='Configuration file.', default=None, required=True)
 
     args = parser.parse_args()
     CONFIG_FILE = args.config_file

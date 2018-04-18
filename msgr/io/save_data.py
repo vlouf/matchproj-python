@@ -1,7 +1,5 @@
 import netCDF4
 
-from ..utils.calc import compute_offset_nofile
-
 
 def _get_metadata():
     metadat = dict()
@@ -40,7 +38,7 @@ def _get_metadata():
     return metadat
 
 
-def save_data(outfilename, data, date, offset=None, nb_pass=0):
+def save_data(outfilename, data, date, offset1=None, offset2=None, nb_pass=0):
     """
     SAVE_DATA
     Dumps data in a python's pickle file
@@ -61,8 +59,6 @@ def save_data(outfilename, data, date, offset=None, nb_pass=0):
     tiltdim = len(data['el'])
     profdim = len(data['sfc'])
 
-    myoffset = compute_offset_nofile(data['ref1'], data['ref5'], data['stdv1'], data['stdv2'])
-
     with netCDF4.Dataset(outfilename, "w", format="NETCDF4") as rootgrp:
         # Create dimension
         rootgrp.createDimension("x", xdim)
@@ -75,19 +71,19 @@ def save_data(outfilename, data, date, offset=None, nb_pass=0):
 
         if nb_pass == 0:
             ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
-            ncoff[:] = myoffset
+            ncoff[:] = offset1
             ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
         else:
             ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
-            ncoff[:] = offset
+            ncoff[:] = offset1
             ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
 
             ncoff = rootgrp.createVariable("offset2", "f8", ("time"))
-            ncoff[:] = myoffset
+            ncoff[:] = offset2
             ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 2")
 
             ncoff = rootgrp.createVariable("offset_total", "f8", ("time"))
-            ncoff[:] = myoffset + offset
+            ncoff[:] = offset2 + offset1
             ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. TOTAL")
 
         for k, v in data.items():
