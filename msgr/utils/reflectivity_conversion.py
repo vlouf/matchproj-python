@@ -1,34 +1,31 @@
-import numpy as np
 import copy
+import numpy as np
 
 
 def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
     """
-    _CONVERT_REFLECTIVITY_FROM_KU
     Convert to S/C-band using method of Cao et al. (2013)
 
     Parameters
     ==========
-        refp:
-            Satellite reflectivity field.
-        zp:
-            Altitude.
-        zbb:
-            Bright band height.
-        bbwidth:
-            Bright band width.
-        l_cband: bool
-            Is radar C-band? (if not then S-band).
+    refp:
+        Satellite reflectivity field.
+    zp:
+        Altitude.
+    zbb:
+        Bright band height.
+    bbwidth:
+        Bright band width.
+    l_cband: bool
+        Is radar C-band? (if not then S-band).
 
     Return
     ======
-        refp_ss:
-            Stratiform reflectivity conversion from Ku-band to S-band
-        refp_sh:
-            Convective reflectivity conversion from Ku-band to S-band
-
+    refp_ss:
+        Stratiform reflectivity conversion from Ku-band to S-band
+    refp_sh:
+        Convective reflectivity conversion from Ku-band to S-band
     """
-
     # Set coefficients for conversion from Ku-band to S-band
     #        Rain      90%      80%      70%      60%      50%      40%      30%      20%      10%     Snow
     as0=[ 4.78e-2, 4.12e-2, 8.12e-2, 1.59e-1, 2.87e-1, 4.93e-1, 8.16e-1, 1.31e+0, 2.01e+0, 2.82e+0, 1.74e-1]
@@ -52,37 +49,31 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
     iax, iay = np.where(ratio >= 1)
     # above melting layer
     if len(iax) > 0:
-        dfrs = as0[10] + as1[10]*refp[iax, iay] + as2[10]*refp[iax, iay]**2 \
-               + as3[10]*refp[iax, iay]**3 + as4[10]*refp[iax, iay]**4
-        dfrh = ah0[10] + ah1[10]*refp[iax, iay] + ah2[10]*refp[iax, iay]**2 \
-               + ah3[10]*refp[iax, iay]**3 + ah4[10]*refp[iax, iay]**4
+        dfrs = as0[10] + as1[10] * refp[iax, iay] + as2[10] * refp[iax, iay]**2 + as3[10] * refp[iax, iay]**3 + as4[10] * refp[iax, iay]**4
+        dfrh = ah0[10] + ah1[10] * refp[iax, iay] + ah2[10] * refp[iax, iay]**2 + ah3[10] * refp[iax, iay]**3 + ah4[10] * refp[iax, iay]**4
         refp_ss[iax, iay] = refp[iax, iay] + dfrs
         refp_sh[iax, iay] = refp[iax, iay] + dfrh
 
     ibx, iby = np.where(ratio <= 0)
-    if len(ibx) > 0: # below the melting layer
-        dfrs = as0[0] + as1[0]*refp[ibx, iby] + as2[0]*refp[ibx, iby]**2 + \
-               as3[0]*refp[ibx, iby]**3 + as4[0]*refp[ibx, iby]**4
-        dfrh = ah0[0] + ah1[0]*refp[ibx, iby] + ah2[0]*refp[ibx, iby]**2 + \
-               ah3[0]*refp[ibx, iby]**3 + ah4[0]*refp[ibx, iby]**4
+    if len(ibx) > 0:  # below the melting layer
+        dfrs = as0[0] + as1[0] * refp[ibx, iby] + as2[0] * refp[ibx, iby]**2 + as3[0] * refp[ibx, iby]**3 + as4[0] * refp[ibx, iby]**4
+        dfrh = ah0[0] + ah1[0] * refp[ibx, iby] + ah2[0] * refp[ibx, iby]**2 + ah3[0] * refp[ibx, iby]**3 + ah4[0] * refp[ibx, iby]**4
         refp_ss[ibx, iby] = refp[ibx, iby] + dfrs
         refp_sh[ibx, iby] = refp[ibx, iby] + dfrh
 
     imx, imy = np.where((ratio > 0) & (ratio < 1))
-    if len(imx) > 0: # within the melting layer
+    if len(imx) > 0:  # within the melting layer
         ind = np.round(ratio[imx, imy]).astype(int)[0]
-        dfrs = as0[ind] + as1[ind]*refp[imx, imy] + as2[ind]*refp[imx, imy]**2 + \
-               as3[ind]*refp[imx, imy]**3 + as4[ind]*refp[imx, imy]**4
-        dfrh = ah0[ind] + ah1[ind]*refp[imx, imy] + ah2[ind]*refp[imx, imy]**2+ \
-               ah3[ind]*refp[imx, imy]**3 + ah4[ind]*refp[imx, imy]**4
+        dfrs = as0[ind] + as1[ind] * refp[imx, imy] + as2[ind] * refp[imx, imy]**2 + as3[ind] * refp[imx, imy]**3 + as4[ind] * refp[imx, imy]**4
+        dfrh = ah0[ind] + ah1[ind] * refp[imx, imy] + ah2[ind] * refp[imx, imy]**2 + ah3[ind] * refp[imx, imy]**3 + ah4[ind] * refp[imx, imy]**4
         refp_ss[imx, imy] = refp[imx, imy] + dfrs
         refp_sh[imx, imy] = refp[imx, imy] + dfrh
 
     # Jackson Tan's fix for C-band
     if l_cband == 1:
-        deltas = (refp_ss - refp)*5.3/10.0
+        deltas = 5.3 / 10.0 * (refp_ss - refp)
         refp_ss = refp + deltas
-        deltah = (refp_sh - refp)*5.3/10.0
+        deltah = 5.3 / 10.0 * (refp_sh - refp)
         refp_sh = refp + deltah
 
     return refp_ss, refp_sh
@@ -90,84 +81,77 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
 
 def convert_to_Sband(refp, zp, zbb, bbwidth):
     """
-    CONVERT_TO_SBAND
     Convert to S-band using method of Cao et al. (2013)
 
     Parameters
     ==========
-        refp:
-            Satellite reflectivity field.
-        zp:
-            Altitude.
-        zbb:
-            Bright band height.
-        bbwidth:
-            Bright band width.
+    refp:
+        Satellite reflectivity field.
+    zp:
+        Altitude.
+    zbb:
+        Bright band height.
+    bbwidth:
+        Bright band width.
 
     Return
     ======
-        refp_ss:
-            Stratiform reflectivity conversion from Ku-band to S-band
-        refp_sh:
-            Convective reflectivity conversion from Ku-band to S-band
-
+    refp_ss:
+        Stratiform reflectivity conversion from Ku-band to S-band
+    refp_sh:
+        Convective reflectivity conversion from Ku-band to S-band
     """
-
     to_send = copy.deepcopy(refp)
     return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 0)
 
 
 def convert_to_Cband(refp, zp, zbb, bbwidth):
     """
-    convert_to_Cband
     Convert to C-band using method of Cao et al. (2013)
 
     Parameters
     ==========
-        refp:
-            Satellite reflectivity field.
-        zp:
-            Altitude.
-        zbb:
-            Bright band height.
-        bbwidth:
-            Bright band width.
+    refp:
+        Satellite reflectivity field.
+    zp:
+        Altitude.
+    zbb:
+        Bright band height.
+    bbwidth:
+        Bright band width.
 
     Return
     ======
-        refp_ss:
-            Stratiform reflectivity conversion from Ku-band to S-band
-        refp_sh:
-            Convective reflectivity conversion from Ku-band to S-band
-
+    refp_ss:
+        Stratiform reflectivity conversion from Ku-band to S-band
+    refp_sh:
+        Convective reflectivity conversion from Ku-band to S-band
     """
-
     to_send = copy.deepcopy(refp)
     return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 1)
 
 
 def convert_to_Ku(refg, zg, zbb, l_cband=1):
     '''
-    CONVERT_TO_KU
-    Method of Liao and Meneghini (2009)
+    From Liao and Meneghini (2009)
 
     Parameters
     ==========
-        refg:
-            Ground radar reflectivity field.
-        zg:
-            Altitude.
-        zbb:
-            Bright band height.
-        bbwidth:
-            Bright band width.
-        l_cband: bool
-            If radar C-Band (if not then S-band).
+    refg:
+        Ground radar reflectivity field.
+    zg:
+        Altitude.
+    zbb:
+        Bright band height.
+    bbwidth:
+        Bright band width.
+    l_cband: bool
+        If radar C-Band (if not then S-band).
 
     Returns
     =======
-        refg_ku:
-            Ground radar reflectivity field converted to Ku-band.
+    refg_ku:
+        Ground radar reflectivity field converted to Ku-band.
     '''
 
     refg_ku = np.zeros(refg.shape) + np.NaN

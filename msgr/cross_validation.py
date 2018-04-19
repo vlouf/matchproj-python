@@ -1,9 +1,10 @@
-# Serious business is done here.
+# Python standard library
 import logging
 import datetime
 import warnings
 import itertools
 
+# Other libraries
 import pyproj
 import numpy as np
 from numpy import sqrt, cos, sin, tan, pi, exp
@@ -12,7 +13,7 @@ from numpy import sqrt, cos, sin, tan, pi, exp
 from .core import Radar, Satellite
 from .io.read_radar import read_radar
 from .utils import reflectivity_conversion
-from .utils.misc import *  # bunch of useful functions
+from .utils.misc import *
 
 
 def _matching(satellite, cpol, nprof, reflectivity_satellite,
@@ -93,9 +94,9 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
 
     '''Reflectivities'''
     ref1 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflectivity
-    ref2 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, snow
-    ref3 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, hail
-    ref4 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity
+    ref2 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity
+    ref3 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, snow
+    ref4 = np.zeros((nprof, ntilt)) + np.NaN  # PR reflec S-band, hail
     ref5 = np.zeros((nprof, ntilt)) + np.NaN  # GR reflectivity Ku-band
     iref1 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated PR reflec
     iref2 = np.zeros((nprof, ntilt)) + np.NaN  # path-integrated GR reflec
@@ -276,31 +277,31 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
 
     # Save structure
     match_vol = dict()
-    match_vol['zbb'] = zbb
-    match_vol['x'] = x[ipairx, ipairy]
-    match_vol['y'] = y[ipairx, ipairy]
-    match_vol['z'] = z[ipairx, ipairy]
-    match_vol['dz'] = dz[ipairx, ipairy]
-    match_vol['ds'] = ds[ipairx, ipairy]
-    match_vol['r'] = r[ipairx, ipairy]
-    match_vol['el'] = cpol.fields['elang'][ipairy]
+    match_vol['zbb'] = zbb  # Average bright band height
+    match_vol['x'] = x[ipairx, ipairy]  # x coordinate of sample
+    match_vol['y'] = y[ipairx, ipairy]  # y coordinate of sample
+    match_vol['z'] = z[ipairx, ipairy]  # z coordinate of sample
+    match_vol['dz'] = dz[ipairx, ipairy]  # depth of sample
+    match_vol['ds'] = ds[ipairx, ipairy]  # width of sample
+    match_vol['r'] = r[ipairx, ipairy]  # range of sample from GR
+    match_vol['el'] = cpol.fields['elang'][ipairy]  # Elevation angle
 
-    match_vol['ref1'] = ref1[ipairx, ipairy]
-    match_vol['ref2'] = ref2[ipairx, ipairy]
-    match_vol['ref3'] = ref3[ipairx, ipairy]
-    match_vol['ref4'] = ref4[ipairx, ipairy]
-    match_vol['ref5'] = ref5[ipairx, ipairy]
-    match_vol['iref1'] = iref1[ipairx, ipairy]
-    match_vol['iref2'] = iref2[ipairx, ipairy]
-    match_vol['ntot1'] = ntot1[ipairx, ipairy]
-    match_vol['nrej1'] = nrej1[ipairx, ipairy]
-    match_vol['ntot2'] = ntot2[ipairx, ipairy]
-    match_vol['nrej2'] = nrej2[ipairx, ipairy]
+    match_vol['ref1'] = ref1[ipairx, ipairy]  # PR reflectivity (Ku-band)
+    match_vol['ref2'] = ref2[ipairx, ipairy]  # GR reflectivity (S/C-band)
+    match_vol['ref3'] = ref3[ipairx, ipairy]  # PR reflectivity (S-band stratiform)
+    match_vol['ref4'] = ref4[ipairx, ipairy]  # PR reflectivity (S-band convective)
+    match_vol['ref5'] = ref5[ipairx, ipairy]  # GR reflectivity (Ku-band)
+    match_vol['iref1'] = iref1[ipairx, ipairy]  # path-integrated PR reflectivity
+    match_vol['iref2'] = iref2[ipairx, ipairy]  # path-integrated GR reflectivity
+    match_vol['ntot1'] = ntot1[ipairx, ipairy]  # total number of PR bins in sample
+    match_vol['nrej1'] = nrej1[ipairx, ipairy]  # number of rejected PR bins in sample
+    match_vol['ntot2'] = ntot2[ipairx, ipairy]  # total number of GR bins in sample
+    match_vol['nrej2'] = nrej2[ipairx, ipairy]  # number of rejected GR bins in sample
 
-    match_vol['stdv1'] = stdv1[ipairx, ipairy]
-    match_vol['stdv2'] = stdv2[ipairx, ipairy]
-    match_vol['vol1'] = vol1[ipairx, ipairy]
-    match_vol['vol2'] = vol2[ipairx, ipairy]
+    match_vol['stdv1'] = stdv1[ipairx, ipairy]  # std. dev. of PR reflectivity in sample
+    match_vol['stdv2'] = stdv2[ipairx, ipairy]  # std. dev. of GR reflectivity in sample
+    match_vol['vol1'] = vol1[ipairx, ipairy]  # total volume of PR bins in sample
+    match_vol['vol2'] = vol2[ipairx, ipairy]  # total volume of GR bins in sample
 
     return match_vol
 

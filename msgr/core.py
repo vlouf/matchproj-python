@@ -144,6 +144,7 @@ class Satellite:
 
         self.__dict__.update(**satdata)
 
+        # Determine the direction of the scans
         self.alpha = np.abs(-17.04 + np.arange(self.nray) * 0.71)
 
     def _read_configfile(self, config_file):
