@@ -269,6 +269,7 @@ def main():
             time_difference = np.abs(satellite_dtime - closest_dtime_rad)
             if time_difference.seconds > max_time_delta:
                 print_red(f'Time difference is {time_difference.seconds}s while the maximum time difference allowed is {max_time_delta}s.', bold=True)
+                continue
 
             # Radar file corresponding to the nearest scan time
             ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
