@@ -193,6 +193,10 @@ def main():
     thresholds = config['thresholds']
     max_time_delta = thresholds.getfloat('max_time_delta')  # in second
 
+    # Radar location
+    radar_lat = config['longitude']
+    radar_lon = config['latitude']
+    
     # General info about the ground radar (ID and OFFSET to apply.)
     GR_param = config['radar']
     rid = GR_param.get('radar_id')
@@ -225,7 +229,9 @@ def main():
         datestr = date.strftime('%Y%m%d')
 
         # Extracting radar file list for this date from the total radar file list.
+        
         radar_file_list = [f for f in total_radar_file_list if datestr in f]
+        
         if len(radar_file_list) == 0:
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
@@ -241,32 +247,36 @@ def main():
             continue
 
         # Obtaining the satellite file(s) and reading its exact date and time.
-        one_sat_file = satfiles[0]
-        if not l_gpm:
-            sat_file_2A25_trmm = satfiles2[0]
-            satellite_dtime = read_date_from_TRMM(one_sat_file)
-        else:
-            sat_file_2A25_trmm = None
-            satellite_dtime = read_date_from_GPM(one_sat_file)
+        for one_sat_file in satfiles:
+            if not l_gpm:
+                sat_file_2A25_trmm = satfiles2[0]
+                satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file,radar_lat,radar_lon)
+            else:
+                sat_file_2A25_trmm = None
+                satellite_dtime,satellite_dist = read_date_from_GPM(one_sat_file,radar_lat,radar_lon)
 
-        orbit = get_orbit_number(one_sat_file)
+            orbit = get_orbit_number(one_sat_file)
 
-        # Get the datetime for each radar files
-        radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
-        radar_dtime = list(filter(None, radar_dtime))  # Removing None values
+            #check satellite dist
+            if satellite_dist > max_dist_delta:
+                continue
+            
+            # Get the datetime for each radar files
+            radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
+            radar_dtime = list(filter(None, radar_dtime))  # Removing None values
 
-        closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
-        time_difference = np.abs(satellite_dtime - closest_dtime_rad)
-        if time_difference.seconds > max_time_delta:
-            print_red(f'Time difference is {time_difference.seconds}s while the maximum time difference allowed is {max_time_delta}s.', bold=True)
+            closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
+            time_difference = np.abs(satellite_dtime - closest_dtime_rad)
+            if time_difference.seconds > max_time_delta:
+                print_red(f'Time difference is {time_difference.seconds}s while the maximum time difference allowed is {max_time_delta}s.', bold=True)
 
-        # Radar file corresponding to the nearest scan time
-        ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
+            # Radar file corresponding to the nearest scan time
+            ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
 
-        # Argument list for multiprocessing.
-        args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
-                          sat_file_2A25_trmm, satellite_dtime, l_cband,
-                          l_dbz, l_gpm, l_atten, gr_offset, l_write, rid, orbit, outdir))
+            # Argument list for multiprocessing.
+            args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
+                              sat_file_2A25_trmm, satellite_dtime, l_cband,
+                              l_dbz, l_gpm, l_atten, gr_offset, l_write, rid, orbit, outdir))
 
     if len(args_list) == 0:
         print_red("Nothing to do. Is the configuration file correct?")
