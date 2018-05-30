@@ -193,18 +193,18 @@ def main():
     thresholds = config['thresholds']
     max_time_delta = thresholds.getfloat('max_time_delta')  # in second
 
-    # Radar location
-    radar_lat = config['longitude']
-    radar_lon = config['latitude']
-    
     # General info about the ground radar (ID and OFFSET to apply.)
+    # Radar location too.
     GR_param = config['radar']
     rid = GR_param.get('radar_id')
+    radar_lat = GR_param.get('latitude')
+    radar_lon = GR_param.get('longitude')
     try:
         gr_offset = GR_param.getfloat('offset')
     except KeyError:
         gr_offset = 0
 
+    # Switches.
     switch = config['switch']
     l_write = switch.getboolean('write')  # switch to save data.
     l_cband = switch.getboolean('cband')  # Switch for C-band GR
