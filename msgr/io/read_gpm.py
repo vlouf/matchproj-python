@@ -4,22 +4,30 @@ import h5py
 import numpy as np
 
 
-def read_date_from_GPM(infile):
+def read_date_from_GPM(infile,radar_lat,radar_lon):
     with h5py.File(infile, 'r') as file_id:
         obj_id = file_id['NS']
-
+        #read GPM lat/lon
+        latitude  = obj_id['Latitude'].value
+        longitude = obj_id['Longitude'].value
         # Read time data
         mem_id = obj_id['ScanTime']
-        year = mem_id['Year'].value
-        month = mem_id['Month'].value
-        day = mem_id['DayOfMonth'].value
-        hour = mem_id['Hour'].value
-        minute = mem_id['Minute'].value
-        second = mem_id['Second'].value
-
-    pos_center = len(year) // 2
-    gpm_date = datetime.datetime(year[pos_center], month[pos_center], day[pos_center],
-                                 hour[pos_center], minute[pos_center], second[pos_center])
+        year      = mem_id['Year'].value
+        month     = mem_id['Month'].value
+        day       = mem_id['DayOfMonth'].value
+        hour      = mem_id['Hour'].value
+        minute    = mem_id['Minute'].value
+        second    = mem_id['Second'].value
+    
+    #extract GPM lat/lon for beam centre
+    beam_center = len(latitude[0]) // 2
+    latitude    = latitude[:,beam_center]
+    longitude   = longitude[:,beam_center]
+    #using distance, find min to radar
+    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)
+    radar_center = np.argmin(dist)
+    gpm_date = datetime.datetime(year[radar_center], month[radar_center], day[radar_center],
+                                 hour[radar_center], minute[radar_center], second[radar_center])
     return gpm_date
 
 

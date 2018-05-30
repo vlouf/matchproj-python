@@ -6,20 +6,25 @@ import netCDF4
 import numpy as np
 
 
-def read_date_from_TRMM(hdf_file1):
+def read_date_from_TRMM(hdf_file1,radar_lat,radar_lon):
     """
     Extract datetime from TRMM HDF files.
     """
     with netCDF4.Dataset(hdf_file1, 'r') as ncid:
-        pos_center = len(ncid['Year']) // 2
-        year = ncid['Year'][pos_center]
-        month = ncid['Month'][pos_center]
-        day = ncid['DayOfMonth'][pos_center]
-        hour = ncid['Hour'][pos_center]
-        minute = ncid['Minute'][pos_center]
-        second = ncid['Second'][pos_center]
-
-    trmm_date = datetime.datetime(year, month, day, hour, minute, second)
+        year        = ncid['Year'][:]
+        month       = ncid['Month'][:]
+        day         = ncid['DayOfMonth'][:]
+        hour        = ncid['Hour'][:]
+        minute      = ncid['Minute'][:]
+        second      = ncid['Second'][:]
+        beam_center = len(ncid['Latitude'][0]) // 2 #find the index of the beam centre (2nd dim)
+        latitude    = ncid['Latitude'][:,beam_center]
+        longitude   = ncid['Longitude'][:,beam_center]
+    #using distance, find min to radar
+    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)    
+    radar_center = np.argmin(dist)
+    trmm_date    = datetime.datetime(year[radar_center], month[radar_center], day[radar_center], 
+                                     hour[radar_center], minute[radar_center], second[radar_center])
     return trmm_date
 
 

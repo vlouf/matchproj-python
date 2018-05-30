@@ -193,6 +193,10 @@ def main():
     thresholds = config['thresholds']
     max_time_delta = thresholds.getfloat('max_time_delta')  # in second
 
+    # Radar location
+    radar_lat = config['longitude']
+    radar_lon = config['latitude']
+    
     # General info about the ground radar (ID and OFFSET to apply.)
     GR_param = config['radar']
     rid = GR_param.get('radar_id')
@@ -244,10 +248,10 @@ def main():
         one_sat_file = satfiles[0]
         if not l_gpm:
             sat_file_2A25_trmm = satfiles2[0]
-            satellite_dtime = read_date_from_TRMM(one_sat_file)
+            satellite_dtime = read_date_from_TRMM(one_sat_file,radar_lat,radar_lon)
         else:
             sat_file_2A25_trmm = None
-            satellite_dtime = read_date_from_GPM(one_sat_file)
+            satellite_dtime = read_date_from_GPM(one_sat_file,radar_lat,radar_lon)
 
         orbit = get_orbit_number(one_sat_file)
 
