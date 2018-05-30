@@ -197,8 +197,8 @@ def main():
     # Radar location too.
     GR_param = config['radar']
     rid = GR_param.get('radar_id')
-    radar_lat = GR_param.get('latitude')
-    radar_lon = GR_param.get('longitude')
+    radar_lat = GR_param.getfloat('latitude')
+    radar_lon = GR_param.getfloat('longitude')
     try:
         gr_offset = GR_param.getfloat('offset')
     except KeyError:
