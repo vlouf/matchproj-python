@@ -19,16 +19,14 @@ def read_date_from_GPM(infile,radar_lat,radar_lon):
         minute    = mem_id['Minute'].value
         second    = mem_id['Second'].value
     
-    #extract GPM lat/lon for beam centre
-    beam_center = len(latitude[0]) // 2
-    latitude    = latitude[:,beam_center]
-    longitude   = longitude[:,beam_center]
     #using distance, find min to radar
     dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)
-    radar_center = np.argmin(dist)
+    dist_atrack  = np.amin(dist,axis=1) #min distance along track axis
+    radar_center = np.argmin(dist_atrack)
+    min_dist     = np.amin(dist_atrack)
     gpm_date = datetime.datetime(year[radar_center], month[radar_center], day[radar_center],
                                  hour[radar_center], minute[radar_center], second[radar_center])
-    return gpm_date
+    return gpm_date, min_dist
 
 
 def read_gpm(infile, sat_offset=None):

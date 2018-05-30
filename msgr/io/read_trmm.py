@@ -17,15 +17,16 @@ def read_date_from_TRMM(hdf_file1,radar_lat,radar_lon):
         hour        = ncid['Hour'][:]
         minute      = ncid['Minute'][:]
         second      = ncid['Second'][:]
-        beam_center = len(ncid['Latitude'][0]) // 2 #find the index of the beam centre (2nd dim)
-        latitude    = ncid['Latitude'][:,beam_center]
-        longitude   = ncid['Longitude'][:,beam_center]
+        latitude    = ncid['Latitude'][:]
+        longitude   = ncid['Longitude'][:]
     #using distance, find min to radar
-    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)    
-    radar_center = np.argmin(dist)
+    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)
+    dist_atrack  = np.amin(dist,axis=1) #min distance along track axis
+    radar_center = np.argmin(dist_atrack)
+    min_dist     = np.amin(dist_atrack)
     trmm_date    = datetime.datetime(year[radar_center], month[radar_center], day[radar_center], 
                                      hour[radar_center], minute[radar_center], second[radar_center])
-    return trmm_date
+    return trmm_date, min_dist
 
 
 def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
