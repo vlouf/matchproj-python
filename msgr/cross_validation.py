@@ -306,7 +306,7 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
     match_vol['vol1'] = vol1[ipairx, ipairy]  # total volume of PR bins in sample
     match_vol['vol2'] = vol2[ipairx, ipairy]  # total volume of GR bins in sample
 
-    return match_vol
+    return match_vol, ipairx
 
 
 def correct_parallax(xc, yc, xp, yp, alpha, the_range):
@@ -488,8 +488,8 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
 
     # The Call.
     print_magenta("Starting volume matching.")
-    match_vol = _matching(satellite, cpol, nprof, dbz_sat, refp_ss, refp_sh, xproj_sat_pxcorr,
-                          yproj_sat_pxcorr, z_sat_pxcorr, rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
+    match_vol, ipairx = _matching(satellite, cpol, nprof, dbz_sat, refp_ss, refp_sh, xproj_sat_pxcorr,
+                                  yproj_sat_pxcorr, z_sat_pxcorr, rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
     if match_vol is None:
       return None
     
