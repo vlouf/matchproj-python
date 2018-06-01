@@ -274,6 +274,9 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
 
     # Extract comparison pairs
     ipairx, ipairy = np.where((~np.isnan(ref1)) & (~np.isnan(ref2)))
+    if len(ipairx) < satellite.min_pair_nb:
+        print_red('Insufficient comparison pairs.')
+        return None
 
     # Save structure
     match_vol = dict()
@@ -487,13 +490,10 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     print_magenta("Starting volume matching.")
     match_vol = _matching(satellite, cpol, nprof, dbz_sat, refp_ss, refp_sh, xproj_sat_pxcorr,
                           yproj_sat_pxcorr, z_sat_pxcorr, rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
-    print_magenta("Volume matching done.")
-
-    # Extract comparison pairs
-    ipairx, ipairy = np.where((~np.isnan(match_vol['ref1'])) & (~np.isnan(match_vol['ref2'])))
-    if len(ipairx) < satellite.min_pair_nb:
-        print_red('Insufficient comparison pairs for ' + day_of_treatment.strftime("%d %b %Y"))
-        return None
+    if match_vol is None:
+      return None
+    
+    print_magenta("Volume matching done.")    
 
     match_vol['date'] = day_of_treatment
     match_vol['bbwidth'] = bbwidth
