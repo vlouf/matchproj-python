@@ -250,16 +250,16 @@ def main():
         for one_sat_file in satfiles:
             if not l_gpm:
                 sat_file_2A25_trmm = satfiles2[0]
-                satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file,radar_lat,radar_lon)
+                satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 sat_file_2A25_trmm = None
-                satellite_dtime,satellite_dist = read_date_from_GPM(one_sat_file,radar_lat,radar_lon)
+                satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)
 
             orbit = get_orbit_number(one_sat_file)
 
-            #check satellite dist
-            if satellite_dist > max_dist_delta:
-                continue
+#            # check satellite dist
+#            if satellite_dist > max_dist_delta:
+#                continue
             
             # Get the datetime for each radar files
             radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
