@@ -65,9 +65,6 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
         except IndexError:
             is_dataQuality = False
 
-    if dataQuality.max() != 0:
-        return None
-
     with netCDF4.Dataset(hdf_file2, 'r') as ncid:
         Latitude25 = ncid['Latitude'][:]
         Longitude25 = ncid['Longitude'][:]
@@ -75,6 +72,9 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
         nscan, nray, nbin = correctZFactor.shape
         if not is_dataQuality:
             dataQuality = ncid['dataQuality'][:]
+
+    if dataQuality.max() != 0:
+        return None
 
     reflectivity = correctZFactor / 100.0
 
