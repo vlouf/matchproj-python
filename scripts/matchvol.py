@@ -248,9 +248,9 @@ def main():
         #     continue
 
         # Obtaining the satellite file(s) and reading its exact date and time.
-        for idx, one_sat_file in enumerate(satfiles):
+        for cnt, one_sat_file in enumerate(satfiles):
             if not l_gpm:
-                sat_file_2A25_trmm = satfiles2[idx]
+                sat_file_2A25_trmm = satfiles2[cnt]
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 sat_file_2A25_trmm = None
