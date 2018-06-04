@@ -93,8 +93,8 @@ def get_satfile_list(satdir, date, l_gpm):
         satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
         satfiles2 = None
     else:
-        satfiles = glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF'))
-        satfiles2 = glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF'))
+        satfiles = sorted(glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF')))
+        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
@@ -199,6 +199,7 @@ def main():
     rid = GR_param.get('radar_id')
     radar_lat = GR_param.getfloat('latitude')
     radar_lon = GR_param.getfloat('longitude')
+    rmax      = GR_param.getfloat('rmax')
     try:
         gr_offset = GR_param.getfloat('offset')
     except KeyError:
@@ -242,14 +243,14 @@ def main():
             print_red(f"No satellite data for {datestr}.")
             continue
 
-        if len(satfiles) > 5:
-            print_red(f"There are more than 5 files for {datestr}. Something probably wrong in the files name. Skipping this date.")
-            continue
+        # if len(satfiles) > 5:
+        #     print_red(f"There are more than 5 files for {datestr}. Something probably wrong in the files name. Skipping this date.")
+        #     continue
 
         # Obtaining the satellite file(s) and reading its exact date and time.
-        for one_sat_file in satfiles:
+        for idx, one_sat_file in enumerate(satfiles):
             if not l_gpm:
-                sat_file_2A25_trmm = satfiles2[0]
+                sat_file_2A25_trmm = satfiles2[idx]
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 sat_file_2A25_trmm = None
@@ -257,9 +258,9 @@ def main():
 
             orbit = get_orbit_number(one_sat_file)
 
-#            # check satellite dist
-#            if satellite_dist > max_dist_delta:
-#                continue
+           # check satellite dist
+           if satellite_dist > rmax:
+               continue
 
             # Get the datetime for each radar files
             radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
