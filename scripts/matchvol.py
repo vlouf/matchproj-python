@@ -93,8 +93,8 @@ def get_satfile_list(satdir, date, l_gpm):
         satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
         satfiles2 = None
     else:
-        satfiles = glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF'))
-        satfiles2 = glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF'))
+        satfiles = sorted(glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF')))
+        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
