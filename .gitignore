@@ -1,0 +1,5 @@
+*log
+build/
+dist/
+msgr.egg-info/
+**/.ipynb_*/

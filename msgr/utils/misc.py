@@ -64,7 +64,7 @@ def get_files(inpath, date=None):
     '''
 
     supported_extension = ['.nc', '.NC', '.cdf', '.hdf5', '.h5', '.HDF5',
-                           '.H5', '.lassen', '.PPI', '.UF', ".gz", ".GZ"]
+                           '.H5', '.lassen', '.PPI', '.UF', ".gz", ".GZ", ".tar"]
     flist = []
 
     # Check date type

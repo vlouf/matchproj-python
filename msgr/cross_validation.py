@@ -372,7 +372,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
-
+    
     date = dtime_sat.strftime("%Y%m%d")
 
     # Projecting on a WGS84 grid.
