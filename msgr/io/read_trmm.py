@@ -6,26 +6,26 @@ import netCDF4
 import numpy as np
 
 
-def read_date_from_TRMM(hdf_file1,radar_lat,radar_lon):
+def read_date_from_TRMM(hdf_file1, radar_lat, radar_lon):
     """
     Extract datetime from TRMM HDF files.
     """
     with netCDF4.Dataset(hdf_file1, 'r') as ncid:
-        year        = ncid['Year'][:]
-        month       = ncid['Month'][:]
-        day         = ncid['DayOfMonth'][:]
-        hour        = ncid['Hour'][:]
-        minute      = ncid['Minute'][:]
-        second      = ncid['Second'][:]
-        latitude    = ncid['Latitude'][:]
-        longitude   = ncid['Longitude'][:]
-    #using distance, find min to radar
-    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)
-    dist_atrack  = np.amin(dist,axis=1) #min distance along track axis
+        year = ncid['Year'][:]
+        month = ncid['Month'][:]
+        day = ncid['DayOfMonth'][:]
+        hour = ncid['Hour'][:]
+        minute = ncid['Minute'][:]
+        second = ncid['Second'][:]
+        latitude = ncid['Latitude'][:]
+        longitude = ncid['Longitude'][:]
+    # Using distance, find min to radar
+    dist = np.sqrt((latitude - radar_lat)**2 + (longitude - radar_lon)**2)
+    dist_atrack = np.amin(dist, axis=1)  # Min distance along track axis
     radar_center = np.argmin(dist_atrack)
-    min_dist     = np.amin(dist_atrack)
-    trmm_date    = datetime.datetime(year[radar_center], month[radar_center], day[radar_center], 
-                                     hour[radar_center], minute[radar_center], second[radar_center])
+    min_dist = np.amin(dist_atrack)
+    trmm_date = datetime.datetime(year[radar_center], month[radar_center], day[radar_center],
+                                  hour[radar_center], minute[radar_center], second[radar_center])
     return trmm_date, min_dist
 
 

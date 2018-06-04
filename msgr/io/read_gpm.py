@@ -4,26 +4,26 @@ import h5py
 import numpy as np
 
 
-def read_date_from_GPM(infile,radar_lat,radar_lon):
+def read_date_from_GPM(infile, radar_lat, radar_lon):
     with h5py.File(infile, 'r') as file_id:
         obj_id = file_id['NS']
-        #read GPM lat/lon
-        latitude  = obj_id['Latitude'].value
+        # Read GPM lat/lon
+        latitude = obj_id['Latitude'].value
         longitude = obj_id['Longitude'].value
         # Read time data
         mem_id = obj_id['ScanTime']
-        year      = mem_id['Year'].value
-        month     = mem_id['Month'].value
-        day       = mem_id['DayOfMonth'].value
-        hour      = mem_id['Hour'].value
-        minute    = mem_id['Minute'].value
-        second    = mem_id['Second'].value
-    
-    #using distance, find min to radar
-    dist         = np.sqrt((latitude-radar_lat)**2 + (longitude-radar_lon)**2)
-    dist_atrack  = np.amin(dist,axis=1) #min distance along track axis
+        year = mem_id['Year'].value
+        month = mem_id['Month'].value
+        day = mem_id['DayOfMonth'].value
+        hour = mem_id['Hour'].value
+        minute = mem_id['Minute'].value
+        second = mem_id['Second'].value
+
+    # Using distance, find min to radar
+    dist = np.sqrt((latitude - radar_lat)**2 + (longitude - radar_lon)**2)
+    dist_atrack = np.amin(dist, axis=1)  # Min distance along track axis
     radar_center = np.argmin(dist_atrack)
-    min_dist     = np.amin(dist_atrack)
+    min_dist = np.amin(dist_atrack)
     gpm_date = datetime.datetime(year[radar_center], month[radar_center], day[radar_center],
                                  hour[radar_center], minute[radar_center], second[radar_center])
     return gpm_date, min_dist

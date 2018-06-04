@@ -387,7 +387,8 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     yproj_sat = satellite_proj_cart[1]
 
     # Identify profiles withing the domnain
-    ioverx, iovery = np.where((xproj_sat >= cpol.xmin) & (xproj_sat <= cpol.xmax) & (yproj_sat >= cpol.ymin) & (yproj_sat <= cpol.ymax))
+    ioverx, iovery = np.where((xproj_sat >= cpol.xmin) & (xproj_sat <= cpol.xmax) &
+                              (yproj_sat >= cpol.ymin) & (yproj_sat <= cpol.ymax))
     if len(ioverx) == 0:
         print_red("Insufficient satellite rays in domain for " + dtime_sat.strftime("%d %b %Y"))
         logging.error("Insufficient satellite rays in domain for " + dtime_sat.strftime("%d %b %Y"))
@@ -491,9 +492,9 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     match_vol, ipairx = _matching(satellite, cpol, nprof, dbz_sat, refp_ss, refp_sh, xproj_sat_pxcorr,
                                   yproj_sat_pxcorr, z_sat_pxcorr, rt, elev_pr_grref, alpha_pxcorr, zbb, l_dbz)
     if match_vol is None:
-      return None
-    
-    print_magenta("Volume matching done.")    
+        return None
+
+    print_magenta("Volume matching done.")
 
     match_vol['date'] = day_of_treatment
     match_vol['bbwidth'] = bbwidth

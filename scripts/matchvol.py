@@ -44,7 +44,7 @@ def compute_offset(matchvol_data):
     dref_ku = dref_ku[~np.isnan(dref_ku)]
 
     if len(dref_ku) <= 1:
-        return np.Nan
+        return np.NaN
     else:
         offset = - np.median(dref_ku)  # !!! Note the MINUS sign !!!
         return offset
@@ -229,9 +229,9 @@ def main():
         datestr = date.strftime('%Y%m%d')
 
         # Extracting radar file list for this date from the total radar file list.
-        
+
         radar_file_list = [f for f in total_radar_file_list if datestr in f]
-        
+
         if len(radar_file_list) == 0:
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
@@ -260,7 +260,7 @@ def main():
 #            # check satellite dist
 #            if satellite_dist > max_dist_delta:
 #                continue
-            
+
             # Get the datetime for each radar files
             radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
             radar_dtime = list(filter(None, radar_dtime))  # Removing None values
