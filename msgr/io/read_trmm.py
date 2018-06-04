@@ -45,6 +45,7 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
     data_dict: dict
         Dictionnary containing all the needed data from the 2A23 and 2A25 files.
     '''
+    is_dataQuality = True
     with netCDF4.Dataset(hdf_file1, 'r') as ncid:
         year = ncid['Year'][:]
         month = ncid['Month'][:]
@@ -56,10 +57,13 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
         Longitude = ncid['Longitude'][:]
         bbwidth = ncid['BBwidth'][:]
         HBB = ncid['HBB'][:]
-        dataQuality = ncid['dataQuality'][:]
         rainFlag = ncid['rainFlag'][:]
         rainType = ncid['rainType'][:]
         status = ncid['status'][:]
+        try:
+            dataQuality = ncid['dataQuality'][:]
+        except IndexError:
+            is_dataQuality = False
 
     if dataQuality.max() != 0:
         return None
@@ -69,6 +73,8 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
         Longitude25 = ncid['Longitude'][:]
         correctZFactor = ncid['correctZFactor'][:]
         nscan, nray, nbin = correctZFactor.shape
+        if not is_dataQuality:
+            dataQuality = ncid['dataQuality'][:]
 
     reflectivity = correctZFactor / 100.0
 
