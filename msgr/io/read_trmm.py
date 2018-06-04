@@ -74,7 +74,7 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
             dataQuality = ncid['dataQuality'][:]
 
     if dataQuality.max() != 0:
-        return None
+        raise ValueError('TRMM data quality are bad.')
 
     reflectivity = correctZFactor / 100.0
 
