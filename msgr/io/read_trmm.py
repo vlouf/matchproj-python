@@ -2,9 +2,9 @@
 import datetime
 
 # Other libraries.
-import netCDF4
 import numpy as np
-
+import netCDF4
+from pyhdf.SD import SD, SDC
 
 def read_date_from_TRMM(hdf_file1, radar_lat, radar_lon):
     """
@@ -46,38 +46,43 @@ def read_trmm(hdf_file1, hdf_file2, sat_offset=None):
         Dictionnary containing all the needed data from the 2A23 and 2A25 files.
     '''
     is_dataQuality = True
-    with netCDF4.Dataset(hdf_file1, 'r') as ncid:
-        year = ncid['Year'][:]
-        month = ncid['Month'][:]
-        day = ncid['DayOfMonth'][:]
-        hour = ncid['Hour'][:]
-        minute = ncid['Minute'][:]
-        second = ncid['Second'][:]
-        Latitude = ncid['Latitude'][:]
-        Longitude = ncid['Longitude'][:]
-        bbwidth = ncid['BBwidth'][:]
-        HBB = ncid['HBB'][:]
-        rainFlag = ncid['rainFlag'][:]
-        rainType = ncid['rainType'][:]
-        status = ncid['status'][:]
-        try:
-            dataQuality = ncid['dataQuality'][:]
-        except IndexError:
-            is_dataQuality = False
-
-    with netCDF4.Dataset(hdf_file2, 'r') as ncid:
-        Latitude25 = ncid['Latitude'][:]
-        Longitude25 = ncid['Longitude'][:]
-        correctZFactor = ncid['correctZFactor'][:]
-        nscan, nray, nbin = correctZFactor.shape
-        if not is_dataQuality:
-            dataQuality = ncid['dataQuality'][:]
+    
+    hdf = SD(hdf_file1, SDC.READ)
+    year = hdf.select('Year').get()
+    month = hdf.select('Month').get()
+    day = hdf.select('DayOfMonth').get()
+    hour = hdf.select('Hour').get()
+    minute = hdf.select('Minute').get()
+    second = hdf.select('Second').get()
+    Latitude = hdf.select('Latitude').get()
+    Longitude = hdf.select('Longitude').get()
+    bbwidth = hdf.select('BBwidth').get()
+    HBB = hdf.select('HBB').get()
+    rainFlag = hdf.select('rainFlag').get()
+    rainType = hdf.select('rainType').get()
+    status = hdf.select('status').get()
+    try:
+        dataQuality = hdf.select('dataQuality').get()
+    except:
+        is_dataQuality = False
+    hdf.end()    
+    
+    hdf_25 = SD(hdf_file2, SDC.READ)
+    Latitude25 = hdf_25.select('Latitude').get()
+    Longitude25 = hdf_25.select('Longitude').get()
+    correctZFactor = hdf_25.select('correctZFactor').get()
+    if not is_dataQuality:
+        dataQuality = hdf_25.select('dataQuality').get()
+    nscan = hdf_25.select('correctZFactor').dimensions()['nscan']
+    nray = hdf_25.select('correctZFactor').dimensions()['nray']
+    nbin = hdf_25.select('correctZFactor').dimensions()['ncell1']
+    hdf_25.end()
 
     if dataQuality.max() != 0:
         raise ValueError('TRMM data quality are bad.')
 
     reflectivity = correctZFactor / 100.0
-
+    
     #  Reverse direction along the beam
     if sat_offset is not None:
         print(f"{sat_offset}dB offset applied to TRMM reflectivity.")

@@ -41,9 +41,9 @@ def compute_offset(matchvol_data):
     ref5 = matchvol_data['ref5']
     stdv1 = matchvol_data['stdv1']
     stdv2 = matchvol_data['stdv2']
-
-    pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
-    ref1[pos] = np.NaN
+    
+    # pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
+    # ref1[pos] = np.NaN
 
     dref_ku = (ref5 - ref1)
     dref_ku = dref_ku[~np.isnan(dref_ku)]
@@ -260,8 +260,6 @@ def main():
             
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
-        print(satfiles)
-        print(satfiles2)
         if satfiles is None:
             print_red(f"No satellite data for {datestr}.")
             continue
@@ -308,10 +306,6 @@ def main():
                 tar_id.close()
                 #generate path to temp dir
                 ground_radar_file = '/'.join([tempdir_path, ground_radar_file])
-            
-            print(ground_radar_file)
-            print(one_sat_file)
-            print(sat_file_2A25_trmm)
             
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
