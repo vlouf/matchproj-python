@@ -42,8 +42,8 @@ def compute_offset(matchvol_data):
     stdv1 = matchvol_data['stdv1']
     stdv2 = matchvol_data['stdv2']
     
-    # pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
-    # ref1[pos] = np.NaN
+    pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
+    ref1[pos] = np.NaN
 
     dref_ku = (ref5 - ref1)
     dref_ku = dref_ku[~np.isnan(dref_ku)]
@@ -321,8 +321,8 @@ def main():
         pool.starmap(multiprocessing_driver, args_list)
 
     #remove tar temp path
-    #if l_tar:
-    #    shutil.rmtree(tempdir_path)
+    if l_tar:
+       shutil.rmtree(tempdir_path)
         
     return None
 
