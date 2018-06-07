@@ -223,8 +223,8 @@ def main():
     # Finish reading configuration file.
 
     #create temp dir
-    #tempdir_path = tempfile.mkdtemp()
-    tempdir_path = '/home/548/jss548/dev/tmp/matchproj/g_in'
+    tempdir_path = tempfile.mkdtemp()
+    #tempdir_path = '/home/548/jss548/dev/tmp/matchproj/g_in'
     
     
     check_directory(radar_dir, satellite_dir, outdir)
