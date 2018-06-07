@@ -95,7 +95,8 @@ def get_satfile_list(satdir, date, l_gpm):
     """
     # Looking for satellite data files.
     if l_gpm:
-        satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
+        sat_path = '/'.join([satdir, '**', f'*{date}*.HDF5'])
+        satfiles = glob.glob(sat_path, recursive=True)
         satfiles2 = None
     else:
         satfiles = sorted(glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF')))
@@ -154,8 +155,11 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
         # Saving data
         if l_write:
             # Output file name.
+            out_path    = '/'.join([outdir, rid])
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
             outfilename = "RID_{}_ORBIT_{}_DATE_{}_PASS_{}.nc".format(rid, orbit, datestr, pass_number + 1)
-            outfilename = os.path.join(outdir, outfilename)
+            outfilename = os.path.join(out_path, outfilename)
             print_green("Saving data to {}.".format(outfilename), bold=True)
             if pass_number == 0:
                 save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, nb_pass=pass_number)
@@ -184,7 +188,6 @@ def main():
 
     # General info.
     general = config['general']
-    ncpu = general.getint('ncpu')
     date1 = general.get('start_date')
     date2 = general.get('end_date')
 
@@ -340,9 +343,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=parser_description)
 
     parser.add_argument('-c', '--config', type=str, dest='config_file', help='Configuration file.', default=None, required=True)
-
+    parser.add_argument('-j', '--cpu', dest='ncpu', default=16, type=int, help='Number of process')
+    
     args = parser.parse_args()
+    
     CONFIG_FILE = args.config_file
+    ncpu        = args.ncpu
 
     warnings.simplefilter("ignore")
     main()
