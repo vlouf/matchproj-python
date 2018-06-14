@@ -35,23 +35,36 @@ from msgr.io.save_data import save_data
 from msgr.utils.misc import *
 
 
-def compute_offset(matchvol_data):
-    z = matchvol_data['z']
-    ref1 = matchvol_data['ref1']
-    ref5 = matchvol_data['ref5']
-    stdv1 = matchvol_data['stdv1']
-    stdv2 = matchvol_data['stdv2']
+def compute_offset(matchvol_data,l_mw):
+    z        = matchvol_data['z']
+    zbb      = matchvol_data['zbb']
+    zbbw     = matchvol_data['bbwidth']
+    ref_GR   = matchvol_data['ref2']  #GR
+    ref_GR_K = matchvol_data['ref5']  #GR (Kuband)
+    ref_SR   = matchvol_data['ref1']  #SR
+    ref_SR_S = matchvol_data['ref3']  #SR (Sband/Snow)
+    std_SR   = matchvol_data['stdv1'] #SR std
+    std_GR   = matchvol_data['stdv2'] #GR std
+    nrej_GR  = matchvol_data['nrej1']
+    nrej_SR  = matchvol_data['nrej2']
+    ntot_GR  = matchvol_data['ntot1']
+    ntot_SR  = matchvol_data['ntot2']
     
-    pos = (z > 4e3) | (ref1 >= 36) | (stdv1 > 4) | (stdv2 > 4) | (ref5 >= 36) | (ref1 == 0) | (ref5 < 21)
-    ref1[pos] = np.NaN
+    if l_mw:
+        #mask implemented by michael whimpey
+        pos = (z > 4e3) | (ref_SR_K >= 36) | (std_SR > 4) | (std_GR > 4) | (ref_GR_K >= 36) | (ref_SR_K == 0) | (ref_GR_K < 21)
+    else:
+        pos   = np.logical_and(z > (zbb - zbbw/2), z < (zbb + zbbw/2)) | (ref_GR < 21) | (ref_SR_S < 21) | (nrej_GR/ntot_GR > 0.3) | (nrej_SR/ntot_SR > 0.3)
+    
+    ref_GR[pos] = np.NaN
 
-    dref_ku = (ref5 - ref1)
-    dref_ku = dref_ku[~np.isnan(dref_ku)]
+    dref = (ref_GR - ref_SR_S)
+    dref = dref[~np.isnan(dref)]
 
-    if len(dref_ku) <= 1:
+    if len(dref) <= 1:
         return np.NaN
     else:
-        offset = - np.median(dref_ku)  # !!! Note the MINUS sign !!!
+        offset = np.median(dref)
         return offset
 
 
@@ -125,7 +138,7 @@ def check_directory(radar_dir, satellite_dir, output_dir):
 
 
 def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
-                           satellite_dtime, l_cband, l_dbz, l_gpm, l_atten, gr_offset,
+                           satellite_dtime, l_cband, l_dbz, l_gpm, l_atten, l_mw, gr_offset,
                            l_write, rid, orbit, outdir):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
@@ -151,7 +164,7 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
             print_red('The comparison returned nothing.')
             return None
 
-        delta_zh = compute_offset(match_vol)
+        delta_zh = compute_offset(match_vol, l_mw)
         # Saving data
         if l_write:
             # Output file name.
@@ -220,6 +233,7 @@ def main():
     l_dbz = switch.getboolean('dbz')  # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')  # Switch for GPM PR data
     l_atten = switch.getboolean('correct_gr_attenuation')
+    l_mw    = switch.getboolean('mw_mask')
     # Finish reading configuration file.
 
     #create temp dir
@@ -313,7 +327,7 @@ def main():
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, l_cband,
-                              l_dbz, l_gpm, l_atten, gr_offset, l_write, rid, orbit, outdir))
+                              l_dbz, l_gpm, l_atten, l_mw, gr_offset, l_write, rid, orbit, outdir))
 
     if len(args_list) == 0:
         print_red("Nothing to do. Is the configuration file correct?")
