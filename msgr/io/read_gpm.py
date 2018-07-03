@@ -2,7 +2,7 @@ import datetime
 
 import h5py
 import numpy as np
-
+import itertools
 
 def read_date_from_GPM(infile, radar_lat, radar_lon):
     with h5py.File(infile, 'r') as file_id:
@@ -70,6 +70,7 @@ def read_gpm(infile, sat_offset=None):
         mem_id = obj_id['PRE']
         sfc = mem_id['landSurfaceType'].value
         pflag = mem_id['flagPrecip'].value
+        cfb = mem_id['binClutterFreeBottom'].value
 
         # Read in the brightband and precipitation type data
         mem_id = obj_id['CSF']
@@ -99,9 +100,16 @@ def read_gpm(infile, sat_offset=None):
 
     nscan, nray, nbin = refl.shape
 
+    # remove clutter free base
+    for ii, jj in itertools.product(range(nscan), range(nray)):
+        cfb_idx = cfb[ii, jj] - 1 #convert to zero-base index for python
+        if not cfb_idx == -9999:
+            refl[:, :, cfb_idx+1:] = -9999.9 #set values below the clutter free base to the default fill value for reflectivity (idx of 1 is top of profile)
+
     #  Reverse direction along the beam
     refl = refl[:, :, ::-1]
-
+            
+    #print(refl[1,1,:])
     # Change pflag=1 to pflag=2 to be consistent with 'Rain certain' in TRMM
     pflag[pflag == 1] = 2
 
