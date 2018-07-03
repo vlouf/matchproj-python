@@ -340,7 +340,9 @@ def main():
     #remove tar temp path
     if l_tar:
        shutil.rmtree(tempdir_path)
-        
+    
+    print('finished')
+    
     return None
 
 
