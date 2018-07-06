@@ -146,8 +146,9 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
     then it computes the offset between ground radars and satellites and runs
     a second time with that offset.
     """
-    datestr = satellite_dtime.strftime('%Y%m%d')
-
+    datestr      = satellite_dtime.strftime('%Y%m%d')
+    pass1_offset = 0
+    
     for pass_number in range(2):
         try:
             # Calling processing function for TRMM
@@ -177,10 +178,13 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
             if pass_number == 0:
                 save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, nb_pass=pass_number)
             else:
-                save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, offset2=delta_zh, nb_pass=pass_number)
+                save_data(outfilename, match_vol, satellite_dtime, offset1=pass1_offset, offset2=delta_zh, nb_pass=pass_number)
 
-        gr_offset = delta_zh
-
+        #for pass 2, save the offset from pass 1
+        pass1_offset = delta_zh
+        #for reprocessing pass 2, use the negative of the offset as this value was inverted in compute_offset
+        gr_offset    = -delta_zh
+        
         if np.abs(gr_offset) < 1:
             print_green(f"No significant difference between ground radar and satellite found for {datestr}. Not doing anymore pass.")
             break
@@ -288,7 +292,11 @@ def main():
         # Obtaining the satellite file(s) and reading its exact date and time.
         for idx, one_sat_file in enumerate(satfiles):
             if not l_gpm:
-                sat_file_2A25_trmm = satfiles2[idx]
+                try:
+                    sat_file_2A25_trmm = satfiles2[idx]
+                except:
+                    print('no matching 2A25 file found for ', one_sat_file)
+                    continue
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 sat_file_2A25_trmm = None
