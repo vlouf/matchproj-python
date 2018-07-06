@@ -72,19 +72,19 @@ def save_data(outfilename, data, date, offset1=None, offset2=None, nb_pass=0):
         if nb_pass == 0:
             ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
             ncoff[:] = offset1
-            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
+            ncoff.setncattr_string("description", "User Specified Ground Reflectivity Offset. PASS 1")
         else:
             ncoff = rootgrp.createVariable("offset1", "f8", ("time"))
             ncoff[:] = offset1
-            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 1")
+            ncoff.setncattr_string("description", "MSGR Difference reflectivity Satellite - Ground Radar. PASS 1")
 
             ncoff = rootgrp.createVariable("offset2", "f8", ("time"))
             ncoff[:] = offset2
-            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. PASS 2")
+            ncoff.setncattr_string("description", "MSGR Difference reflectivity Satellite - Ground Radar. PASS 2")
 
             ncoff = rootgrp.createVariable("offset_total", "f8", ("time"))
             ncoff[:] = offset2 + offset1
-            ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. TOTAL")
+            ncoff.setncattr_string("description", "MSGR Difference reflectivity Satellite - Ground Radar. TOTAL")
 
         for k, v in data.items():
             if k in ['date', 'dt']:
