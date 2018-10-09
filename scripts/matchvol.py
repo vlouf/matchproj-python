@@ -199,7 +199,7 @@ def main():
     rid = GR_param.get('radar_id')
     radar_lat = GR_param.getfloat('latitude')
     radar_lon = GR_param.getfloat('longitude')
-    rmax      = GR_param.getfloat('rmax')
+    rmax = GR_param.getfloat('rmax')
     try:
         gr_offset = GR_param.getfloat('offset')
     except KeyError:
@@ -243,24 +243,22 @@ def main():
             print_red(f"No satellite data for {datestr}.")
             continue
 
-        # if len(satfiles) > 5:
-        #     print_red(f"There are more than 5 files for {datestr}. Something probably wrong in the files name. Skipping this date.")
-        #     continue
-
         # Obtaining the satellite file(s) and reading its exact date and time.
         for cnt, one_sat_file in enumerate(satfiles):
-            if not l_gpm:
-                sat_file_2A25_trmm = satfiles2[cnt]
+            if satfiles2 is not None:
+                # Old version of TRMM
+                sat_file_2A25_trmm = satfiles2[cnt]                
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
-                sat_file_2A25_trmm = None
-                satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)
-
-            orbit = get_orbit_number(one_sat_file)
+                # GPM or new version of TRMM
+                satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)                           
 
            # check satellite dist
            if satellite_dist > rmax:
+               print_red("Ground radar position not inside satellite swath.")
                continue
+
+            orbit = get_orbit_number(one_sat_file)
 
             # Get the datetime for each radar files
             radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
