@@ -132,6 +132,8 @@ def get_time_from_filename(filename, date):
         strlist = re.findall(date + ".?[0-9]{6}", filename)
         if len(strlist) == 0:
             strlist = re.findall(date + ".?[0-9]{4}", filename)
+        if len(strlist) == 0:
+            strlist = re.findall(date[2:], filename)
 
     try:
         date_time = parser.parse(strlist[0], fuzzy=True)
@@ -165,7 +167,7 @@ def get_filename_from_date(file_list, the_date):
     '''
 
     # There is maybe an optionnal character(underscore) between date and time
-    rt_str = the_date.strftime("%Y%m%d.?%H%M")
+    rt_str = the_date.strftime("%y%m%d.?%H%M")
     for the_file in file_list:
         try:
             re.findall(rt_str, the_file)[0]  # If does not exist it raises an error
