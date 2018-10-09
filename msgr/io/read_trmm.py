@@ -9,6 +9,23 @@ import numpy as np
 def read_date_from_TRMM(hdf_file1, radar_lat, radar_lon):
     """
     Extract datetime from TRMM HDF files.
+
+    Parameters:
+    ===========
+    hdf_file1: str
+        File name for TRMM satellite file.
+    radar_lat: float
+        Latitude of ground radar
+    radar_lon: float
+        Longitude of ground radar 
+    
+    Returns:
+    ========
+    trmm_date: datetime
+        Datetime of satellite data at ground radar position.
+    min_dist: float
+        Minimal distance between satellite swath and ground radar, i.e. 
+        is satellite swath are in ground radar domain?
     """
     with netCDF4.Dataset(hdf_file1, 'r') as ncid:
         year = ncid['Year'][:]

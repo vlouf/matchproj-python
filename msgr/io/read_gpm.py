@@ -5,6 +5,26 @@ import numpy as np
 import itertools
 
 def read_date_from_GPM(infile, radar_lat, radar_lon):
+    """
+    Extract datetime from TRMM HDF files.
+
+    Parameters:
+    ===========
+    infile: str
+        Satellite data filename.
+    radar_lat: float
+        Latitude of ground radar
+    radar_lon: float
+        Longitude of ground radar 
+    
+    Returns:
+    ========
+    gpm_date: datetime
+        Datetime of satellite data at ground radar position.
+    min_dist: float
+        Minimal distance between satellite swath and ground radar, i.e. 
+        is satellite swath are in ground radar domain?
+    """
     with h5py.File(infile, 'r') as file_id:
         obj_id = file_id['NS']
         # Read GPM lat/lon
