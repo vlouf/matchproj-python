@@ -343,7 +343,7 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
 
 
 def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=None, dtime_sat=None,
-                  l_cband=True, l_dbz=True, l_gpm=True, l_atten=True, gr_offset=0):
+                  l_cband=True, l_dbz=True, l_atten=True, gr_offset=0):
     '''
     MATCHPROJ_FUN
 
@@ -359,7 +359,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
         TRMM 2A25 files (None for GPM).
     dtime_sat: str
         Date of current processing.
-    l_cband, l_dbz, l_gpm, l_atten: bool
+    l_cband, l_dbz, l_atten: bool
         Switches for C-band, use of natural reflectivity, is this GPM, and
         attenuation correction
 

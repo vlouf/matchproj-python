@@ -251,12 +251,12 @@ def main():
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 # GPM or new version of TRMM
-                satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)                           
+                satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)
 
-           # check satellite dist
-           if satellite_dist > rmax:
-               print_red("Ground radar position not inside satellite swath.")
-               continue
+            # check satellite dist
+            if satellite_dist > rmax:
+                print_red("Ground radar position not inside satellite swath.")
+                continue
 
             orbit = get_orbit_number(one_sat_file)
 
