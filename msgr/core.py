@@ -121,7 +121,8 @@ class Satellite:
 
         self.l_gpm = config['switch'].getboolean('gpm')
         if not self.l_gpm and sat_file_2A25_trmm is None:
-            raise ValueError("Configuration file says that the satellite is TRMM but no TRMM 2A25 files given.")
+            self.TRMM_NEW_VERSION = True
+            # raise ValueError("Configuration file says that the satellite is TRMM but no TRMM 2A25 files given.")
 
         self.min_prof_nb = thresholds.getint('min_profiles')  # minprof
         self.max_time_delta = thresholds.getfloat('max_time_delta')  # maxdt
@@ -133,10 +134,15 @@ class Satellite:
             self.altitude = 407000.   # orbital height of GPM (zt)
             self.dr = 125.            # gate spacing of GPM (drt)
             satdata = read_gpm(sat_file_1, sat_offset)
+        elif self.TRMM_NEW_VERSION:
+            self.altitude = 402500.   # orbital height of TRMM (post boost)
+            self.dr = 250.            # gate spacing of TRMM
+            satdata = read_gpm(sat_file_1, sat_offset)
         else:
             self.altitude = 402500.   # orbital height of TRMM (post boost)
             self.dr = 250.            # gate spacing of TRMM
             satdata = read_trmm(sat_file_1, sat_file_2A25_trmm, sat_offset)
+            
         self.beamwidth = 0.71
 
         if satdata is None:

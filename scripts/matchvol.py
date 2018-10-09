@@ -89,12 +89,12 @@ def get_satfile_list(satdir, date, l_gpm):
         List of TRMM 2A23 files (None for GPM).
     """
     # Looking for satellite data files.
-    if l_gpm:
-        satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
-        satfiles2 = None
-    else:
+    satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
+    satfiles2 = None
+    if len(satfiles) == 0:
+        # Old version of TRMM products, HDF format.
         satfiles = sorted(glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF')))
-        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))
+        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))        
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
@@ -276,7 +276,7 @@ def main():
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, l_cband,
-                              l_dbz, l_gpm, l_atten, gr_offset, l_write, rid, orbit, outdir))
+                              l_dbz, l_atten, gr_offset, l_write, rid, orbit, outdir))
 
     if len(args_list) == 0:
         print_red("Nothing to do. Is the configuration file correct?")
