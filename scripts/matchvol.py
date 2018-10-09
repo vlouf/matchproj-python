@@ -251,6 +251,7 @@ def main():
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 # GPM or new version of TRMM
+                sat_file_2A25_trmm = None
                 satellite_dtime, satellite_dist = read_date_from_GPM(one_sat_file, radar_lat, radar_lon)
 
             # check satellite dist
