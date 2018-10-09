@@ -119,7 +119,7 @@ def check_directory(radar_dir, satellite_dir, output_dir):
 
 
 def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
-                           satellite_dtime, l_cband, l_dbz, l_gpm, l_atten, gr_offset,
+                           satellite_dtime, l_cband, l_dbz, l_atten, gr_offset,
                            l_write, rid, orbit, outdir):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
@@ -135,7 +135,7 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
             tick = time.time()
             match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file,
                                                        sat_file_2A25_trmm, satellite_dtime, l_cband,
-                                                       l_dbz, l_gpm, l_atten, gr_offset)
+                                                       l_dbz, l_atten, gr_offset)
         except Exception:
             traceback.print_exc()
             return None
