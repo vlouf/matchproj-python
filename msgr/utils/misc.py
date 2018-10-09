@@ -88,6 +88,8 @@ def get_files(inpath, date=None):
             if np.any(np.in1d(supported_extension, file_extension)):
                 # Check if file extension is in the list of supported ones
                 the_path = os.path.join(dirpath, filenames_slice)
+            elif '.RAW' in filenames_slice:
+                the_path = os.path.join(dirpath, filenames_slice)
             else:  # If not test next file.
                 continue
 
