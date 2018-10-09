@@ -123,7 +123,7 @@ def get_time_from_filename(filename, date):
     # number (i.e. the time)
     # There is maybe an optionnal character (like _) between date and time
 
-    if filename[-2:] == "gz":
+    if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
         radar = pyart.io.read(filename)
         dtime = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
@@ -132,8 +132,6 @@ def get_time_from_filename(filename, date):
         strlist = re.findall(date + ".?[0-9]{6}", filename)
         if len(strlist) == 0:
             strlist = re.findall(date + ".?[0-9]{4}", filename)
-        if len(strlist) == 0:
-            strlist = re.findall(date[2:], filename)
 
     try:
         date_time = parser.parse(strlist[0], fuzzy=True)
