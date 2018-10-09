@@ -18,7 +18,7 @@ from .utils.misc import *
 
 def _matching(satellite, cpol, nprof, reflectivity_satellite,
               refp_ss, refp_sh, xp, yp, zp, rt, ep, alpha, zbb, l_dbz=True):
-    '''
+    """
     The volume matching is done here
 
     Parameters:
@@ -57,7 +57,7 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
 
     Returns:
     ========
-    '''
+    """
     zt = satellite.altitude
     bwt = satellite.beamwidth
     drt = satellite.dr
@@ -371,15 +371,11 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
-    satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
-
-    date = dtime_sat.strftime("%Y%m%d")
+    satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)    
 
     # Projecting on a WGS84 grid.
     pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (cpol.longitude, cpol.latitude)
-    smap = pyproj.Proj(pyproj_config)
-
-    day_of_treatment = dtime_sat
+    smap = pyproj.Proj(pyproj_config)    
 
     # Convert to Cartesian coordinates
     satellite_proj_cart = smap(satellite.lon, satellite.lat)
@@ -395,13 +391,13 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
         return None
 
     # Note the first and last scan indices
-    i1x, i1y = np.min(ioverx), np.min(iovery)
-    i2x, i2y = np.max(ioverx), np.max(iovery)
+    # i1x, i1y = np.min(ioverx), np.min(iovery)
+    # i2x, i2y = np.max(ioverx), np.max(iovery)
 
     # Determine the datetime of the closest approach of TRMM to the GR
     xclose_sat = xproj_sat[:, 24]  # Grid center
     yclose_sat = yproj_sat[:, 24]
-    iclose = np.argmin(sqrt(xclose_sat**2 + yclose_sat**2))
+    # iclose = np.argmin(sqrt(xclose_sat**2 + yclose_sat**2))
 
     # Compute the distance of every ray to the radar
     dist_to_gr_rays = sqrt(xproj_sat**2 + yproj_sat**2)
@@ -451,8 +447,8 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     # Compute the ground-radar coordinates of the PR pixels
     gamma = sqrt(xproj_sat_pxcorr**2 + yproj_sat_pxcorr**2) / cpol.gaussian_radius
     elev_pr_grref = 180 / pi * np.arctan((cos(gamma) - (cpol.gaussian_radius + cpol.altitude) / (cpol.gaussian_radius + z_sat_pxcorr)) / sin(gamma))
-    range_pr_grref = (cpol.gaussian_radius + z_sat_pxcorr) * sin(gamma) / cos(pi / 180 * elev_pr_grref)  # Not used
-    azi_pr_grref = 90 - 180 / pi * np.arctan2(yproj_sat_pxcorr, xproj_sat_pxcorr)  # Not used
+    # range_pr_grref = (cpol.gaussian_radius + z_sat_pxcorr) * sin(gamma) / cos(pi / 180 * elev_pr_grref)  # Not used
+    # azi_pr_grref = 90 - 180 / pi * np.arctan2(yproj_sat_pxcorr, xproj_sat_pxcorr)  # Not used
 
     # Determine the median brightband height
     ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0]
@@ -461,8 +457,8 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
         zbb = np.median(zbb[ibb])
         bbwidth = np.median(bbwidth[ibb])
     else:
-        print_red('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
-        logging.error('Insufficient bright band rays %i for ' % (nbb) + day_of_treatment.strftime("%d %b %Y"))
+        print_red('Insufficient bright band rays %i for ' % (nbb) + dtime_sat.strftime("%d %b %Y"))
+        logging.error('Insufficient bright band rays %i for ' % (nbb) + dtime_sat.strftime("%d %b %Y"))
         return None
 
     print_green("Satellite side OK.")
@@ -496,7 +492,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
 
     print_magenta("Volume matching done.")
 
-    match_vol['date'] = day_of_treatment
+    match_vol['date'] = dtime_sat
     match_vol['bbwidth'] = bbwidth
     match_vol['dt'] = time_difference.seconds
 
