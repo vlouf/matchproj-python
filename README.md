@@ -1,6 +1,19 @@
 # MSGR - Matching Satellite and Ground Radar
 
-Based on an IDL code from Rob Warren.
+## Disclaimer
+
+This dataset is supported by a funding from the U.S. Department of Energy as part of the Atmospheric Radiation Measurement (ARM) Climate Research Facility, an Office of Science user facility.
+
+If you use this dataset to prepare a publication, please consider offering me (Valentin Louf) co-authorship and add the following line in the acknowledgments:
+
+> This work has been supported by the U.S. Department of Energy Atmospheric Systems Research Program through the grant DE-SC0014063.
+
+## References
+
+- Louf, V., A. Protat, R. A. Warren, S. M. Collis, D. B. Wolff, S. Raunyiar, C. Jakob, and W. A. Petersen, 2018: An integrated approach to weather radar calibration and monitoring using ground clutter and satellite comparisons. J. Atmos. Ocean. Technol., JTECH-D-18-0007.1, doi:10.1175/JTECH-D-18-0007.1. [http://journals.ametsoc.org/doi/10.1175/JTECH-D-18-0007.1]
+
+- Warren, R. A., A. Protat, S. T. Siems, H. A. Ramsay, V. Louf, M. J. Manton, and T. A. Kane, 2018: Calibrating Ground-Based Radars against TRMM and GPM. J. Atmos. Ocean. Technol., 35, 323–346, doi:10.1175/JTECH-D-17-0128.1. 
+
 
 ## Installation
 
@@ -15,7 +28,6 @@ You will need:
 >- Python Data Analysis Library [(pandas)][3]
 >- [Pyproj][4]
 >- h5py
->- pyhdf
 >- netCDF4
 
 This code has been tested and conceived on Python 3.5 and Python 3.6. It will *NOT* work with python 2.X versions.
