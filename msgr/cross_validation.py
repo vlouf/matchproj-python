@@ -343,7 +343,7 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
 
 
 def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=None, dtime_sat=None,
-                  l_cband=True, l_dbz=True, l_gpm=True, l_atten=True, gr_offset=0):
+                  l_cband=True, l_dbz=True, l_gpm=True, l_atten=True, gr_offset=0, rid='00'):
     '''
     MATCHPROJ_FUN
 
@@ -362,13 +362,18 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     l_cband, l_dbz, l_gpm, l_atten: bool
         Switches for C-band, use of natural reflectivity, is this GPM, and
         attenuation correction
+    rid: str
+        radar id (2 digit string)
 
     Returns
     =======
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
-    logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
+    log_path = '/g/data1a/kl02/jss548/logs_msgr'
+    log_fn   = '_'.join(['log_matchvol', rid, dtime_sat.strftime("%Y%m%d")]) + '.log'
+    log_ffn  = '/'.join([log_path, log_fn])
+    logging.basicConfig(log_ffn, level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
