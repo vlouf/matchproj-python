@@ -68,6 +68,31 @@ def _read_radar_pyart(filename):
     return radar
 
 
+def get_reflectivity_name(radar):
+    """
+    Test for several possible name for the ground radar reflectivity.
+
+    Parameters:
+    ===========
+    radar: object
+        Py-ART radar structure
+
+    Returns:
+    key: str
+        Reflectivity field name.
+    """
+    possible_name = ['reflectivity', 'corrected_reflectivity', 'total_power',
+                     'DBZ', 'DBZH', 'UZ', 'CZ', 'Refl']
+    for key in possible_name:
+        try:
+            radar.fields[key]
+            return key
+        except KeyError:
+            continue
+
+    return None
+
+
 def read_radar(filename, offset=None):
     """
     Read input ground radar files and format range, azimuth, elevation and
@@ -88,10 +113,9 @@ def read_radar(filename, offset=None):
     radar = _read_radar_pyart(filename)
     dtime_radar = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
 
-    try:
-        radar.fields[refl_name]
-    except KeyError:
-        raise KeyError(f"Wrong reflectivity field name provided. You said it is '{refl_name}', but I couldn't find it.")
+    refl_name = get_reflectivity_name(radar)
+    if refl_name is None:
+        raise KeyError("Reflectivity field not found, or name not standard.")
 
     ngate = radar.ngates
     nbeam = 360
