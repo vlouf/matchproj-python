@@ -68,7 +68,7 @@ def _read_radar_pyart(filename):
     return radar
 
 
-def read_radar(filename, refl_name='reflectivity', offset=None):
+def read_radar(filename, offset=None):
     """
     Read input ground radar files and format range, azimuth, elevation and
     the reflectivity field the way the volume matching code wants it.
@@ -77,10 +77,8 @@ def read_radar(filename, refl_name='reflectivity', offset=None):
     ===========
     filename: str
         Radar file name.
-    refl_name: str
-        Reflectivity field name.
     offset: float
-        Not used anymore. Kept for compatibility issue
+        Offset to apply to the reflectivity field.
 
     Returns:
     ========
@@ -101,6 +99,8 @@ def read_radar(filename, refl_name='reflectivity', offset=None):
 
     reflectivity = transform_reflectivity(radar, refl_name)
     reflectivity[(reflectivity < 0) | (reflectivity > 60)] = np.NaN  # Remove extreme values.
+    if offset is not None:
+        reflectivity += offset
 
     r = radar.range['data']
     azimuth = np.arange(0, 360)

@@ -371,11 +371,11 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
-    satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)    
+    satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
 
     # Projecting on a WGS84 grid.
     pyproj_config = "+proj=tmerc +lon_0=%f +lat_0=%f +ellps=WGS84" % (cpol.longitude, cpol.latitude)
-    smap = pyproj.Proj(pyproj_config)    
+    smap = pyproj.Proj(pyproj_config)
 
     # Convert to Cartesian coordinates
     satellite_proj_cart = smap(satellite.lon, satellite.lat)
@@ -473,7 +473,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
         refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
 
     print_yellow("Reading {}.".format(radfile))
-    radar = read_radar(radfile, l_atten, cpol.offset)
+    radar = read_radar(radfile, offset=cpol.offset)
     if radar is None:
         print_red("Could not read the ground radar file. Doing nothing.")
         return None

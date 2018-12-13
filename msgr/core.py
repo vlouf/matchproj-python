@@ -142,7 +142,7 @@ class Satellite:
             self.altitude = 402500.   # orbital height of TRMM (post boost)
             self.dr = 250.            # gate spacing of TRMM
             satdata = read_trmm(sat_file_1, sat_file_2A25_trmm, sat_offset)
-            
+
         self.beamwidth = 0.71
 
         if satdata is None:
