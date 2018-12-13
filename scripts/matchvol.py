@@ -94,7 +94,7 @@ def get_satfile_list(satdir, date, l_gpm):
     if len(satfiles) == 0:
         # Old version of TRMM products, HDF format.
         satfiles = sorted(glob.glob(os.path.join(satdir, f'*2A23*{date}*.HDF')))
-        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))        
+        satfiles2 = sorted(glob.glob(os.path.join(satdir, f'*2A25*{date}*.HDF')))
 
     # Checking if found any satellite data file.
     if len(satfiles) == 0:
@@ -155,18 +155,21 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
             if pass_number == 0:
                 save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, nb_pass=pass_number)
             else:
-                save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset, offset2=delta_zh, nb_pass=pass_number)
+                save_data(outfilename, match_vol, satellite_dtime, offset1=gr_offset,
+                          offset2=delta_zh, nb_pass=pass_number)
 
         gr_offset = delta_zh
 
         if np.abs(gr_offset) < 1:
-            print_green(f"No significant difference between ground radar and satellite found for {datestr}. Not doing anymore pass.")
+            print_green(f"No significant difference between ground radar and satellite" +
+                        f" found for {datestr}. Not doing anymore pass.")
             break
         elif np.isnan(gr_offset):
             print_red(f"Invalid offset found. Stopping comparison for {datestr}.")
             return None
         elif pass_number == 0:
-            print_magenta(f"The difference between the ground radar data and the satellite data for {datestr} is of {gr_offset:0.2} dB.")
+            print_magenta(f"The difference between the ground radar data and the" +
+                          f" satellite data for {datestr} is of {gr_offset:0.2} dB.")
 
     return None
 
@@ -247,7 +250,7 @@ def main():
         for cnt, one_sat_file in enumerate(satfiles):
             if satfiles2 is not None:
                 # Old version of TRMM
-                sat_file_2A25_trmm = satfiles2[cnt]                
+                sat_file_2A25_trmm = satfiles2[cnt]
                 satellite_dtime, satellite_dist = read_date_from_TRMM(one_sat_file, radar_lat, radar_lon)
             else:
                 # GPM or new version of TRMM
@@ -268,10 +271,8 @@ def main():
             closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
             time_difference = np.abs(satellite_dtime - closest_dtime_rad)
             if time_difference.seconds > max_time_delta:
-                print(satellite_dtime)
-                print(closest_dtime_rad)
-                print(radar_dtime)
-                print_red(f'Time difference is {time_difference.seconds}s while the maximum time difference allowed is {max_time_delta}s.', bold=True)
+                print_red(f'Time difference is {time_difference.seconds}s while the' +
+                          f' maximum time difference allowed is {max_time_delta}s.', bold=True)
                 continue
 
             # Radar file corresponding to the nearest scan time
@@ -305,7 +306,8 @@ if __name__ == '__main__':
     parser_description = "Start MSGR - volume Matching Satellite and Ground Radar."
     parser = argparse.ArgumentParser(description=parser_description)
 
-    parser.add_argument('-c', '--config', type=str, dest='config_file', help='Configuration file.', default=None, required=True)
+    parser.add_argument('-c', '--config', type=str, dest='config_file',
+                        help='Configuration file.', default=None, required=True)
 
     args = parser.parse_args()
     CONFIG_FILE = args.config_file
