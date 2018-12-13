@@ -45,7 +45,7 @@ def transform_reflectivity(radar, refl_name):
     ntilt = radar.nsweeps
 
     reflectivity_in = radar.fields[refl_name]['data'].filled(np.NaN).copy()
-    reflectivity_3D = np.zeros(ngate, 360, ntilt)
+    reflectivity_3D = np.zeros((ngate, 360, ntilt))
 
     r = radar.range['data']
     azimuth = radar.azimuth['data']
