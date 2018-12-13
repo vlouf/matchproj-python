@@ -93,7 +93,7 @@ def read_radar(filename, refl_name='reflectivity', offset=None):
     try:
         radar.fields[refl_name]
     except KeyError:
-        raise KeyError("Wrong reflectivity field name provided. You said it is '{refl_name}', but I couldn't find it.")
+        raise KeyError(f"Wrong reflectivity field name provided. You said it is '{refl_name}', but I couldn't find it.")
 
     ngate = radar.ngates
     nbeam = 360
