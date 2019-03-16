@@ -18,7 +18,7 @@ import datetime
 import warnings
 import traceback
 import configparser
-import tarfile
+import zipfile
 import shutil
 import tempfile
 
@@ -198,6 +198,7 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
 
 
 def main():
+    print('######## NEED TO DEBUG ZIP IMPLEMENTATION ##############')
     print_with_time("Loading configuration file.")
     #  Reading configuration file
     config = configparser.ConfigParser()
@@ -268,16 +269,15 @@ def main():
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
             
-        #Extract tarfile file list if requires
-        if 'pvol.tar' in radar_file_list[0]:
-            l_tar  = True
-            tar_fn = radar_file_list[0]
-            tar_id = tarfile.open(tar_fn)
-            radar_file_list = tar_id.getnames()
-            tar_member_list = tar_id.getmembers()
-            tar_id.close()
+        #Extract zipfile file list if requires
+        if 'pvol.zip' in radar_file_list[0]:
+            l_zip  = True
+            zip_fn = radar_file_list[0]
+            zip = zipfile.ZipFile(zip_fn)
+            radar_file_list = zip.namelist()
+            zip.close()
         else:
-            l_tar = False 
+            l_zip = False 
             
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
@@ -321,14 +321,14 @@ def main():
             # Radar file corresponding to the nearest scan time
             ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
 
-            #transfer file from tar to temp dir
-            if l_tar:
+            #transfer file from zip to temp dir
+            if l_zip:
                 #extract to temp dir
                 member_idx = radar_file_list.index(ground_radar_file)
-                tar_member = tar_member_list[member_idx]
-                tar_id = tarfile.open(tar_fn)
-                tar_id.extract(tar_member, path=tempdir_path)
-                tar_id.close()
+                zip_member = radar_file_list[member_idx]
+                zip = zipfile.ZipFile(zip_fn)
+                zip.extract(zip_member, path=tempdir_path)
+                zip.close()
                 #generate path to temp dir
                 ground_radar_file = '/'.join([tempdir_path, ground_radar_file])
             
@@ -345,8 +345,8 @@ def main():
     with Pool(ncpu) as pool:
         pool.starmap(multiprocessing_driver, args_list)
 
-    #remove tar temp path
-    if l_tar:
+    #remove zip temp path
+    if l_zip:
        shutil.rmtree(tempdir_path)
     
     print('finished')

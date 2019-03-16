@@ -373,7 +373,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     log_path = '/g/data1a/kl02/jss548/logs_msgr'
     log_fn   = '_'.join(['log_matchvol', rid, dtime_sat.strftime("%Y%m%d")]) + '.log'
     log_ffn  = '/'.join([log_path, log_fn])
-    logging.basicConfig(log_ffn, level=logging.DEBUG)
+    logging.basicConfig(filename=log_ffn, level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
