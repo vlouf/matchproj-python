@@ -68,7 +68,8 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
     elang = cpol.fields['elang']
     ntilt = cpol.fields['ntilt']
     dr = cpol.fields['dr']
-    refg_ku = cpol.convert_refl_ku(zbb)
+    # Convert ground radar reflectivity to Ku-band    
+    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, cpol.radar_band)    
 
     bwr = cpol.beamwidth
     earth_gaussian_radius = cpol.gaussian_radius
@@ -359,9 +360,11 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
         TRMM 2A25 files (None for GPM).
     dtime_sat: str
         Date of current processing.
-    l_cband, l_dbz, l_atten: bool
-        Switches for C-band, use of natural reflectivity, is this GPM, and
-        attenuation correction
+    radar_band: str
+        Possible values are 'S', 'C', or 'X'
+    l_dbz, l_atten: bool
+        Switches for use of linear reflectivity, GPM or TRMM, and attenuation 
+        correction
 
     Returns
     =======
@@ -371,19 +374,19 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     if radar_band == "C":
         l_cband = True
         l_xband = False
-        print_red("You say that the radar is C-band")
+        print_red("You say that the ground radar is C-band")
     elif radar_band == "S":
         l_cband = False
         l_xband = False
-        print_red("You say that the radar is S-band")
+        print_red("You say that the ground radar is S-band")
     elif radar_band == "X":
         l_cband = False
         l_xband = True
-        print_red("You say that the radar is X-band")
+        print_red("You say that the ground radar is X-band")
         print_red("Reflectivity conversion to X-band not yet supported.")
     else:
-        print_red(f"Radar frequency band unknown. You said {radar_band}. " + 
-                  "The supported values are 'S', 'C', and 'X'. Doing nothing")
+        print_red(f"Ground radar frequency band unknown. You said {radar_band}. " +
+                  "The supported values are 'S', 'C', and 'X'. Doing nothing.")
         return None
 
     logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
@@ -484,14 +487,8 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     # Set all values less than satellite.min_refl_thrld as missing
     dbz_sat = np.ma.masked_where(dbz_sat < satellite.min_refl_thrld, dbz_sat)
 
-    # Convert to S-band using method of Cao et al. (2013)
-    if l_cband:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
-    else:
-        if l_xband:
-            refp_ss, refp_sh = reflectivity_conversion.convert_to_Xband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
-        else:
-            refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
+    # Convert satellite reflectivity to ground radar reflectivty band using the method of Cao et al. (2013)
+    refp_ss, refp_sh = reflectivity_conversion.convert_sat_refl_to_gr_band(dbz_sat, z_sat_pxcorr, zbb, bbwidth, radar_band)
 
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, offset=cpol.offset)

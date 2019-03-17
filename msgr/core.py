@@ -20,6 +20,9 @@ class Radar:
 
         self._check_keys(GR_param)  # raise error if wrong key.
 
+        # Get radar reflectivity band
+        self.radar_band = GR_param.get("band")
+
         # Radar name
         self.name = GR_param.get('radar_name')
         self.id = GR_param.get('radar_id')
@@ -102,11 +105,6 @@ class Radar:
         yg = sg * sin(pi / 180 * (90 - ag))
 
         return xg, yg, zg
-
-    def convert_refl_ku(self, zbb):
-        xg, yg, zg = self.get_cartesian_coordinates()
-        refg_ku = reflectivity_conversion.convert_to_Ku(self.fields['reflec'], zg, zbb, self.l_cband)
-        return refg_ku
 
 
 class Satellite:

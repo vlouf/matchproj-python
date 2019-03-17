@@ -133,7 +133,7 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
         try:
             # Calling processing function for TRMM
             tick = time.time()
-            match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,                                                         
+            match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
                                                        satellite_dtime, radar_band, l_dbz, l_atten, gr_offset)
         except Exception:
             traceback.print_exc()
@@ -200,8 +200,10 @@ def main():
     GR_param = config['radar']
     try:
         radar_band = GR_param.get("band")
+        if radar_band == 'X':
+            print_yellow("X-band reflectivity conversion is still experimental and not based on actual research, just educated guess.")
     except KeyError:
-        raise KeyError("Please use 'band' in [radar] section of the configuration file instead of cband in switches." + 
+        raise KeyError("Please use 'band' in [radar] section of the configuration file instead of cband in switches." +
                        " The possible values for band are S, C, or X.")
     rid = GR_param.get('radar_id')
     radar_lat = GR_param.getfloat('latitude')

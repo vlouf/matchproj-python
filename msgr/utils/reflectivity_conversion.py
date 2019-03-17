@@ -4,7 +4,7 @@ import numpy as np
 
 def convert_sat_refl_to_gr_band(refp, zp, zbb, bbwidth, radar_band='S'):
     """
-    Convert the satellite reflectivity to S, C, or X-band using the Cao et al. 
+    Convert the satellite reflectivity to S, C, or X-band using the Cao et al.
     (2013) method.
 
     Parameters
