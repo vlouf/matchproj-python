@@ -2,9 +2,10 @@ import copy
 import numpy as np
 
 
-def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
+def convert_sat_refl_to_gr_band(refp, zp, zbb, bbwidth, radar_band='S'):
     """
-    Convert to S/C-band using method of Cao et al. (2013)
+    Convert the satellite reflectivity to S, C, or X-band using the Cao et al. 
+    (2013) method.
 
     Parameters
     ==========
@@ -16,8 +17,8 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
         Bright band height.
     bbwidth:
         Bright band width.
-    l_cband: bool
-        Is radar C-band? (if not then S-band).
+    radar_band: str
+        Possible values are 'S', 'C', or 'X'
 
     Return
     ======
@@ -70,68 +71,21 @@ def _convert_reflectivity_from_ku(refp, zp, zbb, bbwidth, l_cband=1):
         refp_sh[imx, imy] = refp[imx, imy] + dfrh
 
     # Jackson Tan's fix for C-band
-    if l_cband == 1:
+    if radar_band == 'C':
         deltas = 5.3 / 10.0 * (refp_ss - refp)
         refp_ss = refp + deltas
         deltah = 5.3 / 10.0 * (refp_sh - refp)
+        refp_sh = refp + deltah
+    elif radar_band == 'X':
+        deltas = 3.2 / 10.0 * (refp_ss - refp)
+        refp_ss = refp + deltas
+        deltah = 3.2 / 10.0 * (refp_sh - refp)
         refp_sh = refp + deltah
 
     return refp_ss, refp_sh
 
 
-def convert_to_Sband(refp, zp, zbb, bbwidth):
-    """
-    Convert to S-band using method of Cao et al. (2013)
-
-    Parameters
-    ==========
-    refp:
-        Satellite reflectivity field.
-    zp:
-        Altitude.
-    zbb:
-        Bright band height.
-    bbwidth:
-        Bright band width.
-
-    Return
-    ======
-    refp_ss:
-        Stratiform reflectivity conversion from Ku-band to S-band
-    refp_sh:
-        Convective reflectivity conversion from Ku-band to S-band
-    """
-    to_send = copy.deepcopy(refp)
-    return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 0)
-
-
-def convert_to_Cband(refp, zp, zbb, bbwidth):
-    """
-    Convert to C-band using method of Cao et al. (2013)
-
-    Parameters
-    ==========
-    refp:
-        Satellite reflectivity field.
-    zp:
-        Altitude.
-    zbb:
-        Bright band height.
-    bbwidth:
-        Bright band width.
-
-    Return
-    ======
-    refp_ss:
-        Stratiform reflectivity conversion from Ku-band to S-band
-    refp_sh:
-        Convective reflectivity conversion from Ku-band to S-band
-    """
-    to_send = copy.deepcopy(refp)
-    return _convert_reflectivity_from_ku(to_send, zp, zbb, bbwidth, 1)
-
-
-def convert_to_Ku(refg, zg, zbb, l_cband=1):
+def convert_to_Ku(refg, zg, zbb, radar_band='S'):
     '''
     From Liao and Meneghini (2009)
 
@@ -145,8 +99,8 @@ def convert_to_Ku(refg, zg, zbb, l_cband=1):
         Bright band height.
     bbwidth:
         Bright band width.
-    l_cband: bool
-        If radar C-Band (if not then S-band).
+    radar_band: str
+        Possible values are 'S', 'C', or 'X'
 
     Returns
     =======
@@ -167,8 +121,11 @@ def convert_to_Ku(refg, zg, zbb, l_cband=1):
         refg_ku[ibx, iby, ibz] = -1.50393 + 1.07274 * refg[ibx, iby, ibz] + 0.000165393 * refg[ibx, iby, ibz]**2
 
     #  Jackson Tan's fix for C-band
-    if l_cband:
+    if radar_band == 'C':
         delta = (refg_ku - refg) * 5.3 / 10.0
+        refg_ku = refg + delta
+    elif radar_band == 'X':
+        delta = (refg_ku - refg) * 3.2 / 10.0
         refg_ku = refg + delta
 
     return refg_ku
