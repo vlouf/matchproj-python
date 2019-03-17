@@ -119,7 +119,7 @@ def check_directory(radar_dir, satellite_dir, output_dir):
 
 
 def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
-                           satellite_dtime, l_cband, l_dbz, l_atten, gr_offset,
+                           satellite_dtime, radar_band, l_dbz, l_atten, gr_offset,
                            l_write, rid, orbit, outdir):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
@@ -133,9 +133,8 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
         try:
             # Calling processing function for TRMM
             tick = time.time()
-            match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file,
-                                                       sat_file_2A25_trmm, satellite_dtime, l_cband,
-                                                       l_dbz, l_atten, gr_offset)
+            match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,                                                         
+                                                       satellite_dtime, radar_band, l_dbz, l_atten, gr_offset)
         except Exception:
             traceback.print_exc()
             return None
@@ -199,6 +198,11 @@ def main():
     # General info about the ground radar (ID and OFFSET to apply.)
     # Radar location too.
     GR_param = config['radar']
+    try:
+        radar_band = GR_param.get("band")
+    except KeyError:
+        raise KeyError("Please use 'band' in [radar] section of the configuration file instead of cband in switches." + 
+                       " The possible values for band are S, C, or X.")
     rid = GR_param.get('radar_id')
     radar_lat = GR_param.getfloat('latitude')
     radar_lon = GR_param.getfloat('longitude')
@@ -211,10 +215,15 @@ def main():
     # Switches.
     switch = config['switch']
     l_write = switch.getboolean('write')  # switch to save data.
-    l_cband = switch.getboolean('cband')  # Switch for C-band GR
     l_dbz = switch.getboolean('dbz')  # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')  # Switch for GPM PR data
     l_atten = switch.getboolean('correct_gr_attenuation')
+    try:
+        l_cband = switch.getboolean("cband")
+        raise DeprecationWarning("The cband switch is now deprecated. Please use 'band' in [radar] section of the configuration file. I will use the band value.")
+    except KeyError:
+        pass
+
     # Finish reading configuration file.
 
     check_directory(radar_dir, satellite_dir, outdir)
@@ -280,7 +289,7 @@ def main():
 
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
-                              sat_file_2A25_trmm, satellite_dtime, l_cband,
+                              sat_file_2A25_trmm, satellite_dtime, radar_band,
                               l_dbz, l_atten, gr_offset, l_write, rid, orbit, outdir))
 
     if len(args_list) == 0:

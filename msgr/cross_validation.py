@@ -343,7 +343,7 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
 
 
 def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=None, dtime_sat=None,
-                  l_cband=True, l_dbz=True, l_atten=True, gr_offset=0):
+                  radar_band="C", l_dbz=True, l_atten=True, gr_offset=0):
     '''
     MATCHPROJ_FUN
 
@@ -368,6 +368,24 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
+    if radar_band == "C":
+        l_cband = True
+        l_xband = False
+        print_red("You say that the radar is C-band")
+    elif radar_band == "S":
+        l_cband = False
+        l_xband = False
+        print_red("You say that the radar is S-band")
+    elif radar_band == "X":
+        l_cband = False
+        l_xband = True
+        print_red("You say that the radar is X-band")
+        print_red("Reflectivity conversion to X-band not yet supported.")
+    else:
+        print_red(f"Radar frequency band unknown. You said {radar_band}. " + 
+                  "The supported values are 'S', 'C', and 'X'. Doing nothing")
+        return None
+
     logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
@@ -470,7 +488,10 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     if l_cband:
         refp_ss, refp_sh = reflectivity_conversion.convert_to_Cband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
     else:
-        refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
+        if l_xband:
+            refp_ss, refp_sh = reflectivity_conversion.convert_to_Xband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
+        else:
+            refp_ss, refp_sh = reflectivity_conversion.convert_to_Sband(dbz_sat, z_sat_pxcorr, zbb, bbwidth)
 
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, offset=cpol.offset)
