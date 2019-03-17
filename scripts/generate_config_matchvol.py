@@ -91,6 +91,7 @@ output = /path/to/ouptut/directory/
 # Units in meters and degrees
 radar_name = MYSUPERRADAR
 radar_id = MYSUPERRADAR_ID1
+band = C
 rmin = 15000
 rmax = 150000
 longitude = 12.8
@@ -121,7 +122,6 @@ min_gr_reflec = 17
 # Correct ground radar attenuation using pyart
 dbz = False
 gpm = False
-cband = True
 write = True
 correct_gr_attenuation = False
 """
@@ -159,6 +159,7 @@ output = /home/548/vhl548/data/
 # Units in meters and degrees
 radar_name = CPOL
 radar_id = IDR59
+band = C
 rmin = 15000
 rmax = 150000
 longitude = 131.04530334
@@ -192,7 +193,6 @@ min_gr_reflec = 17
 # Correct ground radar attenuation using pyart
 dbz = False
 gpm = False
-cband = True
 write = True
 correct_gr_attenuation = True
 intermediary = False
