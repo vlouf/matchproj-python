@@ -220,11 +220,6 @@ def main():
     l_dbz = switch.getboolean('dbz')  # Switch for averaging in dBZ
     l_gpm = switch.getboolean('gpm')  # Switch for GPM PR data
     l_atten = switch.getboolean('correct_gr_attenuation')
-    try:
-        l_cband = switch.getboolean("cband")
-        raise DeprecationWarning("The cband switch is now deprecated. Please use 'band' in [radar] section of the configuration file. I will use the band value.")
-    except KeyError:
-        pass
 
     # Finish reading configuration file.
 
