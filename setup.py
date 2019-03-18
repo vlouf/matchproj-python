@@ -20,7 +20,7 @@ AUTHOR = 'Valentin Louf'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    "arm_pyart", "numpy", "crayons", "netCDF4", "h5py", "pyproj"
+    "arm_pyart", "numpy", "crayons", "netCDF4", "h5py", "pyproj", 'xarray',
 ]
 
 # The rest you shouldn't have to touch too much :)

@@ -18,6 +18,7 @@ from dateutil import parser
 
 import netCDF4
 import pyart
+import xarray as xr
 
 
 def find_file_with_string(flist, orb):
@@ -122,6 +123,10 @@ def get_time_from_filename(filename, date):
     # Looking for date followed by underscore (or not) and 6 (or 4) consecutives
     # number (i.e. the time)
     # There is maybe an optionnal character (like _) between date and time
+
+    if filename[-2:] == "nc" or filename[-2:] == "NC":
+        ds = xr.open_dataset(filename)
+        return ds.time.values[0]
 
     if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
