@@ -17,6 +17,7 @@ import numpy as np
 from dateutil import parser
 
 import netCDF4
+import pandas as pd
 import pyart
 import xarray as xr
 
@@ -126,7 +127,9 @@ def get_time_from_filename(filename, date):
 
     if filename[-2:] == "nc" or filename[-2:] == "NC":
         ds = xr.open_dataset(filename)
-        return ds.time.values[0]
+        # I wish it was simpler in python but it's not.
+        dates = pd.DatetimeIndex([ds.time.values[0]])
+        return dates.to_pydatetime()[0]
 
     if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
