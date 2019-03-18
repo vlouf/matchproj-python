@@ -371,7 +371,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
-    if radar_band != "C" or radar_band != "S" or radar_band != "X":
+    if radar_band != "C" and radar_band != "S" and radar_band != "X":
         print_red(f"Ground radar frequency band unknown. You said {radar_band}. " +
                   "The supported values are 'S', 'C', and 'X'. Doing nothing.")
         return None
