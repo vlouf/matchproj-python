@@ -68,8 +68,8 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
     elang = cpol.fields['elang']
     ntilt = cpol.fields['ntilt']
     dr = cpol.fields['dr']
-    # Convert ground radar reflectivity to Ku-band    
-    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, cpol.radar_band)    
+    # Convert ground radar reflectivity to Ku-band
+    refg_ku = reflectivity_conversion.convert_to_Ku(reflectivity_ground_radar, zg, zbb, cpol.radar_band)
 
     bwr = cpol.beamwidth
     earth_gaussian_radius = cpol.gaussian_radius
@@ -363,7 +363,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     radar_band: str
         Possible values are 'S', 'C', or 'X'
     l_dbz, l_atten: bool
-        Switches for use of linear reflectivity, GPM or TRMM, and attenuation 
+        Switches for use of linear reflectivity, GPM or TRMM, and attenuation
         correction
 
     Returns
@@ -371,20 +371,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     match_vol: dict
         A dictionnary structure containing the comparable reflectivities.
     '''
-    if radar_band == "C":
-        l_cband = True
-        l_xband = False
-        print_yellow("You say that the ground radar is C-band")
-    elif radar_band == "S":
-        l_cband = False
-        l_xband = False
-        print_yellow("You say that the ground radar is S-band")
-    elif radar_band == "X":
-        l_cband = False
-        l_xband = True
-        print_yellow("You say that the ground radar is X-band")
-        print_yellow("Reflectivity conversion to X-band not yet supported.")
-    else:
+    if radar_band != "C" or radar_band != "S" or radar_band != "X":
         print_red(f"Ground radar frequency band unknown. You said {radar_band}. " +
                   "The supported values are 'S', 'C', and 'X'. Doing nothing.")
         return None

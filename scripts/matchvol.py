@@ -200,8 +200,6 @@ def main():
     GR_param = config['radar']
     try:
         radar_band = GR_param.get("band")
-        if radar_band == 'X':
-            print_yellow("X-band reflectivity conversion is still experimental and not based on actual research, just educated guess.")
     except KeyError:
         raise KeyError("Please use 'band' in [radar] section of the configuration file instead of cband in switches." +
                        " The possible values for band are S, C, or X.")
@@ -213,6 +211,18 @@ def main():
         gr_offset = GR_param.getfloat('offset')
     except KeyError:
         gr_offset = 0
+
+    if radar_band == "C":
+        print_yellow("You say that the ground radar is C-band")
+    elif radar_band == "S":
+        print_yellow("You say that the ground radar is S-band")
+    elif radar_band == "X":
+        print_yellow("You say that the ground radar is X-band")
+        print_yellow("Reflectivity conversion to X-band not yet supported.")
+    else:
+        print_red(f"Ground radar frequency band unknown. You said {radar_band}. " +
+                  "The supported values are 'S', 'C', and 'X'. Doing nothing.")
+        return None
 
     # Switches.
     switch = config['switch']
@@ -234,6 +244,7 @@ def main():
     total_radar_file_list = get_files(radar_dir)
     print_yellow(f"Found {len(total_radar_file_list)} supported radar files in {radar_dir}.")
 
+    print_green("Building database.")
     args_list = []
     for date in date_list:
         datestr = date.strftime('%Y%m%d')
@@ -245,8 +256,8 @@ def main():
         if len(radar_file_list) == 0:
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
-        else:
-            print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
+        # else:
+        #     print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
 
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
@@ -296,6 +307,7 @@ def main():
         print_red("Nothing to do. Is the configuration file correct?")
         return None
 
+    print_green('Database built. Start processing.')
     # Start multiprocessing.
     with Pool(ncpu) as pool:
         pool.starmap(multiprocessing_driver, args_list)
