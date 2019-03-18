@@ -245,6 +245,8 @@ def main():
         if len(radar_file_list) == 0:
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
+        else:
+            print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
 
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
@@ -277,7 +279,7 @@ def main():
             closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
             time_difference = np.abs(satellite_dtime - closest_dtime_rad)
             if time_difference.seconds > max_time_delta:
-                print_red(f"Found {len(radar_file_list)} for date {datestr}. " +
+                print_red(f"Found {len(radar_file_list)} ground radar files for date {datestr}. " +
                           f'Smallest time difference is {time_difference.seconds}s while the' +
                           f' maximum time difference allowed is {max_time_delta}s.', bold=True)
                 continue

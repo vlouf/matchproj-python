@@ -125,6 +125,13 @@ def get_time_from_filename(filename, date):
     # number (i.e. the time)
     # There is maybe an optionnal character (like _) between date and time
 
+    try:
+        dtstr = re.findall(date + '.[0-9]{6}', filename)
+        dtime = datetime.datetime.strptime(dtstr[0], '%Y%m%d.%H%M%S')
+        return dtime
+    except Exception:
+        pass    
+
     if filename[-2:] == "nc" or filename[-2:] == "NC":
         ds = xr.open_dataset(filename)
         # I wish it was simpler in python but it's not.
