@@ -118,6 +118,7 @@ class Satellite:
             pass
 
         self.l_gpm = config['switch'].getboolean('gpm')
+        self.TRMM_NEW_VERSION = False
         if not self.l_gpm and sat_file_2A25_trmm is None:
             self.TRMM_NEW_VERSION = True
             # raise ValueError("Configuration file says that the satellite is TRMM but no TRMM 2A25 files given.")

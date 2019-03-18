@@ -374,16 +374,16 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     if radar_band == "C":
         l_cband = True
         l_xband = False
-        print_red("You say that the ground radar is C-band")
+        print_yellow("You say that the ground radar is C-band")
     elif radar_band == "S":
         l_cband = False
         l_xband = False
-        print_red("You say that the ground radar is S-band")
+        print_yellow("You say that the ground radar is S-band")
     elif radar_band == "X":
         l_cband = False
         l_xband = True
-        print_red("You say that the ground radar is X-band")
-        print_red("Reflectivity conversion to X-band not yet supported.")
+        print_yellow("You say that the ground radar is X-band")
+        print_yellow("Reflectivity conversion to X-band not yet supported.")
     else:
         print_red(f"Ground radar frequency band unknown. You said {radar_band}. " +
                   "The supported values are 'S', 'C', and 'X'. Doing nothing.")
