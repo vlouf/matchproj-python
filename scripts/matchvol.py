@@ -277,7 +277,8 @@ def main():
             closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
             time_difference = np.abs(satellite_dtime - closest_dtime_rad)
             if time_difference.seconds > max_time_delta:
-                print_red(f'Time difference is {time_difference.seconds}s while the' +
+                print_red(f"Found {len(radar_file_list)} for date {datestr}. " +
+                          f'Smallest time difference is {time_difference.seconds}s while the' +
                           f' maximum time difference allowed is {max_time_delta}s.', bold=True)
                 continue
 
