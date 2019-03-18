@@ -135,6 +135,8 @@ def get_time_from_filename(filename, date):
 
     try:
         date_time = parser.parse(strlist[0], fuzzy=True)
+    except ValueError:
+        date_time = datetime.datetime.strptime(strlist[0], "%Y%m%d")
     except IndexError:
         date_time = None
 
