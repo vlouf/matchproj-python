@@ -246,11 +246,15 @@ def main():
 
     print_green("Building database.")
     args_list = []
+    print(date_list)
+    
     for date in date_list:
         datestr = date.strftime('%Y%m%d')
 
         # Extracting radar file list for this date from the total radar file list.
 
+        print(total_radar_file_list)
+        print(datestr)
         radar_file_list = [f for f in total_radar_file_list if datestr in f]
 
         if len(radar_file_list) == 0:
@@ -264,7 +268,6 @@ def main():
         if satfiles is None:
             print_red(f"No satellite data for {datestr}.")
             continue
-
         # Obtaining the satellite file(s) and reading its exact date and time.
         for cnt, one_sat_file in enumerate(satfiles):
             if satfiles2 is not None:
@@ -296,8 +299,9 @@ def main():
                 continue
 
             # Radar file corresponding to the nearest scan time
+            # There is maybe an optionnal character(underscore) between date and time
             ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
-
+            
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, radar_band,

@@ -1,1 +1,10 @@
 .vscode/settings.json
+
+
+dist
+__pycache__
+build
+release
+msgr.egg-info
+scripts/*.log
+*checkpoint.py
