@@ -88,8 +88,8 @@ def save_data(outfilename, data, date, offset1=None, offset2=None, nb_pass=0):
 
         for k, v in data.items():
             if k in ['zbb', 'date', 'bbwidth', 'dt']:
-                # rootgrp.setncattr(k, v)
-                continue
+                rootgrp.setncattr(k, v)
+                #continue
 
             if k == "el":
                 ncelev = rootgrp.createVariable('elevation', 'f8', ("tilt"), zlib=True)
