@@ -163,7 +163,7 @@ def get_closest_date(list_date, base_time):
     GET_CLOSEST_DATE
     from:  http://stackoverflow.com/a/17249470/846892
     '''
-
+    
     b_d = base_time
 
     def func(x):
@@ -180,11 +180,11 @@ def get_filename_from_date(file_list, the_date):
     Looks for a file in a list of file with the exact corresponding date and
     returns it.
     '''
-    print(file_list)
-    print(the_date)
+    #print(file_list)
+    #print(the_date)
     # There is maybe an optionnal character(underscore) between date and time
     rt_str = the_date.strftime("%Y%m%d.%H%M")
-    print(rt_str)
+    #print(rt_str)
     for the_file in file_list:
         try:
             re.findall(rt_str, the_file)[0]  # If does not exist it raises an error

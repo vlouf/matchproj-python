@@ -246,22 +246,23 @@ def main():
 
     print_green("Building database.")
     args_list = []
-    print(date_list)
     
     for date in date_list:
+        #date string for searching in file names
         datestr = date.strftime('%Y%m%d')
 
-        # Extracting radar file list for this date from the total radar file list.
-
-        print(total_radar_file_list)
-        print(datestr)
+        #search for matching radar files for the current date
         radar_file_list = [f for f in total_radar_file_list if datestr in f]
-
-        if len(radar_file_list) == 0:
+        # Get the datetime for each radar files
+        radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
+        radar_dtime = list(filter(None, radar_dtime))  # Removing None values
+            
+        #no files found, abort    
+        if len(radar_file_list) == 0:    
             print_yellow(f"No ground radar file found for this date {datestr}")
             continue
-        # else:
-        #     print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
+        else:
+            print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
 
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
@@ -285,11 +286,7 @@ def main():
                 continue
 
             orbit = get_orbit_number(one_sat_file)
-
-            # Get the datetime for each radar files
-            radar_dtime = [get_time_from_filename(radfile, datestr) for radfile in radar_file_list]
-            radar_dtime = list(filter(None, radar_dtime))  # Removing None values
-
+            
             closest_dtime_rad = get_closest_date(radar_dtime, satellite_dtime)
             time_difference = np.abs(satellite_dtime - closest_dtime_rad)
             if time_difference.seconds > max_time_delta:
