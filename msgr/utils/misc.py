@@ -132,11 +132,11 @@ def get_time_from_filename(filename, date):
     except Exception:
         pass    
 
-    if filename[-2:] == "nc" or filename[-2:] == "NC":
-        ds = xr.open_dataset(filename)
-        # I wish it was simpler in python but it's not.
-        dates = pd.DatetimeIndex([ds.time.values[0]])
-        return dates.to_pydatetime()[0]
+#     if filename[-2:] == "nc" or filename[-2:] == "NC":
+#         ds = xr.open_dataset(filename)
+#         # I wish it was simpler in python but it's not.
+#         dates = pd.DatetimeIndex([ds.time.values[0]])
+#         return dates.to_pydatetime()[0]
 
     if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
