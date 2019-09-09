@@ -60,11 +60,21 @@ def transform_reflectivity(radar, refl_name):
 
 
 def _read_radar_pyart(filename):
+    #determine correct reading using file extension
+    file_extension = filename[-2:]
     try:
-        radar = pyart.aux_io.read_odim_h5(filename)
-    except Exception:
-        radar = pyart.io.read(filename)
-    return radar
+        if file_extension == 'h5':
+            radar = pyart.aux_io.read_odim_h5(filename)
+        elif file_extension == 'nc':
+            radar = pyart.io.read_cfradial(filename)
+        else:
+            print('UNKNOWN GROUND RADAR FILE EXTENSION:', filename)
+            return None
+        return radar
+    except Exception as e:
+        print('Failed to load GROUND RADAR FILE:', filename)
+        print(e)
+        return None
 
 
 def get_reflectivity_name(radar):
