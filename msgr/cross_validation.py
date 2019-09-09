@@ -461,7 +461,11 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     # Determine the median brightband height
     ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0]
     nbb = len(ibb)
-    if nbb >= satellite.min_prof_nb:
+    if satellite.min_prof_nb == 0:
+        #case for including cases with only frozen precip
+        zbb = 0
+        bbwidth = 0
+    elif nbb >= satellite.min_prof_nb:
         zbb = np.median(zbb[ibb])
         bbwidth = np.median(bbwidth[ibb])
     else:
