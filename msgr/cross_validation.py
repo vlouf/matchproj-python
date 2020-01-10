@@ -239,13 +239,13 @@ def _matching(satellite, cpol, nprof, reflectivity_satellite,
         w = volg1 * exp(-1 * (d[igx, igy] / (ds[ii, jj] / 2.))**2)
         w = w * refg1 / refg2
 
-        ref2[ii, jj] = np.nansum(w * refg1) / np.nansum(w)
+        ref2[ii, jj] = np.nansum(w * refg1) / np.nansum(w[~np.isnan(refg1)])
 
         # if ref2[ii, jj] < minrefp:
         #     ref2[ii, jj] = np.NaN
 
-        ref5[ii, jj] = np.nansum(w * refg2) / np.nansum(w)
-        iref2[ii, jj] = np.nansum(w * irefg1) / np.nansum(w)
+        ref5[ii, jj] = np.nansum(w * refg2) / np.nansum(w[~np.isnan(refg2)])
+        iref2[ii, jj] = np.nansum(w * irefg1) / np.nansum(w[~np.isnan(irefg1)])
 
         if not l_dbz:
             stdv2[ii, jj] = np.nanstd(10 * np.log10(refg1))
