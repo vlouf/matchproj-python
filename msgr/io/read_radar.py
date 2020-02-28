@@ -61,10 +61,12 @@ def transform_reflectivity(radar, refl_name):
 
 def _read_radar_pyart(filename):
     try:
-        radar = pyart.io.read(filename)
+        if 'h5' in filename: #if the cfradial reader crashes, it leaves the file open, then it cannot be read by h5py
+            radar = pyart.aux_io.read_odim_h5(filename)
+        else:
+            radar = pyart.io.read(filename)
     except Exception:
-        radar = pyart.aux_io.read_odim_h5(filename)
-
+        radar = None
     return radar
 
 
