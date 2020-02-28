@@ -259,6 +259,19 @@ def main():
         # else:
         #     print_green(f"Found {len(radar_file_list)} radar files for date {datestr}")
 
+        #Extract file listing from zip if required (rq0 specific)
+        if '.zip' in radar_file_list[0]:
+			#declare zip ffn
+			zip_ffn = radar_file_list[0]
+	    	#create temp_path for use later when extracting volumes from the zip
+            unzip_temp_path = tempfile.mkdtemp()
+			#extract name list
+            zip = zipfile.ZipFile(zip_ffn)
+            radar_file_list = zip.namelist()
+            zip.close()
+		else:
+			zip_ffn = None
+
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
         if satfiles is None:
@@ -298,6 +311,15 @@ def main():
             # Radar file corresponding to the nearest scan time
             ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
 
+			# if processing radar data from rq0, ground_radar_file will need to be extracted
+            if zip_ffn:
+                #extract to temp dir
+                zip = zipfile.ZipFile(zip_ffn)
+                zip.extract(ground_radar_file, path=unzip_temp_path)
+                zip.close()
+                #generate path to temp path
+                ground_radar_file = '/'.join([unzip_temp_path, ground_radar_file])
+			
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, radar_band,
@@ -311,6 +333,10 @@ def main():
     # Start multiprocessing.
     with Pool(ncpu) as pool:
         pool.starmap(multiprocessing_driver, args_list)
+
+	#remove zip temp path
+    if zip_ffn:
+       shutil.rmtree(unzip_temp_path)
 
     return None
 
