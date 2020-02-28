@@ -16,6 +16,9 @@ import datetime
 import warnings
 import traceback
 import configparser
+import zipfile
+import tempfile
+
 
 from multiprocessing import Pool
 
@@ -89,7 +92,7 @@ def get_satfile_list(satdir, date, l_gpm):
         List of TRMM 2A23 files (None for GPM).
     """
     # Looking for satellite data files.
-    satfiles = glob.glob(os.path.join(satdir, f'*{date}*.HDF5'))
+    satfiles = glob.glob(os.path.join(satdir, '**', f'*{date}*.HDF5'), recursive=True)
     satfiles2 = None
     if len(satfiles) == 0:
         # Old version of TRMM products, HDF format.
@@ -232,7 +235,6 @@ def main():
     l_atten = switch.getboolean('correct_gr_attenuation')
 
     # Finish reading configuration file.
-
     check_directory(radar_dir, satellite_dir, outdir)
 
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
@@ -261,16 +263,16 @@ def main():
 
         #Extract file listing from zip if required (rq0 specific)
         if '.zip' in radar_file_list[0]:
-			#declare zip ffn
-			zip_ffn = radar_file_list[0]
-	    	#create temp_path for use later when extracting volumes from the zip
+            #declare zip ffn
+            zip_ffn = radar_file_list[0]
+            #create temp_path for use later when extracting volumes from the zip
             unzip_temp_path = tempfile.mkdtemp()
-			#extract name list
+            #extract name list
             zip = zipfile.ZipFile(zip_ffn)
             radar_file_list = zip.namelist()
             zip.close()
-		else:
-			zip_ffn = None
+        else:
+            zip_ffn = None
 
         # Looking for satellite data corresponding to this date.
         satfiles, satfiles2 = get_satfile_list(satellite_dir, datestr, l_gpm)
@@ -311,7 +313,7 @@ def main():
             # Radar file corresponding to the nearest scan time
             ground_radar_file = get_filename_from_date(radar_file_list, closest_dtime_rad)
 
-			# if processing radar data from rq0, ground_radar_file will need to be extracted
+            # if processing radar data from rq0, ground_radar_file will need to be extracted from the zip
             if zip_ffn:
                 #extract to temp dir
                 zip = zipfile.ZipFile(zip_ffn)
@@ -319,7 +321,7 @@ def main():
                 zip.close()
                 #generate path to temp path
                 ground_radar_file = '/'.join([unzip_temp_path, ground_radar_file])
-			
+
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, radar_band,
@@ -334,9 +336,9 @@ def main():
     with Pool(ncpu) as pool:
         pool.starmap(multiprocessing_driver, args_list)
 
-	#remove zip temp path
+    #remove zip temp path
     if zip_ffn:
-       shutil.rmtree(unzip_temp_path)
+        os.system('rm -rf ' + unzip_temp_path)
 
     return None
 
