@@ -56,7 +56,7 @@ You should only modify the config.ini file to match your own configuration and t
 
 ## Satellite data
 
-For GPM you need the 2AKu product. For TRMM you need the 2A23 and 2A25 products.
+For GPM you need the 2AKu product. For TRMM you need the 2APR product.
 
 The website where you can download TRMM and GPM data is https://storm.pps.eosdis.nasa.gov/storm/data/Service.jsp?serviceName=RestrictedOrder. You need to register before you can order data. One you've entered your pre-registered email address you can enter the details of your order. You want the following options:
 *	Under 'Order type' select 'Standalone order'
