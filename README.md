@@ -65,7 +65,8 @@ The website where you can download TRMM and GPM data is https://storm.pps.eosdis
 *	Under 'Product Type' select '2AKu' under 'Algorithm' and check the box that comes up below. Note that this is for GPM. For TRMM you have to select 2APR, but if you're only working with GPM you don't need to worry about that.
 *	Under 'Temporal Criteria' set the range of dates you want data for.
 *	Under 'Special Area Of Interest' specify the limits of your domain (it should encompass the 150km range ring of your radar(s)). Give it a 'Location Alias'.
-*	Under 'Parameter Subset' choose the following: 'dataQuality' from 'scanStatus', 'landSurfaceType' and 'flagPrecip' from 'PRE', 'flagBB', 'heightBB', 'widthBB', 'qualityBB', 'typePrecip', and 'qualityTypePrecip' from 'CSF', and 'zFactorCorrected' from 'SLV'. Provide an identifier, then select 'No' for 'Do you want to generate Read and Write routines for this subset', and set 'HDF' as the 'Output Data Format'.
+*	Under 'Parameter Subset' choose the following: From 'scanStatus' select 'dataQuality'. From 'PRE' select 'landSurfaceType', 'binClutterFreeBottom' and 'flagPrecip'. From 'CSF' select 'flagBB', 'heightBB', 'widthBB', 'qualityBB', 'typePrecip' and 'qualityTypePrecip'. From 'SLV' select 'zFactorCorrected'. From 'NS' select 'Latitude', 'Longitude'. From 'ScanTime' select 'Year', 'Month', 'DayOfMonth', 'Hour', 'Minute', 'Second'
+*	Provide an identifier, then select 'No' for 'Do you want to generate Read and Write routines for this subset', and set 'HDF' as the 'Output Data Format'.
 *	Under 'Search Results' select all the files by clicking the top-most check box.
 Hitting submit should then get you what you want.
 
