@@ -83,6 +83,7 @@ end_date = 20130506
 ground_radar = /path/to/ground/radar/data/
 satellite = /path/to/satellite/radar/data/
 output = /path/to/ouptut/directory/
+log = /path/to/log/directory/
 
 [radar]
 # rmin is the minimum radar range (in meter) we start looking for data.
@@ -151,6 +152,7 @@ end_date = %s
 ground_radar = %s
 satellite = /g/data2/rr5/vhl548/TRMM
 output = /home/548/vhl548/data/
+log = /home/548/vhl548/log/
 
 ''' % (ncpu, st_date, end_date, gr_path)
 

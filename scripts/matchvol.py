@@ -106,7 +106,7 @@ def get_satfile_list(satdir, date, l_gpm):
     return satfiles, satfiles2
 
 
-def check_directory(radar_dir, satellite_dir, output_dir):
+def check_directory(radar_dir, satellite_dir, output_dir, logdir):
     # Check if dirs exist.
     if not os.path.isdir(radar_dir):
         raise FileNotFoundError('Ground radar data directory not found.')
@@ -117,13 +117,18 @@ def check_directory(radar_dir, satellite_dir, output_dir):
         os.mkdir(output_dir)
     except FileExistsError:
         pass
-
+    
+    try:
+        os.mkdir(logdir)
+    except FileExistsError:
+        pass
+    
     return None
 
 
 def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
                            satellite_dtime, radar_band, l_dbz, l_atten, gr_offset,
-                           l_write, rid, orbit, outdir):
+                           l_write, rid, orbit, outdir, logdir):
     """
     Buffer function that handles Exceptions while running the multiprocessing.
     Automatically runs the comparison 2 times. First with the raw radar data,
@@ -137,7 +142,7 @@ def multiprocessing_driver(CONFIG_FILE, ground_radar_file, one_sat_file, sat_fil
             # Calling processing function for TRMM
             tick = time.time()
             match_vol = cross_validation.match_volumes(CONFIG_FILE, ground_radar_file, one_sat_file, sat_file_2A25_trmm,
-                                                       satellite_dtime, radar_band, l_dbz, l_atten, gr_offset)
+                                                       satellite_dtime, radar_band, l_dbz, l_atten, gr_offset, logdir)
         except Exception:
             traceback.print_exc()
             return None
@@ -193,7 +198,8 @@ def main():
     radar_dir = path.get('ground_radar')
     satellite_dir = path.get('satellite')
     outdir = path.get('output')
-
+    logdir = path.get('log')
+    
     # Thresholds
     thresholds = config['thresholds']
     max_time_delta = thresholds.getfloat('max_time_delta')  # in second
@@ -235,7 +241,7 @@ def main():
     l_atten = switch.getboolean('correct_gr_attenuation')
 
     # Finish reading configuration file.
-    check_directory(radar_dir, satellite_dir, outdir)
+    check_directory(radar_dir, satellite_dir, outdir, logdir)
 
     start_date = datetime.datetime.strptime(date1, '%Y%m%d')
     end_date = datetime.datetime.strptime(date2, '%Y%m%d')
@@ -325,7 +331,7 @@ def main():
             # Argument list for multiprocessing.
             args_list.append((CONFIG_FILE, ground_radar_file, one_sat_file,
                               sat_file_2A25_trmm, satellite_dtime, radar_band,
-                              l_dbz, l_atten, gr_offset, l_write, rid, orbit, outdir))
+                              l_dbz, l_atten, gr_offset, l_write, rid, orbit, outdir, logdir))
 
     if len(args_list) == 0:
         print_red("Nothing to do. Is the configuration file correct?")

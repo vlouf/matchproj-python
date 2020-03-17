@@ -344,7 +344,7 @@ def correct_parallax(xc, yc, xp, yp, alpha, the_range):
 
 
 def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=None, dtime_sat=None,
-                  radar_band="C", l_dbz=True, l_atten=True, gr_offset=0):
+                  radar_band="C", l_dbz=True, l_atten=True, gr_offset=0, log_path='.'):
     '''
     MATCHPROJ_FUN
 
@@ -376,7 +376,7 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
                   "The supported values are 'S', 'C', and 'X'. Doing nothing.")
         return None
 
-    logging.basicConfig(filename="log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
+    logging.basicConfig(filename=log_path + "log_matchvol_{}.log".format(dtime_sat.strftime("%Y%m%d")), level=logging.DEBUG)
     # Spawning Radar and Satellite
     cpol = Radar(configuration_file, gr_offset=gr_offset)
     satellite = Satellite(configuration_file, sat_file_1, sat_file_2A25_trmm)
