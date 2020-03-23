@@ -34,7 +34,7 @@ def _get_metadata():
     metadat['nbb'] = {'long_name': 'Number of profiles with a bright band', 'units': None}
     metadat['vol1'] = {'long_name': 'PR averaging volume', 'units': 'km^3'}
     metadat['vol2'] = {'long_name': 'GR averaging volume', 'units': 'km^3'}
-
+    
     return metadat
 
 
@@ -87,7 +87,7 @@ def save_data(outfilename, data, date, offset1=None, offset2=None, nb_pass=0):
             ncoff.setncattr_string("description", "Difference reflectivity Satellite - Ground Radar. TOTAL")
 
         for k, v in data.items():
-            if k in ['zbb', 'date', 'bbwidth', 'dt']:
+            if k in ['date', 'dt']:
                 # rootgrp.setncattr(k, v)
                 continue
 

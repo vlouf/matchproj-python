@@ -346,6 +346,8 @@ def main():
     if zip_ffn:
         os.system('rm -rf ' + unzip_temp_path)
 
+    print_green('MSGR processing complete.')
+    
     return None
 
 
