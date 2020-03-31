@@ -85,6 +85,45 @@ def convert_sat_refl_to_gr_band(refp, zp, zbb, bbwidth, radar_band='S'):
     return refp_ss, refp_sh
 
 
+def convert_gpmrefl_grband_dfr(refp, radar_band=None):
+    '''
+    Convert GPM reflectivity to ground radar band using the DFR relationship
+    found in Louf et al. (2019) paper.
+    NOTE: It's a continuous relationship, so here there is no difference here
+    between conv/strat.
+    Parameters
+    ==========
+    refp:
+        Satellite reflectivity field.
+    radar_band: str
+        Possible values are 'S', 'C', or 'X'
+    Return
+    ======
+    refl_strat:
+        Stratiform reflectivity conversion from Ku-band to S-band
+    refl_conv:
+        Convective reflectivity conversion from Ku-band to S-band
+    '''
+    if radar_band == 'S':
+        cof = np.array([ 2.01236803e-07, -6.50694273e-06,  1.10885533e-03, -6.47985914e-02, -7.46518423e-02])
+        dfr = np.poly1d(cof)
+    elif radar_band == 'C':
+        cof = np.array([ 1.21547932e-06, -1.23266138e-04,  6.38562875e-03, -1.52248868e-01, 5.33556919e-01])
+        dfr = np.poly1d(cof)
+    elif radar_band == 'X':
+        # Use of C band DFR relationship multiply by ratio
+        cof = np.array([ 1.21547932e-06, -1.23266138e-04,  6.38562875e-03, -1.52248868e-01, 5.33556919e-01])
+        dfr = 3.2 / 5.5 * np.poly1d(cof)
+    else:
+         raise ValueError(f'Radar reflectivity band ({radar_band}) not supported.')
+
+    # It's a continuous relationship, so here there is no difference between conv/strat.
+    refl_strat = refp + dfr(refp)
+    refl_conv = refl_strat
+
+    return refl_strat, refl_conv
+
+
 def convert_to_Ku(refg, zg, zbb, radar_band='S'):
     '''
     From Liao and Meneghini (2009)

@@ -458,25 +458,25 @@ def match_volumes(configuration_file, radfile, sat_file_1, sat_file_2A25_trmm=No
     # range_pr_grref = (cpol.gaussian_radius + z_sat_pxcorr) * sin(gamma) / cos(pi / 180 * elev_pr_grref)  # Not used
     # azi_pr_grref = 90 - 180 / pi * np.arctan2(yproj_sat_pxcorr, xproj_sat_pxcorr)  # Not used
 
+    # Set all values less than satellite.min_refl_thrld as missing
+    dbz_sat = np.ma.masked_where(dbz_sat < satellite.min_refl_thrld, dbz_sat)
+
     # Determine the median brightband height
     ibb = np.where((zbb > 0) & (bbwidth > 0) & (quality == 1))[0]
     nbb = len(ibb)
     if nbb >= satellite.min_prof_nb:
         zbb = np.median(zbb[ibb])
         bbwidth = np.median(bbwidth[ibb])
+        refp_ss, refp_sh = reflectivity_conversion.convert_sat_refl_to_gr_band(dbz_sat, 
+                                                                               z_sat_pxcorr, 
+                                                                               zbb, 
+                                                                               bbwidth, 
+                                                                               radar_band=radar_band)
     else:
-        print_red('Insufficient bright band rays %i for ' % (nbb) + dtime_sat.strftime("%d %b %Y"))
-        logging.error('Insufficient bright band rays %i for ' % (nbb) + dtime_sat.strftime("%d %b %Y"))
-        return None
+        refp_ss, refp_sh = reflectivity_conversion.convert_gpmrefl_grband_dfr(dbz_sat, 
+                                                                              radar_band=radar_band)
 
     print_green("Satellite side OK.")
-
-    # Set all values less than satellite.min_refl_thrld as missing
-    dbz_sat = np.ma.masked_where(dbz_sat < satellite.min_refl_thrld, dbz_sat)
-
-    # Convert satellite reflectivity to ground radar reflectivty band using the method of Cao et al. (2013)
-    refp_ss, refp_sh = reflectivity_conversion.convert_sat_refl_to_gr_band(dbz_sat, z_sat_pxcorr, zbb, bbwidth, radar_band)
-
     print_yellow("Reading {}.".format(radfile))
     radar = read_radar(radfile, offset=cpol.offset)
     if radar is None:
