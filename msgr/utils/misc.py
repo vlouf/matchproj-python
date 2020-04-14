@@ -16,7 +16,7 @@ import datetime
 import numpy as np
 from dateutil import parser
 
-import netCDF4
+import cftime
 import pandas as pd
 import pyart
 import xarray as xr
@@ -130,7 +130,7 @@ def get_time_from_filename(filename, date):
         dtime = datetime.datetime.strptime(dtstr[0], '%Y%m%d.%H%M%S')
         return dtime
     except Exception:
-        pass    
+        pass
 
     if filename[-2:] == "nc" or filename[-2:] == "NC":
         ds = xr.open_dataset(filename)
@@ -141,7 +141,9 @@ def get_time_from_filename(filename, date):
     if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
         radar = pyart.io.read(filename)
-        dtime = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
+        dtime = cftime.num2date(radar.time['data'][0], radar.time['units'],
+                                only_use_cftime_datetimes=False,
+                                only_use_python_datetimes=True)
         return dtime
     else:
         strlist = re.findall(date + ".?[0-9]{6}", filename)

@@ -2,7 +2,7 @@ import traceback
 
 # Other libraries.
 import pyart
-import netCDF4
+import cftime
 import numpy as np
 
 from scipy.interpolate import griddata
@@ -113,7 +113,10 @@ def read_radar(filename, offset=None):
         Data structure.
     """
     radar = _read_radar_pyart(filename)
-    dtime_radar = netCDF4.num2date(radar.time['data'][0], radar.time['units'])
+    dtime_radar = cftime.num2date(radar.time['data'][0], radar.time['units'],
+                                  only_use_cftime_datetimes=False,
+                                  only_use_python_datetimes=True)
+
 
     refl_name = get_reflectivity_name(radar)
     if refl_name is None:
