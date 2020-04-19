@@ -141,9 +141,7 @@ def get_time_from_filename(filename, date):
     if filename[-2:] == "gz" or '.RAW' in filename:
         # SIGMET file date convention.
         radar = pyart.io.read(filename)
-        dtime = cftime.num2date(radar.time['data'][0], radar.time['units'],
-                                only_use_cftime_datetimes=False,
-                                only_use_python_datetimes=True)
+        dtime = cftime.num2pydate(radar.time['data'][0], radar.time['units'])
         return dtime
     else:
         strlist = re.findall(date + ".?[0-9]{6}", filename)

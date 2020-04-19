@@ -113,11 +113,7 @@ def read_radar(filename, offset=None):
         Data structure.
     """
     radar = _read_radar_pyart(filename)
-    dtime_radar = cftime.num2date(radar.time['data'][0], radar.time['units'],
-                                  only_use_cftime_datetimes=False,
-                                  only_use_python_datetimes=True)
-
-
+    dtime_radar = cftime.num2pydate(radar.time['data'][0], radar.time['units'])
     refl_name = get_reflectivity_name(radar)
     if refl_name is None:
         raise KeyError("Reflectivity field not found, or name not standard.")
